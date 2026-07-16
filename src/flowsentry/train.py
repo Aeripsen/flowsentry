@@ -22,7 +22,6 @@ from pathlib import Path
 
 import joblib
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import average_precision_score, classification_report, f1_score
 from sklearn.preprocessing import label_binarize
@@ -36,10 +35,16 @@ from .data import (
     load_sample,
 )
 from .model import TwoStageRejectClassifier
+from .registry import make_stage_estimator
 
 ARTIFACT_DIR = Path(__file__).resolve().parents[2] / "artifacts"
 THRESHOLDS = [0.0, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99]
 ESCALATE_THRESHOLD = 0.90
+# Every reported number was measured with these. Swap the name to train the same
+# pipeline on another registered family (see registry.py).
+STAGE_ESTIMATOR = "random_forest"
+STAGE1_PARAMS = {"n_estimators": 60, "random_state": 42}
+STAGE2_PARAMS = {"n_estimators": 200, "random_state": 42}
 
 
 def _pr_auc(y_true_bin, scores) -> float:
@@ -63,9 +68,15 @@ def main() -> dict:
     Xtr, Xte = imputer.transform(X[tr]), imputer.transform(X[te])
     ytr, yte = y[tr], y[te]
 
-    print("[fit ] two-stage reject classifier (Stage 1 = UDP-only, Stage 2 = UDP+QUIC) ...")
+    print(
+        f"[fit ] two-stage reject classifier "
+        f"(Stage 1 = UDP-only, Stage 2 = UDP+QUIC, estimator={STAGE_ESTIMATOR}) ..."
+    )
     model = TwoStageRejectClassifier(
-        stage1_features=STAGE1_INDICES, escalate_threshold=ESCALATE_THRESHOLD
+        stage1_features=STAGE1_INDICES,
+        escalate_threshold=ESCALATE_THRESHOLD,
+        stage1_estimator=make_stage_estimator(STAGE_ESTIMATOR, **STAGE1_PARAMS),
+        stage2_estimator=make_stage_estimator(STAGE_ESTIMATOR, **STAGE2_PARAMS),
     )
     model.fit(Xtr, ytr)
 
@@ -97,11 +108,9 @@ def main() -> dict:
     curve = model.coverage_reliability_curve(Xte, yte, THRESHOLDS)
     escalation_rate = curve[0]["escalation_rate"]
 
-    # Ablation: single-stage RF on the full UDP+QUIC space (no hierarchy, no reject),
-    # so the value of the two-stage design is measurable, not asserted.
-    single = RandomForestClassifier(
-        n_estimators=200, random_state=42, n_jobs=-1, class_weight="balanced_subsample"
-    ).fit(Xtr, ytr)
+    # Ablation: single-stage estimator on the full UDP+QUIC space (no hierarchy, no
+    # reject), so the value of the two-stage design is measurable, not asserted.
+    single = make_stage_estimator(STAGE_ESTIMATOR, **STAGE2_PARAMS).fit(Xtr, ytr)
     single_pred = single.classes_[single.predict_proba(Xte).argmax(axis=1)]
     single_macro_f1 = round(float(f1_score(yte, single_pred, average="macro")), 4)
     single_acc = round(float((single_pred == yte).mean()), 4)

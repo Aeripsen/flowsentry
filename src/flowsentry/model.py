@@ -23,7 +23,7 @@ the point of the reject option.
 from __future__ import annotations
 
 import numpy as np
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import RandomForestClassifier
 
 UNKNOWN = "unknown"
@@ -65,15 +65,34 @@ class TwoStageRejectClassifier(BaseEstimator):
         n_estimators_stage1: int = 60,
         n_estimators_stage2: int = 200,
         random_state: int = 42,
+        stage1_estimator=None,
+        stage2_estimator=None,
     ) -> None:
         # stage1_features: indices (within the full Stage-2 matrix) of the UDP-only
         # columns Stage 1 trains on. None means Stage 1 sees the full feature set
         # (degenerate single-stage); training always passes the real UDP indices.
+        #
+        # stage1_estimator / stage2_estimator: any classifier satisfying
+        # registry.StageClassifier (fit / predict_proba / classes_), cloned at fit
+        # time. None keeps the defaults every reported number was measured with:
+        # random forests built from n_estimators_stage1/2 + random_state.
         self.stage1_features = stage1_features
         self.escalate_threshold = escalate_threshold
         self.n_estimators_stage1 = n_estimators_stage1
         self.n_estimators_stage2 = n_estimators_stage2
         self.random_state = random_state
+        self.stage1_estimator = stage1_estimator
+        self.stage2_estimator = stage2_estimator
+
+    def _build_stage(self, estimator, n_estimators: int):
+        if estimator is not None:
+            return clone(estimator)
+        return RandomForestClassifier(
+            n_estimators=n_estimators,
+            random_state=self.random_state,
+            n_jobs=-1,
+            class_weight="balanced_subsample",
+        )
 
     def fit(self, X, y) -> TwoStageRejectClassifier:
         X = np.asarray(X, dtype=float)
@@ -84,18 +103,8 @@ class TwoStageRejectClassifier(BaseEstimator):
             self.stage1_features_ = list(range(n_features))
         else:
             self.stage1_features_ = list(self.stage1_features)
-        self.stage1_ = RandomForestClassifier(
-            n_estimators=self.n_estimators_stage1,
-            random_state=self.random_state,
-            n_jobs=-1,
-            class_weight="balanced_subsample",
-        )
-        self.stage2_ = RandomForestClassifier(
-            n_estimators=self.n_estimators_stage2,
-            random_state=self.random_state,
-            n_jobs=-1,
-            class_weight="balanced_subsample",
-        )
+        self.stage1_ = self._build_stage(self.stage1_estimator, self.n_estimators_stage1)
+        self.stage2_ = self._build_stage(self.stage2_estimator, self.n_estimators_stage2)
         self.stage1_.fit(X[:, self.stage1_features_], y)
         self.stage2_.fit(X, y)
         return self
