@@ -28,17 +28,19 @@ from typing import Any
 
 import numpy as np
 
+from .config import get_settings
 from .data import QUIC_FEATURES, STAGE2_FEATURES
 from .model import UNKNOWN, TwoStageRejectClassifier
 
-ARTIFACT_DIR = Path(__file__).resolve().parents[2] / "artifacts"
+_SETTINGS = get_settings()
+ARTIFACT_DIR = _SETTINGS.artifact_dir
 ARTIFACT = ARTIFACT_DIR / "flowsentry.joblib"
 
 # Batch size at which score_batch hands off from sequential tree scoring to the
 # forests' native threaded path. Measured on the dev machine: sequential wins at
-# <=1024 rows, threaded wins at >=4096 (see artifacts/benchmark.json); 2048 splits
-# the bracket. Getting it somewhat wrong costs milliseconds, not correctness.
-SEQUENTIAL_CUTOFF = 2048
+# <=1024 rows, threaded wins at >=4096 (see artifacts/benchmark.json); the default
+# splits the bracket. Getting it somewhat wrong costs milliseconds, not correctness.
+SEQUENTIAL_CUTOFF = _SETTINGS.serving.sequential_cutoff
 
 _QUIC_SET = frozenset(QUIC_FEATURES)
 

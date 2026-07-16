@@ -1,0 +1,20 @@
+# Optional config overrides. Copy to flowsentry.yaml (repo root) or point
+# FLOWSENTRY_CONFIG at it. Environment variables beat this file
+# (FLOWSENTRY_TRAINING__SEED=7); code defaults in src/flowsentry/config.py are
+# the values every reported number was measured with, so with no file and no env
+# vars you always get the published model.
+#
+# training:
+#   test_size: 0.25
+#   seed: 42
+#   escalate_threshold: 0.90
+#   reject_thresholds: [0.0, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99]
+#   stage_estimator: random_forest    # or hist_gradient_boosting (registry.py)
+#   stage1_params: {n_estimators: 60, random_state: 42}
+#   stage2_params: {n_estimators: 200, random_state: 42}
+#
+# serving:
+#   sequential_cutoff: 2048
+#
+# artifact_dir: artifacts
+# sample_path: data/sample/bccc_udp_quic_sample.csv.gz

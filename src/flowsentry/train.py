@@ -18,7 +18,6 @@ Pipeline:
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import joblib
 import numpy as np
@@ -26,6 +25,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import average_precision_score, classification_report, f1_score
 from sklearn.preprocessing import label_binarize
 
+from .config import get_settings
 from .data import (
     STAGE1_INDICES,
     STAGE2_FEATURES,
@@ -37,25 +37,21 @@ from .data import (
 from .model import TwoStageRejectClassifier
 from .registry import make_stage_estimator
 
-ARTIFACT_DIR = Path(__file__).resolve().parents[2] / "artifacts"
-THRESHOLDS = [0.0, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99]
-ESCALATE_THRESHOLD = 0.90
-# Every reported number was measured with these. Swap the name to train the same
-# pipeline on another registered family (see registry.py).
-STAGE_ESTIMATOR = "random_forest"
-STAGE1_PARAMS = {"n_estimators": 60, "random_state": 42}
-STAGE2_PARAMS = {"n_estimators": 200, "random_state": 42}
-
 
 def _pr_auc(y_true_bin, scores) -> float:
     return float(average_precision_score(y_true_bin, scores))
 
 
 def main() -> dict:
+    # Defaults in config.py are the exact values every reported number was
+    # measured with; env vars / flowsentry.yaml override them (see config.py).
+    cfg = get_settings()
+    train_cfg = cfg.training
+
     print("[data] loading BCCC-UDP-QUIC-IDS-2025 sample ...")
     df = load_sample()
     X, y, groups = build_matrices(df)
-    tr, te = leakage_safe_split(groups, test_size=0.25, seed=42)
+    tr, te = leakage_safe_split(groups, test_size=train_cfg.test_size, seed=train_cfg.seed)
     print(
         f"[data] rows={len(df)} features={X.shape[1]} "
         f"(udp={len(UDP_FEATURES)}, joint={len(STAGE2_FEATURES)}) "
@@ -70,13 +66,17 @@ def main() -> dict:
 
     print(
         f"[fit ] two-stage reject classifier "
-        f"(Stage 1 = UDP-only, Stage 2 = UDP+QUIC, estimator={STAGE_ESTIMATOR}) ..."
+        f"(Stage 1 = UDP-only, Stage 2 = UDP+QUIC, estimator={train_cfg.stage_estimator}) ..."
     )
     model = TwoStageRejectClassifier(
         stage1_features=STAGE1_INDICES,
-        escalate_threshold=ESCALATE_THRESHOLD,
-        stage1_estimator=make_stage_estimator(STAGE_ESTIMATOR, **STAGE1_PARAMS),
-        stage2_estimator=make_stage_estimator(STAGE_ESTIMATOR, **STAGE2_PARAMS),
+        escalate_threshold=train_cfg.escalate_threshold,
+        stage1_estimator=make_stage_estimator(
+            train_cfg.stage_estimator, **train_cfg.stage1_params
+        ),
+        stage2_estimator=make_stage_estimator(
+            train_cfg.stage_estimator, **train_cfg.stage2_params
+        ),
     )
     model.fit(Xtr, ytr)
 
@@ -105,12 +105,14 @@ def main() -> dict:
     binary_attack_prauc = round(_pr_auc(is_attack, 1.0 - p_benign), 4)
     benign_prauc = round(_pr_auc((yte == "benign").astype(int), p_benign), 4)
 
-    curve = model.coverage_reliability_curve(Xte, yte, THRESHOLDS)
+    curve = model.coverage_reliability_curve(Xte, yte, train_cfg.reject_thresholds)
     escalation_rate = curve[0]["escalation_rate"]
 
     # Ablation: single-stage estimator on the full UDP+QUIC space (no hierarchy, no
     # reject), so the value of the two-stage design is measurable, not asserted.
-    single = make_stage_estimator(STAGE_ESTIMATOR, **STAGE2_PARAMS).fit(Xtr, ytr)
+    single = make_stage_estimator(
+        train_cfg.stage_estimator, **train_cfg.stage2_params
+    ).fit(Xtr, ytr)
     single_pred = single.classes_[single.predict_proba(Xte).argmax(axis=1)]
     single_macro_f1 = round(float(f1_score(yte, single_pred, average="macro")), 4)
     single_acc = round(float((single_pred == yte).mean()), 4)
@@ -133,7 +135,7 @@ def main() -> dict:
         "n_features_stage2_joint": len(STAGE2_FEATURES),
         "classes": classes,
         "test_class_support": {c: n_pos[c] for c in classes},
-        "escalate_threshold": ESCALATE_THRESHOLD,
+        "escalate_threshold": train_cfg.escalate_threshold,
         "escalation_rate": escalation_rate,
         "accuracy_full_coverage": round(accuracy, 4),
         "macro_f1_full_coverage": round(macro_f1, 4),
@@ -150,7 +152,8 @@ def main() -> dict:
         },
     }
 
-    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+    artifact_dir = cfg.artifact_dir
+    artifact_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(
         {
             "imputer": imputer,
@@ -164,12 +167,12 @@ def main() -> dict:
             # split these metrics are measured on, not the shuffled full sample.
             "test_indices": [int(i) for i in te],
         },
-        ARTIFACT_DIR / "flowsentry.joblib",
+        artifact_dir / "flowsentry.joblib",
     )
-    (ARTIFACT_DIR / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    (artifact_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
 
     print(json.dumps(metrics, indent=2))
-    print(f"[save] {ARTIFACT_DIR / 'flowsentry.joblib'}")
+    print(f"[save] {artifact_dir / 'flowsentry.joblib'}")
     return metrics
 
 

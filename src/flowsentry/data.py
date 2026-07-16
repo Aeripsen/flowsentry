@@ -41,8 +41,9 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit
 
-DATA_DIR = Path(__file__).resolve().parents[2] / "data"
-SAMPLE_PATH = DATA_DIR / "sample" / "bccc_udp_quic_sample.csv.gz"
+from .config import get_settings
+
+SAMPLE_PATH = get_settings().sample_path
 
 # Columns present in the CSV that are NOT model features.
 ID_COLS = ["flow_id", "timestamp", "src_ip", "src_port", "dst_ip", "dst_port", "protocol"]

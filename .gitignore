@@ -12,5 +12,7 @@ artifacts/*.joblib
 data/*.txt
 data/*.zip
 data/*.csv
+# local config overrides (flowsentry.example.yaml is the committed template)
+flowsentry.yaml
 # private handoff notes
 HANDOFF.md
