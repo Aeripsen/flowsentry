@@ -1,0 +1,41 @@
+{
+  "what": "measured scoring-path benchmark; single_row is the per-request serving path, batch is whole-matrix scoring",
+  "environment": {
+    "timestamp": "2026-07-16T17:11:53+00:00",
+    "python": "3.13.13",
+    "platform": "Windows",
+    "cpu_count": 12,
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "scikit_learn": "1.9.0",
+    "joblib": "1.5.3"
+  },
+  "single_row": {
+    "mean_ms": 42.724,
+    "p50_ms": 30.413,
+    "p95_ms": 86.206,
+    "p99_ms": 94.12,
+    "implied_flows_per_s": 23.4,
+    "n_calls": 300
+  },
+  "batch": [
+    {
+      "batch_size": 1024,
+      "median_wall_s": 0.093,
+      "flows_per_s": 11010.3,
+      "reps": 5
+    },
+    {
+      "batch_size": 8192,
+      "median_wall_s": 0.1415,
+      "flows_per_s": 57913.8,
+      "reps": 5
+    },
+    {
+      "batch_size": 25615,
+      "median_wall_s": 0.2501,
+      "flows_per_s": 102412.9,
+      "reps": 5
+    }
+  ]
+}
