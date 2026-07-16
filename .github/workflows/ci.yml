@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +25,29 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Lint (ruff)
-        run: ruff check src tests
+        run: ruff check src tests scripts dashboard
+
+      - name: Types (mypy)
+        run: mypy
 
       - name: Test (pytest)
         run: pytest -q
+
+  # Exact-bytes reproducibility under the locked environment the numbers were
+  # published from. The unlocked matrix above still enforces the PR-AUC floor
+  # via the regression test; this job is the strict byte-identity contract.
+  reproduce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install locked environment
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e . --no-deps
+      - name: Reproduce metrics byte-identically
+        run: python scripts/reproduce.py
