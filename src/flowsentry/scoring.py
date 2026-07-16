@@ -132,7 +132,9 @@ class FlowScorer:
             "abstained": bool(abstained[0]),
         }
 
-    def score_batch(self, X: np.ndarray, reject_threshold: float = 0.0):
+    def score_batch(
+        self, X: np.ndarray, reject_threshold: float = 0.0
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Score a whole raw feature matrix (NaN = missing) in one call.
         Returns (labels, confidence, escalated_mask, abstained_mask)."""
         X = np.asarray(X, dtype=np.float64)
