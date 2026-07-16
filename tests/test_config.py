@@ -17,6 +17,7 @@ def test_defaults_are_the_measured_configuration():
     assert s.training.stage1_params == {"n_estimators": 60, "random_state": 42}
     assert s.training.stage2_params == {"n_estimators": 200, "random_state": 42}
     assert s.serving.sequential_cutoff == 2048
+    assert s.serving.max_batch_rows == 4096
     assert s.artifact_dir.name == "artifacts"
     assert s.sample_path.name == "bccc_udp_quic_sample.csv.gz"
 

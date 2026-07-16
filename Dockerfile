@@ -20,10 +20,10 @@ RUN python -m flowsentry.train
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
-# Liveness: hit /health with stdlib urllib (curl is not in the slim image).
-# /health returns 503 when the model is missing, so an unhealthy container is
-# reported unhealthy rather than falsely green.
+# Readiness: hit /ready with stdlib urllib (curl is not in the slim image).
+# /ready returns 503 until a trained model is loaded, so a container that cannot
+# serve is reported unhealthy rather than falsely green. /health stays liveness-only.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')"
 
 CMD ["uvicorn", "flowsentry.service:app", "--host", "0.0.0.0", "--port", "8000"]

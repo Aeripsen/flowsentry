@@ -59,10 +59,25 @@ with small perturbations).
 
 ### 5. The service itself
 
-Input is validated by pydantic (typed fields, bounded `reject_threshold`); unknown feature keys are
-ignored, missing UDP features are median-imputed and missing QUIC features default to 0, rather than
-crashing the pipeline. Volumetric DoS against the endpoint is handled at the deployment layer (rate
-limits, container resource caps), not in the model.
+Input is validated by pydantic at the boundary: feature values must be finite numbers (strings and
+NaN/Infinity literals are rejected with 422, not fed into the feature row), `reject_threshold` is
+bounded to [0, 1], and `/predict/batch` is capped at `max_batch_rows` (default 4096) per request,
+which bounds both memory and per-request oracle throughput. Unknown feature keys are ignored,
+missing UDP features are median-imputed and missing QUIC features default to 0, rather than crashing
+the pipeline. `/health` is liveness-only and never touches the model; `/ready` owns the 503.
+Volumetric DoS against the endpoint is handled at the deployment layer (rate limits, container
+resource caps), not in the model.
+
+### 6. The model artifact (pickle trust boundary)
+
+The serving artifact (`artifacts/flowsentry.joblib`) is joblib, which is pickle: loading one
+executes whatever it contains. The rule, enforced by practice and documented in
+`scoring.load_bundle`, is that the service only ever loads an artifact this repo trained itself,
+locally via `python -m flowsentry.train` or inside the Docker build (the image trains from the
+committed sample at build time, so nothing is downloaded at runtime). No artifact is fetched over
+the network, accepted from a user, or shipped in the repo (`artifacts/*.joblib` is gitignored). If a
+future deploy wants prebuilt artifacts, they need integrity verification (signed digests) before
+`load` ever sees them; until then, do not point `load_bundle` at anything you did not train.
 
 ## What the reject option is, and is not
 

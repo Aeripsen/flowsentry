@@ -49,6 +49,8 @@ class ServingConfig(BaseModel):
     # batch size where score_batch hands off from sequential tree scoring to the
     # threaded path; measured bracket on the dev machine is (1024, 4096)
     sequential_cutoff: int = Field(2048, gt=0)
+    # request-size ceiling for POST /predict/batch (memory + oracle-abuse bound)
+    max_batch_rows: int = Field(4096, gt=0)
 
 
 class Settings(BaseSettings):
