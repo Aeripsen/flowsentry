@@ -165,8 +165,9 @@ harder picture.
 5. **Uncalibrated confidence, by measured choice.** Raw confidence overstates itself (ECE 0.041);
    thresholds are meaningful only against the measured curve for this dataset. See the calibration
    section for the experiment and the shipping trade-off.
-6. **Latency/throughput are measured per-flow on one machine** (`src/flowsentry/stream.py`), not
-   under sustained concurrent load. A proper load test is roadmap.
+6. **Latency/throughput are measured on one machine** (`python -m flowsentry.bench`, environment
+   recorded in `artifacts/benchmark.json`), scoring stored flows, not under sustained concurrent
+   HTTP load. A proper load test is roadmap.
 
 ## Attribution
 
