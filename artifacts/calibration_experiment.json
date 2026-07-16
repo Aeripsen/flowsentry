@@ -1,0 +1,48 @@
+{
+  "what": "isotonic confidence calibration experiment; model fit on train minus a grouped calibration split, evaluated on the untouched test split",
+  "n_fit": 14515,
+  "n_calibration": 4530,
+  "n_test": 6570,
+  "ece_raw": 0.0411,
+  "ece_calibrated": 0.0078,
+  "mean_confidence_raw": 0.8696,
+  "mean_confidence_calibrated": 0.8327,
+  "test_accuracy_full_coverage": 0.8315,
+  "reliability_at_matched_coverage": [
+    {
+      "coverage_target": 0.95,
+      "reliability_raw": 0.8315,
+      "reliability_calibrated": 0.8315
+    },
+    {
+      "coverage_target": 0.9,
+      "reliability_raw": 0.9208,
+      "reliability_calibrated": 0.9205
+    },
+    {
+      "coverage_target": 0.85,
+      "reliability_raw": 0.9562,
+      "reliability_calibrated": 0.9562
+    },
+    {
+      "coverage_target": 0.8,
+      "reliability_raw": 0.9764,
+      "reliability_calibrated": 0.9753
+    },
+    {
+      "coverage_target": 0.75,
+      "reliability_raw": 0.9828,
+      "reliability_calibrated": 0.9824
+    },
+    {
+      "coverage_target": 0.7,
+      "reliability_raw": 0.9891,
+      "reliability_calibrated": 0.9869
+    },
+    {
+      "coverage_target": 0.65,
+      "reliability_raw": 0.9891,
+      "reliability_calibrated": 0.9869
+    }
+  ]
+}
