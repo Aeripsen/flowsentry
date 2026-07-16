@@ -28,6 +28,7 @@ import numpy as np
 
 from .attack_map import lookup
 from .data import STAGE2_FEATURES, TARGET, load_sample
+from .drift import drift_report
 from .scoring import ARTIFACT, FlowScorer, load_bundle
 from .sinks import AlertSink, JsonlSink, StdoutSink
 
@@ -170,6 +171,7 @@ def run(
     max_alerts: int,
     batch: bool = False,
     jsonl: Path | None = None,
+    drift: bool = False,
 ) -> dict:
     bundle = load_bundle()
     X, truth = load_stream(n)
@@ -197,6 +199,24 @@ def run(
             sink.emit(a)
     for sink in sinks:
         sink.close()
+
+    if drift:
+        reference = bundle.get("drift_reference")
+        if reference is None:
+            print("[drift ] artifact has no drift_reference; retrain to enable --drift")
+        else:
+            scorer = FlowScorer.from_bundle(bundle)
+            report = drift_report(reference, scorer.impute(X), scorer.feature_names)
+            summary["drift"] = report
+            b = report["bands"]
+            print(
+                f"\n[drift ] PSI vs the training distribution over this {report['n_rows']}-flow "
+                f"window: {b['stable']} stable, {b['moderate']} moderate, {b['major']} major"
+            )
+            for row in report["top"][:5]:
+                print(
+                    f"[drift ]   {row['feature']:<32} psi={row['psi']:<8} {row['band']}"
+                )
 
     c = summary["counts"]
     print("\n" + "=" * 70)
@@ -241,8 +261,19 @@ def main() -> None:
         "--jsonl", type=Path, default=None,
         help="also append every alert as one JSON object per line to this file",
     )
+    ap.add_argument(
+        "--drift", action="store_true",
+        help="report per-feature PSI of this window vs the training distribution",
+    )
     args = ap.parse_args()
-    run(args.n, args.reject_threshold, args.max_alerts, batch=args.batch, jsonl=args.jsonl)
+    run(
+        args.n,
+        args.reject_threshold,
+        args.max_alerts,
+        batch=args.batch,
+        jsonl=args.jsonl,
+        drift=args.drift,
+    )
 
 
 if __name__ == "__main__":

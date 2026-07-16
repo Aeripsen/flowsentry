@@ -34,6 +34,7 @@ from .data import (
     leakage_safe_split,
     load_sample,
 )
+from .drift import reference_from_matrix
 from .model import TwoStageRejectClassifier
 from .registry import make_stage_estimator
 
@@ -166,6 +167,10 @@ def main() -> dict:
             # dashboard and any replay can evaluate on the exact same leakage-safe
             # split these metrics are measured on, not the shuffled full sample.
             "test_indices": [int(i) for i in te],
+            # Per-feature decile edges + proportions of the imputed TRAIN matrix,
+            # so scored windows can be PSI-checked against what the model actually
+            # learned from (see drift.py).
+            "drift_reference": reference_from_matrix(Xtr, list(STAGE2_FEATURES)),
         },
         artifact_dir / "flowsentry.joblib",
     )
