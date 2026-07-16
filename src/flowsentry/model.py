@@ -29,6 +29,34 @@ from sklearn.ensemble import RandomForestClassifier
 UNKNOWN = "unknown"
 
 
+def forest_proba(forest, X: np.ndarray, sequential: bool = False) -> np.ndarray:
+    """Class probabilities from a fitted forest, with an optional sequential path.
+
+    The fitted forests carry n_jobs=-1, and sklearn's predict_proba builds and
+    tears down a joblib thread pool on every call. That overhead is ~30-60 ms per
+    call on the dev machine, which is fine for a 25k-row matrix and ruinous for a
+    single-row request (see artifacts/benchmark.json). `sequential=True` walks the
+    trees in order with input validation hoisted out of the loop, which is the
+    same accumulate-then-divide computation sklearn runs, so the result is
+    bit-identical to predict_proba with n_jobs=1 (a test asserts exact equality).
+    Estimators without an `estimators_` forest fall back to their native path.
+    """
+    if not sequential or not hasattr(forest, "estimators_"):
+        return forest.predict_proba(X)
+    trees = forest.estimators_
+    # the validation sklearn would do per tree, done once: float32 C-order + width
+    Xv = np.ascontiguousarray(X, dtype=np.float32)
+    if Xv.ndim != 2 or Xv.shape[1] != forest.n_features_in_:
+        raise ValueError(
+            f"expected shape (n, {forest.n_features_in_}), got {np.shape(X)}"
+        )
+    proba = trees[0].predict_proba(Xv, check_input=False)
+    for tree in trees[1:]:
+        proba += tree.predict_proba(Xv, check_input=False)
+    proba /= len(trees)
+    return proba
+
+
 class TwoStageRejectClassifier(BaseEstimator):
     def __init__(
         self,
@@ -72,14 +100,17 @@ class TwoStageRejectClassifier(BaseEstimator):
         self.stage2_.fit(X, y)
         return self
 
-    def _stage_predict(self, X):
+    def _stage_predict(self, X, sequential: bool = False):
         """Return (labels, confidence, escalated_mask, proba) with two-stage
         escalation applied. `proba` is the class-probability matrix (columns follow
         self.classes_): Stage-1 rows for confident flows, Stage-2 rows for escalated
-        ones, so it is a faithful basis for PR-AUC / ranking metrics."""
+        ones, so it is a faithful basis for PR-AUC / ranking metrics.
+
+        `sequential=True` scores the forests tree by tree without the per-call
+        thread-pool spin-up (see forest_proba); the numbers are bit-identical."""
         X = np.asarray(X, dtype=float)
         classes = list(self.classes_)
-        p1 = self.stage1_.predict_proba(X[:, self.stage1_features_])
+        p1 = forest_proba(self.stage1_, X[:, self.stage1_features_], sequential)
         conf1 = p1.max(axis=1)
         pred1 = self.stage1_.classes_[p1.argmax(axis=1)]
         escalate = conf1 < self.escalate_threshold
@@ -91,7 +122,7 @@ class TwoStageRejectClassifier(BaseEstimator):
         labels = np.array(pred1, dtype=object)
         conf = conf1.astype(float).copy()
         if escalate.any():
-            p2 = self.stage2_.predict_proba(X[escalate])
+            p2 = forest_proba(self.stage2_, X[escalate], sequential)
             labels[escalate] = self.stage2_.classes_[p2.argmax(axis=1)]
             conf[escalate] = p2.max(axis=1)
             block = np.zeros((int(escalate.sum()), len(classes)), dtype=float)
@@ -100,30 +131,30 @@ class TwoStageRejectClassifier(BaseEstimator):
             proba[escalate] = block
         return labels, conf, escalate, proba
 
-    def predict(self, X, reject_threshold: float = 0.0):
-        labels, conf, _, _ = self._stage_predict(X)
+    def predict(self, X, reject_threshold: float = 0.0, sequential: bool = False):
+        labels, conf, _, _ = self._stage_predict(X, sequential)
         out = labels.copy()
         if reject_threshold > 0:
             out[conf < reject_threshold] = UNKNOWN
         return out
 
-    def predict_proba(self, X):
+    def predict_proba(self, X, sequential: bool = False):
         """Two-stage class probabilities (columns follow self.classes_)."""
-        _, _, _, proba = self._stage_predict(X)
+        _, _, _, proba = self._stage_predict(X, sequential)
         return proba
 
-    def predict_detail(self, X, reject_threshold: float = 0.0):
+    def predict_detail(self, X, reject_threshold: float = 0.0, sequential: bool = False):
         """Return (labels, confidence, escalated_mask, abstained_mask)."""
-        labels, conf, escalate, _ = self._stage_predict(X)
+        labels, conf, escalate, _ = self._stage_predict(X, sequential)
         out = labels.copy()
         abstained = conf < reject_threshold
         out[abstained] = UNKNOWN
         return out, conf, escalate, abstained
 
-    def coverage_reliability_curve(self, X, y, thresholds):
+    def coverage_reliability_curve(self, X, y, thresholds, sequential: bool = False):
         """For each reject threshold: coverage (fraction answered) and reliability
         (accuracy on the answered subset). Also reports the escalation rate."""
-        labels, conf, escalate, _ = self._stage_predict(X)
+        labels, conf, escalate, _ = self._stage_predict(X, sequential)
         y = np.asarray(y)
         rows = []
         for t in thresholds:

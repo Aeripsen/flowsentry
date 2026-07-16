@@ -7,6 +7,7 @@ from sklearn.impute import SimpleImputer
 from flowsentry import service
 from flowsentry.data import STAGE1_INDICES, STAGE2_FEATURES, UDP_FEATURES
 from flowsentry.model import TwoStageRejectClassifier
+from flowsentry.scoring import FlowScorer
 
 
 def _tiny_bundle():
@@ -23,8 +24,12 @@ def _tiny_bundle():
     return {"imputer": imputer, "model": model, "stage2_features": STAGE2_FEATURES}
 
 
+def _tiny_scorer():
+    return FlowScorer.from_bundle(_tiny_bundle())
+
+
 def test_health_ok(monkeypatch):
-    monkeypatch.setattr(service, "_bundle", _tiny_bundle())
+    monkeypatch.setattr(service, "_scorer", _tiny_scorer())
     client = TestClient(service.app)
     resp = client.get("/health")
     assert resp.status_code == 200
@@ -32,7 +37,7 @@ def test_health_ok(monkeypatch):
 
 
 def test_health_503_when_artifact_missing(monkeypatch, tmp_path):
-    monkeypatch.setattr(service, "_bundle", None)
+    monkeypatch.setattr(service, "_scorer", None)
     monkeypatch.setattr(service, "ARTIFACT", tmp_path / "no-such-model.joblib")
     client = TestClient(service.app)
     resp = client.get("/health")
@@ -40,7 +45,7 @@ def test_health_503_when_artifact_missing(monkeypatch, tmp_path):
 
 
 def test_predict_returns_label(monkeypatch):
-    monkeypatch.setattr(service, "_bundle", _tiny_bundle())
+    monkeypatch.setattr(service, "_scorer", _tiny_scorer())
     client = TestClient(service.app)
     resp = client.post(
         "/predict",
@@ -54,7 +59,7 @@ def test_predict_returns_label(monkeypatch):
 
 
 def test_predict_reject_threshold_abstains(monkeypatch):
-    monkeypatch.setattr(service, "_bundle", _tiny_bundle())
+    monkeypatch.setattr(service, "_scorer", _tiny_scorer())
     client = TestClient(service.app)
     payload = {"features": {UDP_FEATURES[0]: 0.55, "pkt_count": 500}}
 

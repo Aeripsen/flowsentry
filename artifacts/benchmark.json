@@ -1,7 +1,7 @@
 {
-  "what": "measured scoring-path benchmark; single_row is the per-request serving path, batch is whole-matrix scoring",
+  "what": "measured scoring-path benchmark; single_row is the per-request serving path (FlowScorer.score_one), single_row_native_pool is the pre-fix path kept for comparison, batch is FlowScorer.score_batch",
   "environment": {
-    "timestamp": "2026-07-16T17:11:53+00:00",
+    "timestamp": "2026-07-16T17:18:51+00:00",
     "python": "3.13.13",
     "platform": "Windows",
     "cpu_count": 12,
@@ -11,30 +11,38 @@
     "joblib": "1.5.3"
   },
   "single_row": {
-    "mean_ms": 42.724,
-    "p50_ms": 30.413,
-    "p95_ms": 86.206,
-    "p99_ms": 94.12,
-    "implied_flows_per_s": 23.4,
+    "mean_ms": 2.407,
+    "p50_ms": 1.328,
+    "p95_ms": 5.619,
+    "p99_ms": 6.043,
+    "implied_flows_per_s": 415.5,
     "n_calls": 300
+  },
+  "single_row_native_pool": {
+    "mean_ms": 44.664,
+    "p50_ms": 29.806,
+    "p95_ms": 84.289,
+    "p99_ms": 88.908,
+    "implied_flows_per_s": 22.4,
+    "n_calls": 100
   },
   "batch": [
     {
       "batch_size": 1024,
-      "median_wall_s": 0.093,
-      "flows_per_s": 11010.3,
+      "median_wall_s": 0.0298,
+      "flows_per_s": 34398.5,
       "reps": 5
     },
     {
       "batch_size": 8192,
-      "median_wall_s": 0.1415,
-      "flows_per_s": 57913.8,
+      "median_wall_s": 0.1368,
+      "flows_per_s": 59895.4,
       "reps": 5
     },
     {
       "batch_size": 25615,
-      "median_wall_s": 0.2501,
-      "flows_per_s": 102412.9,
+      "median_wall_s": 0.2049,
+      "flows_per_s": 125027.4,
       "reps": 5
     }
   ]
