@@ -1,30 +1,27 @@
-"""Fetch the NSL-KDD public benchmark (KDDTrain+ / KDDTest+) into ./data.
+"""Verify the committed BCCC-UDP-QUIC sample is present.
 
-NSL-KDD is a public research benchmark (Canadian Institute for Cybersecurity).
-We use it only as a comparison baseline, never as the headline dataset.
+Unlike a benchmark that must be downloaded, FlowSentry ships a stratified sample of
+the public BCCC-UDP-QUIC-IDS-2025 dataset in the repo
+(`data/sample/bccc_udp_quic_sample.csv.gz`, CC BY 4.0). So there is nothing to
+fetch; this script just confirms the sample exists before training. To regenerate
+the sample from the full dataset, see `scripts/build_sample.py` (author tool).
 """
 from __future__ import annotations
 
 import sys
-import urllib.request
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
-BASE = "https://raw.githubusercontent.com/jmnwong/NSL-KDD-Dataset/master"
-FILES = {"KDDTrain+.txt": f"{BASE}/KDDTrain%2B.txt", "KDDTest+.txt": f"{BASE}/KDDTest%2B.txt"}
+SAMPLE = Path(__file__).resolve().parents[1] / "data" / "sample" / "bccc_udp_quic_sample.csv.gz"
 
 
 def main() -> int:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    for name, url in FILES.items():
-        dest = DATA_DIR / name
-        if dest.exists() and dest.stat().st_size > 0:
-            print(f"[skip] {name} already present ({dest.stat().st_size} bytes)")
-            continue
-        print(f"[get ] {name} <- {url}")
-        urllib.request.urlretrieve(url, dest)
-        print(f"[ok  ] {name} ({dest.stat().st_size} bytes)")
-    return 0
+    if SAMPLE.exists() and SAMPLE.stat().st_size > 0:
+        print(f"[ok] BCCC sample present: {SAMPLE} ({SAMPLE.stat().st_size} bytes)")
+        print("     run `python -m flowsentry.train` to train + write artifacts/")
+        return 0
+    print(f"[error] BCCC sample missing at {SAMPLE}", file=sys.stderr)
+    print("        it should ship with the repo; regenerate via scripts/build_sample.py", file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":

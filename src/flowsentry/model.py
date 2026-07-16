@@ -10,9 +10,15 @@ the coverage-vs-reliability curve, which is the point of the reject option: you
 trade how many flows you answer for how reliable those answers are.
 
 Note on data: for this public benchmark reproduction the two "stages" run on
-feature subsets of the same NSL-KDD vector. In the headline system the stages are
-genuinely different feature sets (UDP-only vs QUIC-augmented) produced by Sepehr's
-own UDPFlowLyzer / QUICFlowLyzer extractors. See docs/MODEL_CARD.md.
+feature subsets of the same NSL-KDD vector. flowsentry.train picks stage 1's subset
+explicitly by column name (11 cheap numeric flow stats - packet/count/rate fields
+that need no payload or session inspection; see docs/MODEL_CARD.md), passed in via
+the stage1_features argument below. This class's own stage1_features=None fallback
+(first-half positional slice) only fires if a caller does not specify a subset; it
+is a generic default for library/test use, not a claim about which columns are cheap.
+In the headline system the stages are genuinely different feature sets (UDP-only vs
+QUIC-augmented) produced by Sepehr's own UDPFlowLyzer / QUICFlowLyzer extractors.
+See docs/MODEL_CARD.md.
 """
 from __future__ import annotations
 
@@ -44,7 +50,12 @@ class TwoStageRejectClassifier(BaseEstimator):
         self.classes_ = np.unique(y)
         n_features = X.shape[1]
         if self.stage1_features is None:
-            # cheap subset = first half of the feature vector (the "always-available" flow stats)
+            # No explicit stage1_features given: fall back to a naive positional slice
+            # (first half of the feature vector). This is NOT a claim that those columns
+            # are cheap or numeric - it is just a default so the class is usable without
+            # a caller who knows the feature layout. Callers who care which columns stage 1
+            # sees (e.g. flowsentry.train, which wants real cheap numeric flow stats) must
+            # pass stage1_features explicitly.
             self.stage1_features_ = list(range(max(1, n_features // 2)))
         else:
             self.stage1_features_ = list(self.stage1_features)

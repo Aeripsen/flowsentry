@@ -1,5 +1,6 @@
 # FlowSentry local stack: the FastAPI API on 8000 and the Streamlit dashboard on
-# 8501, both from the one image built here.
+# 8501, both from the one image built here. The model is trained into the image at
+# build time from the committed BCCC sample, so no data volumes are needed.
 services:
   api:
     build: .
@@ -18,14 +19,8 @@ services:
     build: .
     image: flowsentry:latest
     command: streamlit run dashboard/app.py --server.port 8501 --server.address 0.0.0.0
-    environment:
-      - PYTHONPATH=/app/src
     ports:
       - "8501:8501"
-    # The dashboard replays KDDTest+, which is gitignored and excluded from the
-    # image (.dockerignore), so mount it in read-only at runtime.
-    volumes:
-      - ./data:/app/data:ro
     depends_on:
       - api
     restart: unless-stopped

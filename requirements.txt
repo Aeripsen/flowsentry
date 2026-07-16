@@ -1,3 +1,8 @@
+# Runtime + dev + dashboard deps, for `pip install -r requirements.txt`.
+# The canonical install is `pip install -e ".[dev]"` (see pyproject.toml); this file
+# is a convenience mirror that also includes the dashboard and build backend.
+setuptools>=61
+wheel
 scikit-learn>=1.4
 pandas>=2.0
 numpy>=1.26

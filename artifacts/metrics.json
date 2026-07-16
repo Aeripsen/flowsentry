@@ -10,70 +10,70 @@
     "r2l",
     "u2r"
   ],
-  "macro_f1_full_coverage": 0.457,
+  "macro_f1_full_coverage": 0.4752,
   "per_class_f1": {
-    "dos": 0.8091,
-    "normal": 0.7558,
-    "probe": 0.6764,
-    "r2l": 0.0151,
+    "dos": 0.8574,
+    "normal": 0.7699,
+    "probe": 0.7042,
+    "r2l": 0.0158,
     "u2r": 0.0286
   },
   "coverage_reliability_curve": [
     {
       "threshold": 0.0,
       "coverage": 1.0,
-      "reliability": 0.7148,
+      "reliability": 0.7402,
       "n_covered": 22544,
-      "escalation_rate": 0.4746
+      "escalation_rate": 0.1607
     },
     {
       "threshold": 0.5,
-      "coverage": 0.9901,
-      "reliability": 0.7181,
-      "n_covered": 22320,
-      "escalation_rate": 0.4746
+      "coverage": 0.9874,
+      "reliability": 0.7468,
+      "n_covered": 22259,
+      "escalation_rate": 0.1607
     },
     {
       "threshold": 0.6,
-      "coverage": 0.9665,
-      "reliability": 0.7307,
-      "n_covered": 21788,
-      "escalation_rate": 0.4746
+      "coverage": 0.9469,
+      "reliability": 0.7745,
+      "n_covered": 21347,
+      "escalation_rate": 0.1607
     },
     {
       "threshold": 0.7,
-      "coverage": 0.943,
-      "reliability": 0.7446,
-      "n_covered": 21260,
-      "escalation_rate": 0.4746
+      "coverage": 0.9232,
+      "reliability": 0.7924,
+      "n_covered": 20813,
+      "escalation_rate": 0.1607
     },
     {
       "threshold": 0.8,
-      "coverage": 0.8974,
-      "reliability": 0.7555,
-      "n_covered": 20230,
-      "escalation_rate": 0.4746
+      "coverage": 0.899,
+      "reliability": 0.808,
+      "n_covered": 20268,
+      "escalation_rate": 0.1607
     },
     {
       "threshold": 0.9,
-      "coverage": 0.8203,
-      "reliability": 0.8103,
-      "n_covered": 18493,
-      "escalation_rate": 0.4746
+      "coverage": 0.8565,
+      "reliability": 0.8397,
+      "n_covered": 19310,
+      "escalation_rate": 0.1607
     },
     {
       "threshold": 0.95,
-      "coverage": 0.3164,
-      "reliability": 0.8311,
-      "n_covered": 7133,
-      "escalation_rate": 0.4746
+      "coverage": 0.8117,
+      "reliability": 0.8657,
+      "n_covered": 18298,
+      "escalation_rate": 0.1607
     },
     {
       "threshold": 0.99,
-      "coverage": 0.2473,
-      "reliability": 0.9464,
-      "n_covered": 5575,
-      "escalation_rate": 0.4746
+      "coverage": 0.6966,
+      "reliability": 0.9198,
+      "n_covered": 15705,
+      "escalation_rate": 0.1607
     }
   ]
 }

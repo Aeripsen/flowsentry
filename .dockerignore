@@ -1,12 +1,17 @@
 .venv
-data
+.venv*
 .git
 .github
 tests
-scripts
 __pycache__
 **/__pycache__
 *.pyc
 .pytest_cache
 .ruff_cache
 *.egg-info
+# The trained artifact is built inside the image; never copy a host-built one in.
+artifacts
+# Keep data/sample (the committed CSV sample needed to train at build time); only
+# exclude any large raw dataset files a developer may have dropped into data/.
+data/*.txt
+data/*.zip

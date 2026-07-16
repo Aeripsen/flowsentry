@@ -1,24 +1,28 @@
-# FlowSentry serving image. Bakes in the trained artifact and serves the FastAPI
-# app. The same image also runs the Streamlit dashboard (see docker-compose.yml).
+# FlowSentry serving image. Trains inside the build from the committed BCCC sample,
+# so every image is self-contained and /predict works on a clean clone.
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install deps first so the layer caches across code changes.
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-
-# App code, dashboard, and the trained artifact.
+# Install deps + the package editable, so the package stays under /app/src and its
+# path-relative data/ and artifacts/ dirs resolve to /app (not site-packages).
+COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
+RUN pip install --no-cache-dir -e ".[dashboard]"
+
+# App code, dashboard, and the committed data sample (needed to train at build time).
 COPY dashboard ./dashboard
-COPY artifacts ./artifacts
+COPY data ./data
 
-ENV PYTHONPATH=/app/src
+# Train the model into artifacts/ so the image ships with a working model.
+RUN python -m flowsentry.train
+
 ENV PYTHONUNBUFFERED=1
-
 EXPOSE 8000
 
 # Liveness: hit /health with stdlib urllib (curl is not in the slim image).
+# /health returns 503 when the model is missing, so an unhealthy container is
+# reported unhealthy rather than falsely green.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
 

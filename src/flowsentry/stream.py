@@ -1,12 +1,14 @@
 """
-Streaming replayer: treat KDDTest+ as a live flow stream, classify each flow with
-the trained FlowSentry artifact, and emit a structured alert for every flow that is
-predicted as an attack (non-normal) and not abstained.
+Batch replayer: read the committed BCCC-UDP-QUIC sample as a sequence of flows,
+classify each one with the trained FlowSentry artifact, and emit a structured,
+MITRE ATT&CK-tagged alert for every flow predicted as an attack (non-benign) and
+not abstained.
 
-The point of this file is honest per-flow timing. It classifies one flow at a time,
-the way the deployed service sees traffic, and measures the real preprocess+classify
-latency (mean/p50/p95/p99) and throughput. Numbers printed at the end are measured on
-THIS machine over the flows actually replayed. Nothing here is invented.
+This is a BATCH replay, not a real-time stream: it iterates a stored CSV one flow
+at a time the way the deployed service sees a single request. There is no event
+source, queue, or backpressure. Its purpose is honest per-flow timing: it measures
+the real preprocess+classify latency (mean/p50/p95/p99) and the resulting
+throughput on THIS machine. Every number printed is measured, not invented.
 
 Run:  PYTHONPATH=src python -m flowsentry.stream --n 2000
 """
@@ -17,62 +19,58 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-import joblib
 import numpy as np
-import pandas as pd
 
 from .attack_map import lookup
-from .data import ATTACK_CATEGORY, COLUMNS
+from .data import STAGE2_FEATURES, TARGET, load_sample
 
 ARTIFACT = Path(__file__).resolve().parents[2] / "artifacts" / "flowsentry.joblib"
-DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
 def load_bundle(path: Path = ARTIFACT) -> dict:
-    """Load the serving artifact dict: {preprocessor, model, feature_names}."""
+    """Load the serving artifact dict: {imputer, model, ...}."""
     if not path.exists():
         raise FileNotFoundError(
             f"model artifact missing at {path}; run `python -m flowsentry.train` first"
         )
+    import joblib
+
     return joblib.load(path)
 
 
-def load_stream(n: int, data_dir: Path = DATA_DIR) -> pd.DataFrame:
-    """Read the first n rows of KDDTest+ as raw flow records (n <= 0 means all)."""
-    path = data_dir / "KDDTest+.txt"
-    if not path.exists():
-        raise FileNotFoundError(
-            f"test data missing at {path}; run `python scripts/get_data.py` first"
-        )
-    df = pd.read_csv(path, header=None, names=COLUMNS, nrows=n if n > 0 else None)
-    # ground-truth 5-class category, kept only so the demo can show truth beside the guess
-    df["category"] = df["label"].map(ATTACK_CATEGORY).fillna("unknown_attack")
-    return df
+def load_stream(n: int):
+    """Return (X_stage2, truth) for the first n sample flows (n <= 0 means all)."""
+    df = load_sample()
+    if n > 0:
+        df = df.head(n)
+    X = df[STAGE2_FEATURES].to_numpy(dtype=np.float64)
+    X = np.where(np.isfinite(X), X, np.nan)
+    truth = df[TARGET].to_numpy()
+    return X, truth
 
 
-def classify_stream(bundle: dict, df: pd.DataFrame, reject_threshold: float = 0.0):
+def classify_stream(bundle: dict, X, truth, reject_threshold: float = 0.0):
     """Classify each row one flow at a time.
 
     Returns (alerts, latencies_ms, summary):
-      alerts       list of alert dicts for non-normal, non-abstained flows
-      latencies_ms per-flow preprocess+classify latency in milliseconds (np.ndarray)
+      alerts       list of alert dicts for attack (non-benign), non-abstained flows
+      latencies_ms per-flow preprocess+classify latency in milliseconds
       summary      counts + latency percentiles for the whole run
     """
-    pre = bundle["preprocessor"]
+    imputer = bundle["imputer"]
     model = bundle["model"]
-    n_flows = len(df)
+    n_flows = X.shape[0]
     latencies = np.empty(n_flows, dtype=float)
     alerts: list[dict] = []
-    counts = {"normal": 0, "abstained": 0, "attack": 0}
+    counts = {"benign": 0, "abstained": 0, "attack": 0}
     family_counts: dict[str, int] = {}
-    has_truth = "category" in df.columns
 
     for i in range(n_flows):
-        row = df.iloc[[i]]  # 1-row frame keeps column names/dtypes for the preprocessor
+        row = X[i : i + 1]
         t0 = time.perf_counter()
-        X = pre.transform(row)
+        Xi = imputer.transform(row)
         labels, conf, escalated, abstained = model.predict_detail(
-            X, reject_threshold=reject_threshold
+            Xi, reject_threshold=reject_threshold
         )
         latencies[i] = (time.perf_counter() - t0) * 1000.0
 
@@ -80,8 +78,8 @@ def classify_stream(bundle: dict, df: pd.DataFrame, reject_threshold: float = 0.
         if bool(abstained[0]):
             counts["abstained"] += 1
             continue
-        if label == "normal":
-            counts["normal"] += 1
+        if label == "benign":
+            counts["benign"] += 1
             continue
 
         counts["attack"] += 1
@@ -98,7 +96,7 @@ def classify_stream(bundle: dict, df: pd.DataFrame, reject_threshold: float = 0.
                 "mitre_id": info["technique_id"],
                 "mitre_technique": info["technique_name"],
                 "playbook": info["playbook"],
-                "true_category": str(row["category"].iloc[0]) if has_truth else None,
+                "true_label": str(truth[i]),
             }
         )
 
@@ -118,21 +116,21 @@ def _format_alert(a: dict) -> str:
     mitre = f"{a['mitre_id']} {a['mitre_technique']}" if a["mitre_id"] else "n/a"
     esc = " [escalated->stage2]" if a["escalated"] else ""
     return (
-        f"ALERT flow#{a['flow_index']:<5} {a['predicted_class']:<6} "
+        f"ALERT flow#{a['flow_index']:<5} {a['predicted_class']:<13} "
         f"conf={a['confidence']:.3f}{esc}  {mitre}  | {a['playbook']}"
     )
 
 
 def run(n: int, reject_threshold: float, max_alerts: int) -> dict:
     bundle = load_bundle()
-    df = load_stream(n)
+    X, truth = load_stream(n)
     print(
-        f"[stream] replaying {len(df)} flows from KDDTest+ "
+        f"[replay] classifying {X.shape[0]} flows from the BCCC sample "
         f"(reject_threshold={reject_threshold})\n"
     )
 
     wall_start = time.perf_counter()
-    alerts, _latencies, summary = classify_stream(bundle, df, reject_threshold)
+    alerts, _latencies, summary = classify_stream(bundle, X, truth, reject_threshold)
     wall = time.perf_counter() - wall_start
 
     for a in alerts[:max_alerts]:
@@ -145,7 +143,7 @@ def run(n: int, reject_threshold: float, max_alerts: int) -> dict:
     print("\n" + "=" * 70)
     print(
         f"[flows  ] {summary['n_flows']}   attacks={c['attack']}  "
-        f"normal={c['normal']}  abstained={c['abstained']}"
+        f"benign={c['benign']}  abstained={c['abstained']}"
     )
     print(f"[family ] {summary['family_counts']}")
     print(
@@ -155,7 +153,7 @@ def run(n: int, reject_threshold: float, max_alerts: int) -> dict:
     )
     print(
         f"[through] {throughput:,.0f} flows/sec over {wall:.2f}s wall "
-        f"(single-thread, this machine)"
+        f"(single-thread batch replay, this machine)"
     )
     print("=" * 70)
     return summary
@@ -163,7 +161,7 @@ def run(n: int, reject_threshold: float, max_alerts: int) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Replay KDDTest+ as a live flow stream through FlowSentry."
+        description="Replay the BCCC-UDP-QUIC sample as a batch flow stream through FlowSentry."
     )
     ap.add_argument("--n", type=int, default=2000, help="flows to replay (0 = all)")
     ap.add_argument(
