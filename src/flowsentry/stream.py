@@ -39,8 +39,35 @@ def load_bundle(path: Path = ARTIFACT) -> dict:
 
 
 def load_stream(n: int):
-    """Return (X_stage2, truth) for the first n sample flows (n <= 0 means all)."""
+    """Return (X_stage2, truth) for the first n sample flows (n <= 0 means all).
+
+    This is the FULL committed sample (train + test rows). It is used only for the
+    latency/throughput replay, where the mix does not matter: every printed number
+    is a per-flow timing, not an accuracy claim.
+    """
     df = load_sample()
+    if n > 0:
+        df = df.head(n)
+    X = df[STAGE2_FEATURES].to_numpy(dtype=np.float64)
+    X = np.where(np.isfinite(X), X, np.nan)
+    truth = df[TARGET].to_numpy()
+    return X, truth
+
+
+def load_test_stream(bundle: dict, n: int = 0):
+    """Return (X_stage2, truth) for the held-out TEST split only.
+
+    Uses the test row positions persisted in the training artifact (`test_indices`),
+    so any coverage/reliability number computed from this is measured on the exact
+    same leakage-safe split `train.py` reports, NOT on the shuffled full sample.
+    n <= 0 returns every test flow; n > 0 returns the first n test flows.
+    """
+    test_idx = bundle.get("test_indices")
+    if test_idx is None:
+        raise KeyError(
+            "artifact has no 'test_indices'; retrain with `python -m flowsentry.train`"
+        )
+    df = load_sample().iloc[list(test_idx)].reset_index(drop=True)
     if n > 0:
         df = df.head(n)
     X = df[STAGE2_FEATURES].to_numpy(dtype=np.float64)

@@ -98,3 +98,21 @@ def test_stage1_uses_real_udp_feature_indices():
     assert model.stage1_features_ == list(range(114))
     assert model.stage1_.n_features_in_ == 114  # UDP-only
     assert model.stage2_.n_features_in_ == np.asarray(X).shape[1]  # UDP + QUIC
+
+
+def test_dashboard_slice_is_the_heldout_test_split():
+    """Guard against the dashboard reporting training rows as 'test flows'.
+    `load_test_stream` must return exactly the leakage-safe held-out test rows the
+    artifact persists (`test_indices`), NOT head(n) of the shuffled full sample."""
+    from flowsentry.stream import load_test_stream
+
+    df = load_sample()
+    _, y, groups = build_matrices(df)
+    tr, te = leakage_safe_split(groups, test_size=0.25, seed=42)
+    bundle = {"test_indices": [int(i) for i in te]}
+    _, truth = load_test_stream(bundle, 0)
+    # exactly the held-out rows, same order
+    assert list(truth) == list(y[te])
+    # and their connections are disjoint from train -> it really is the test split,
+    # so a reliability number computed from this cannot include training rows
+    assert set(groups[te]).isdisjoint(set(groups[tr]))

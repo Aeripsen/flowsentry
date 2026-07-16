@@ -150,6 +150,10 @@ def main() -> dict:
             "udp_features": list(UDP_FEATURES),
             "stage2_features": list(STAGE2_FEATURES),
             "classes": classes,
+            # Positions (into load_sample() order) of the held-out TEST rows, so the
+            # dashboard and any replay can evaluate on the exact same leakage-safe
+            # split these metrics are measured on, not the shuffled full sample.
+            "test_indices": [int(i) for i in te],
         },
         ARTIFACT_DIR / "flowsentry.joblib",
     )

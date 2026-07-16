@@ -68,6 +68,18 @@ DDoS families; all rare-family flows kept, benign and UDP-RAW capped). **Leakage
 train and test; the median imputer is fit on train only. Reproduced by every `python -m
 flowsentry.train` run (`random_state=42`).
 
+**How much does the grouping buy on this sample? Honestly, little, and that is worth stating.** The
+committed sample averages only ~1.4 flows per connection (UDP-RAW: 12,000 flows over 9,353
+connections, mean 1.28), so a plain stratified random split scores the *same* binary PR-AUC (0.9767)
+and essentially the same accuracy (0.8321 vs 0.8317). The connection-grouped split is the correct
+method and stays, but on this balanced sample it is hygiene, not a measurable score-inflation guard.
+The full dataset (~25 flows per 5-tuple for the dominant flood) is where grouping would bite; the
+row-capping that builds this balanced sample dilutes those connections. And the deeper axis is
+untested and cannot be tested inside this dataset: UDP-RAW comes from only **2 source IPs**, and 85%
+of test flows share a source IP with training, so the near-perfect UDP-RAW PR-AUC is "recognize the
+same campaign," not "detect a new flood." Host/campaign generalization needs a cross-day or
+cross-dataset eval (see the model card's limitations).
+
 **Binary DDoS detection (benign vs attack), PR-AUC = 0.977.** Benign-detection PR-AUC = 0.954.
 **Full-coverage accuracy = 83.2%, macro-F1 = 0.391** across the 8 classes.
 
@@ -146,10 +158,12 @@ docker compose up --build
 ## Dashboard
 
 `dashboard/app.py` is a Streamlit dashboard whose centerpiece is the reject-threshold slider: move
-it and the coverage-vs-reliability tradeoff recomputes live from the trained model against a sampled
-slice of the test flows. Below the slider: the same live-inference logic as
-`src/flowsentry/stream.py` (measured per-flow latency/throughput on this machine), an alerts-by-
-family bar chart, an alert feed with the MITRE ATT&CK mapping, and the coverage-reliability curve.
+it and the coverage-vs-reliability tradeoff recomputes live from the trained model on the full
+held-out test split (the same leakage-safe split the model card reports, so the dashboard's
+coverage/reliability numbers match the Results table above, not training rows). Below the slider:
+the same live-inference logic as `src/flowsentry/stream.py` (measured per-flow latency/throughput on
+this machine, over a slice of the test flows), an alerts-by-family bar chart, an alert feed with the
+MITRE ATT&CK mapping, and the coverage-reliability curve.
 
 ```bash
 python -m flowsentry.train          # need a trained artifact first

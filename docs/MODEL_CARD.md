@@ -51,10 +51,18 @@ be pointed at a production network as-is without site-specific retraining and ca
   released dataset is redistributed, with attribution; no non-public lab data is included.
 - **Split (leakage-safe):** `GroupShuffleSplit` on the **UDP 5-tuple connection**
   (src_ip, src_port, dst_ip, dst_port). No flow from one connection appears in both train and test,
-  so correlated flows from the same connection (the dataset averages ~25 flows per 5-tuple for the
-  dominant flood) cannot straddle the split and inflate the score. The median imputer is fit on the
-  **train split only**. IPs and ports are used only to build the connection key; they are **not**
-  model features.
+  so correlated flows from the same connection cannot straddle the split. The median imputer is fit
+  on the **train split only**. IPs and ports are used only to build the connection key; they are
+  **not** model features.
+  - **What the grouping actually buys on THIS sample: little, stated honestly.** The committed
+    balanced sample averages only ~1.4 flows per connection (UDP-RAW: 12,000 flows over 9,353
+    connections, mean 1.28), because the row-capping in `scripts/build_sample.py:51-54` that keeps
+    the class mix balanced also dilutes the dominant flood's connections. A plain stratified random
+    split therefore scores the same binary PR-AUC (0.9767) and essentially the same accuracy (0.8321
+    vs the grouped 0.8317) - the grouping changes nothing measurable here. It is the correct METHOD
+    and stays, but on this sample it is hygiene, not a score-inflation guard. The property that would
+    make it bite is a full-dataset one: there the dominant flood averages ~25 flows per 5-tuple, and
+    correlated flows straddling a random split would inflate the score.
 - **Labels:** the multi-class `label_mc` field, restricted to the closed set
   `benign, UDP-RAW, UDP-VSE, UDP-OVH, UDP-MULTI, UDP-HULK, UDP-bypass-v1, UDP-GAME`. The dataset's
   coarse catch-all labels (`attack`, `suspicious`) are excluded from the closed-set family task, as
@@ -122,8 +130,13 @@ harder picture.
 2. **Sampled subset, not the full dataset.** Numbers are on the committed 25,615-flow balanced
    sample. Full-dataset numbers (826,953 UDP flows, 94% UDP-RAW) will differ, binary detection gets
    easier, macro metrics shift with the class mix. Training on a larger slice is roadmap.
-3. **Single-day/single-dataset evaluation.** The sample covers one attack day of the capture. No
-   cross-dataset generalization test has been run.
+3. **Single-day/single-dataset evaluation; campaign generalization untested.** The sample covers one
+   attack day of the capture, and UDP-RAW (the dominant flood) comes from only **2 source IPs**, with
+   85% of test flows sharing a source IP with training. So even under the connection-grouped split
+   the same attacking host straddles train and test on different ports, and the near-perfect UDP-RAW
+   PR-AUC (0.9986) measures "recognize the same campaign," not "detect a new flood from an unseen
+   host." Only a cross-day or cross-dataset eval can answer host/campaign generalization; none has
+   been run.
 4. **No adversarial evaluation yet.** Whether the reject option catches deliberately perturbed
    flows is a hypothesis until the adversarial probe measures it. See `docs/THREAT_MODEL.md`.
 5. **Uncalibrated confidence.** Thresholds are meaningful only against the measured curve for this
