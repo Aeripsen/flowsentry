@@ -22,12 +22,14 @@ from __future__ import annotations
 import argparse
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 
 import numpy as np
 
 from .attack_map import lookup
 from .data import STAGE2_FEATURES, TARGET, load_sample
 from .scoring import ARTIFACT, FlowScorer, load_bundle
+from .sinks import AlertSink, JsonlSink, StdoutSink
 
 __all__ = ["ARTIFACT", "load_bundle", "load_stream", "load_test_stream", "classify_stream"]
 
@@ -162,16 +164,13 @@ def classify_batch(bundle: dict, X, truth, reject_threshold: float = 0.0):
     return alerts, summary
 
 
-def _format_alert(a: dict) -> str:
-    mitre = f"{a['mitre_id']} {a['mitre_technique']}" if a["mitre_id"] else "n/a"
-    esc = " [escalated->stage2]" if a["escalated"] else ""
-    return (
-        f"ALERT flow#{a['flow_index']:<5} {a['predicted_class']:<13} "
-        f"conf={a['confidence']:.3f}{esc}  {mitre}  | {a['playbook']}"
-    )
-
-
-def run(n: int, reject_threshold: float, max_alerts: int, batch: bool = False) -> dict:
+def run(
+    n: int,
+    reject_threshold: float,
+    max_alerts: int,
+    batch: bool = False,
+    jsonl: Path | None = None,
+) -> dict:
     bundle = load_bundle()
     X, truth = load_stream(n)
     mode = "batch (one score_batch call)" if batch else "per-flow (serving path)"
@@ -190,10 +189,14 @@ def run(n: int, reject_threshold: float, max_alerts: int, batch: bool = False) -
             summary["n_flows"] / summary["wall_s"] if summary["wall_s"] > 0 else float("nan")
         )
 
-    for a in alerts[:max_alerts]:
-        print(_format_alert(a))
-    if len(alerts) > max_alerts:
-        print(f"... {len(alerts) - max_alerts} more alerts not shown")
+    sinks: list[AlertSink] = [StdoutSink(max_alerts=max_alerts)]
+    if jsonl is not None:
+        sinks.append(JsonlSink(jsonl))
+    for a in alerts:
+        for sink in sinks:
+            sink.emit(a)
+    for sink in sinks:
+        sink.close()
 
     c = summary["counts"]
     print("\n" + "=" * 70)
@@ -234,8 +237,12 @@ def main() -> None:
         "--batch", action="store_true",
         help="score all flows in one vectorized call and report bulk throughput",
     )
+    ap.add_argument(
+        "--jsonl", type=Path, default=None,
+        help="also append every alert as one JSON object per line to this file",
+    )
     args = ap.parse_args()
-    run(args.n, args.reject_threshold, args.max_alerts, batch=args.batch)
+    run(args.n, args.reject_threshold, args.max_alerts, batch=args.batch, jsonl=args.jsonl)
 
 
 if __name__ == "__main__":
