@@ -93,7 +93,8 @@ def test_stage1_uses_real_udp_feature_indices():
     X, y, groups = build_matrices(df)
     tr, _ = leakage_safe_split(groups, seed=42)
     imp = SimpleImputer(strategy="median").fit(X[tr])
-    model = TwoStageRejectClassifier(stage1_features=STAGE1_INDICES).fit(imp.transform(X[tr]), y[tr])
+    Xtr = imp.transform(X[tr])
+    model = TwoStageRejectClassifier(stage1_features=STAGE1_INDICES).fit(Xtr, y[tr])
     assert model.stage1_features_ == list(range(114))
     assert model.stage1_.n_features_in_ == 114  # UDP-only
     assert model.stage2_.n_features_in_ == np.asarray(X).shape[1]  # UDP + QUIC

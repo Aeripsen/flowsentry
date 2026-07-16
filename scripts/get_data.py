@@ -20,7 +20,8 @@ def main() -> int:
         print("     run `python -m flowsentry.train` to train + write artifacts/")
         return 0
     print(f"[error] BCCC sample missing at {SAMPLE}", file=sys.stderr)
-    print("        it should ship with the repo; regenerate via scripts/build_sample.py", file=sys.stderr)
+    print("        it should ship with the repo; regenerate via", file=sys.stderr)
+    print("        scripts/build_sample.py", file=sys.stderr)
     return 1
 
 

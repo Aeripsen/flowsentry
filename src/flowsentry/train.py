@@ -113,7 +113,10 @@ def main() -> dict:
             "rare UDP DDoS families + capped benign/UDP-RAW. Metrics are real, "
             "measured on a connection-grouped leakage-safe held-out test split."
         ),
-        "split": "GroupShuffleSplit on the UDP 5-tuple connection; no connection in both train and test",
+        "split": (
+            "GroupShuffleSplit on the UDP 5-tuple connection; "
+            "no connection in both train and test"
+        ),
         "n_rows": int(len(df)),
         "n_train": int(len(tr)),
         "n_test": int(len(te)),
