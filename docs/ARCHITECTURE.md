@@ -71,3 +71,6 @@ of what was cut and why is ADR 008.
   including the pre-fix path so the speedup stays reproducible.
 - `artifacts/calibration_experiment.json`: why the reject knob runs on raw
   confidence (measured ECE and matched-coverage reliability).
+- `artifacts/split_comparison.json`: what the connection-grouped split buys on
+  this sample (grouped vs stratified head to head), and the connection/host
+  structure that explains the answer.

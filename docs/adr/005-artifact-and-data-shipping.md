@@ -20,9 +20,11 @@ else produced.
 - Format: joblib, loaded only from the local artifacts directory. joblib is
   pickle, so the trust boundary is "only load what this repo trained"; that rule
   lives in `scoring.load_bundle` and docs/THREAT_MODEL.md section 6.
-- Measured evidence: metrics.json, benchmark.json, calibration_experiment.json
-  ARE committed. They are small, diffable, and `make reproduce` checks the
-  retrained metrics.json is byte-identical to the committed one.
+- Measured evidence: metrics.json, benchmark.json, calibration_experiment.json,
+  split_comparison.json ARE committed. They are small, diffable, and `make
+  reproduce` checks the retrained metrics.json is byte-identical to the committed
+  one. The rule they enforce: a number that appears in the README, an ADR, the
+  model card or a code comment cites one of these files, or it does not ship.
 
 ## Alternatives rejected
 

@@ -104,12 +104,15 @@ DDoS families; all rare-family flows kept, benign and UDP-RAW capped). **Leakage
 `GroupShuffleSplit` on the UDP 5-tuple connection, so no flow from one connection appears in both
 train and test; the median imputer is fit on train only.
 
-**How much does the grouping buy on this sample? Honestly, little, and that is worth stating.** The
-committed sample averages only ~1.4 flows per connection, so a plain stratified random split scores
-the *same* binary PR-AUC (0.9767). The connection-grouped split is the correct method and stays,
-but on this balanced sample it is hygiene, not a measurable score-inflation guard. The deeper axis
-cannot be tested inside this dataset: UDP-RAW comes from only **2 source IPs**, and 85% of test
-flows share a source IP with training, so the near-perfect UDP-RAW PR-AUC is "recognize the same
+**How much does the grouping buy on this sample? Honestly, little, and that is measured.**
+`python scripts/split_comparison.py` runs both splits head to head and writes
+`artifacts/split_comparison.json`: binary PR-AUC is identical (0.9767 either way), accuracy differs
+by four ten-thousandths (grouped 0.8317, stratified 0.8321), and macro-F1 is actually higher under
+the grouped split (0.3911 vs 0.3714). The reason is the sample averages 1.4003 flows per connection,
+so there is almost nothing for grouping to hold together. It is the correct method and stays, but on
+this balanced sample it is hygiene, not a measurable score-inflation guard. The deeper axis cannot be
+tested inside this dataset: UDP-RAW comes from only **2 source IPs**, and **85.24%** of test flows
+share a source IP with training, so the near-perfect UDP-RAW PR-AUC is "recognize the same
 campaign," not "detect a new flood." Details in [ADR 002](docs/adr/002-connection-grouped-split.md)
 and the model card's limitations.
 

@@ -54,15 +54,17 @@ be pointed at a production network as-is without site-specific retraining and ca
   so correlated flows from the same connection cannot straddle the split. The median imputer is fit
   on the **train split only**. IPs and ports are used only to build the connection key; they are
   **not** model features.
-  - **What the grouping actually buys on THIS sample: little, stated honestly.** The committed
-    balanced sample averages only ~1.4 flows per connection (UDP-RAW: 12,000 flows over 9,353
-    connections, mean 1.28), because the row-capping in `scripts/build_sample.py:51-54` that keeps
-    the class mix balanced also dilutes the dominant flood's connections. A plain stratified random
-    split therefore scores the same binary PR-AUC (0.9767) and essentially the same accuracy (0.8321
-    vs the grouped 0.8317) - the grouping changes nothing measurable here. It is the correct METHOD
-    and stays, but on this sample it is hygiene, not a score-inflation guard. The property that would
-    make it bite is a full-dataset one: there the dominant flood averages ~25 flows per 5-tuple, and
-    correlated flows straddling a random split would inflate the score.
+  - **What the grouping actually buys on THIS sample: little, stated honestly and measured.**
+    `scripts/split_comparison.py` runs both splits head to head at the same seed and test_size and
+    writes `artifacts/split_comparison.json`. Binary PR-AUC is identical (0.9767 either way),
+    accuracy differs by four ten-thousandths (grouped 0.8317, stratified 0.8321), and macro-F1 is
+    actually higher under the grouped split (0.3911 vs 0.3714). The reason is the sample: it
+    averages 1.4003 flows per connection, and UDP-RAW averages 1.283 (12,000 flows over 9,353
+    connections), because the row-capping in `scripts/build_sample.py` samples the two dominant
+    classes down at random and scatters their flows across connections. The grouping is the correct
+    METHOD and stays, but on this sample it is hygiene, not a score-inflation guard. The correlation
+    that would make it bite is a property of the full dataset, which this repo does not ship and
+    therefore does not quote a number for.
 - **Labels:** the multi-class `label_mc` field, restricted to the closed set
   `benign, UDP-RAW, UDP-VSE, UDP-OVH, UDP-MULTI, UDP-HULK, UDP-bypass-v1, UDP-GAME`. The dataset's
   coarse catch-all labels (`attack`, `suspicious`) are excluded from the closed-set family task, as
@@ -153,13 +155,15 @@ harder picture.
 2. **Sampled subset, not the full dataset.** Numbers are on the committed 25,615-flow balanced
    sample. Full-dataset numbers (826,953 UDP flows, 94% UDP-RAW) will differ, binary detection gets
    easier, macro metrics shift with the class mix. Training on a larger slice is roadmap.
-3. **Single-day/single-dataset evaluation; campaign generalization untested.** The sample covers one
-   attack day of the capture, and UDP-RAW (the dominant flood) comes from only **2 source IPs**, with
-   85% of test flows sharing a source IP with training. So even under the connection-grouped split
-   the same attacking host straddles train and test on different ports, and the near-perfect UDP-RAW
-   PR-AUC (0.9986) measures "recognize the same campaign," not "detect a new flood from an unseen
-   host." Only a cross-day or cross-dataset eval can answer host/campaign generalization; none has
-   been run.
+3. **Single-dataset evaluation; campaign generalization untested.** UDP-RAW (the dominant flood)
+   comes from only **2 source IPs**, and **85.24%** of test flows share a source IP with training
+   (`artifacts/split_comparison.json`). So even under the connection-grouped split the same attacking
+   host straddles train and test on different ports, and the near-perfect UDP-RAW PR-AUC (0.9986)
+   measures "recognize the same campaign," not "detect a new flood from an unseen host." Only a
+   cross-day or cross-dataset eval can answer host/campaign generalization; none has been run, and
+   the committed sample cannot support one: `scripts/build_sample.py` drops the `timestamp` column,
+   so the shipped data carries no day field to split on. Doing this properly means rebuilding the
+   sample from the full dataset with the timestamp retained.
 4. **No adversarial evaluation yet.** Whether the reject option catches deliberately perturbed
    flows is a hypothesis until the adversarial probe measures it. See `docs/THREAT_MODEL.md`.
 5. **Uncalibrated confidence, by measured choice.** Raw confidence overstates itself (ECE 0.041);

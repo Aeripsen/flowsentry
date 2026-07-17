@@ -17,13 +17,25 @@ only to build the group key, never as features.
 
 ## Honest accounting
 
-On the committed balanced sample the grouping changes nothing measurable: the
-sample averages ~1.4 flows per connection (the row-capping that balances classes
-also dilutes connections), and a plain stratified split scores the same binary
-PR-AUC (0.9767). The grouping is kept because it is the correct method and it
-bites on the full dataset (~25 flows per 5-tuple for the dominant flood). The
-deeper limit is stated in the model card: UDP-RAW comes from 2 source IPs, so
-even grouped, the same attacking host straddles the split on different ports.
+Measured, not asserted: `scripts/split_comparison.py` runs both splits head to
+head at the same seed and test_size and writes artifacts/split_comparison.json.
+On the committed balanced sample the grouping changes nothing measurable. Binary
+PR-AUC is identical (0.9767 either way), accuracy differs by four ten-thousandths
+(grouped 0.8317, stratified 0.8321), and macro-F1 is actually *higher* under the
+grouped split (0.3911 vs 0.3714).
+
+The mechanism is the sample, not the method. It averages 1.4003 flows per
+connection, and the dominant flood averages 1.283 (12,000 flows over 9,353
+connections). The row-capping in `scripts/build_sample.py` samples the two
+dominant classes down at random, which scatters their flows across connections,
+so grouping has almost nothing left to hold together. It is kept because it is
+the correct method and because the correlation it guards against is a real
+property of the full dataset, which this repo does not ship and therefore does
+not quote a number for.
+
+The deeper limit it does NOT fix, from the same artifact: UDP-RAW comes from 2
+source IPs, and 85.24% of test flows share a source IP with training. So even
+grouped, the same attacking host straddles the split on different ports.
 Host-level generalization is untestable inside this dataset.
 
 ## Alternatives rejected

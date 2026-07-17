@@ -1,0 +1,85 @@
+{
+  "what": "what the connection-grouped split buys on the committed sample, and the connection/host structure that explains it; the stratified arm is trained for comparison only and is never shipped",
+  "config": {
+    "test_size": 0.25,
+    "seed": 42,
+    "stage_estimator": "random_forest"
+  },
+  "sample_structure": {
+    "n_flows": 25615,
+    "n_connections": 18293,
+    "mean_flows_per_connection": 1.4003,
+    "note": "the row-capping in scripts/build_sample.py that balances the classes samples the two dominant classes down at random, which scatters their flows across connections and leaves ~1 flow per connection; that is why grouping cannot move the score on this sample",
+    "per_class": {
+      "UDP-GAME": {
+        "n_flows": 207,
+        "n_connections": 176,
+        "mean_flows_per_connection": 1.1761,
+        "n_source_ips": 124
+      },
+      "UDP-HULK": {
+        "n_flows": 246,
+        "n_connections": 227,
+        "mean_flows_per_connection": 1.0837,
+        "n_source_ips": 146
+      },
+      "UDP-MULTI": {
+        "n_flows": 261,
+        "n_connections": 226,
+        "mean_flows_per_connection": 1.1549,
+        "n_source_ips": 129
+      },
+      "UDP-OVH": {
+        "n_flows": 304,
+        "n_connections": 188,
+        "mean_flows_per_connection": 1.617,
+        "n_source_ips": 139
+      },
+      "UDP-RAW": {
+        "n_flows": 12000,
+        "n_connections": 9353,
+        "mean_flows_per_connection": 1.283,
+        "n_source_ips": 2
+      },
+      "UDP-VSE": {
+        "n_flows": 383,
+        "n_connections": 330,
+        "mean_flows_per_connection": 1.1606,
+        "n_source_ips": 148
+      },
+      "UDP-bypass-v1": {
+        "n_flows": 214,
+        "n_connections": 196,
+        "mean_flows_per_connection": 1.0918,
+        "n_source_ips": 156
+      },
+      "benign": {
+        "n_flows": 12000,
+        "n_connections": 7605,
+        "mean_flows_per_connection": 1.5779,
+        "n_source_ips": 3380
+      }
+    }
+  },
+  "host_overlap_grouped_split": {
+    "test_flows_sharing_a_source_ip_with_train": 0.8524,
+    "n_test_flows_sharing": 5600,
+    "n_test_flows": 6570,
+    "note": "the limit the grouping does NOT fix: the same attacking host appears on both sides on different ports, so UDP-RAW's near-perfect PR-AUC measures 'recognize this campaign', not 'detect an unseen flood'. Grouping by source IP instead would collapse the attack classes onto one side of the split, because there are only 2 attack source IPs. Only a cross-day or cross-dataset eval answers this, and none has been run."
+  },
+  "grouped": {
+    "n_train": 19045,
+    "n_test": 6570,
+    "accuracy_full_coverage": 0.8317,
+    "macro_f1_full_coverage": 0.3911,
+    "binary_attack_detection_pr_auc": 0.9767
+  },
+  "stratified": {
+    "n_train": 19211,
+    "n_test": 6404,
+    "accuracy_full_coverage": 0.8321,
+    "macro_f1_full_coverage": 0.3714,
+    "binary_attack_detection_pr_auc": 0.9767
+  },
+  "verdict": "the grouped split is the correct method and is kept, but on this sample it is hygiene, not a score-inflation guard: binary PR-AUC is identical and accuracy differs by well under a point. Reported so the claim is measured rather than asserted."
+}
