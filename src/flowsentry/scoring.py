@@ -5,10 +5,11 @@ Why this module exists (all measured, see artifacts/benchmark.json):
 
   The fitted forests carry n_jobs=-1, and sklearn's predict_proba spins up and
   tears down a joblib thread pool on every call. On a single-row request that
-  overhead is ~30-60 ms, which capped the serving path at ~23 flows/s and was the
-  README's embarrassing "20 flows/s" number. Scoring the trees sequentially
-  (model.forest_proba) removes it: bit-identical probabilities at ~2-6 ms per
-  flow. For large batches the thread pool amortizes and wins, so score_batch
+  fixed cost is the whole runtime: the pre-fix path measured mean 44.664 ms per
+  call (single_row_native_pool), which capped the serving path at ~22 flows/s.
+  Scoring the trees sequentially (model.forest_proba) removes it: bit-identical
+  probabilities at mean 2.407 ms per flow (single_row, p95 5.619). For large
+  batches the thread pool amortizes and wins, so score_batch
   switches strategy at a measured cutoff: on the dev machine sequential is faster
   up to ~1k rows, the threaded path is faster from ~4k rows; the default cutoff
   sits between at 2048.

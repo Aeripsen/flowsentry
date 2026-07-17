@@ -33,9 +33,10 @@ def forest_proba(forest, X: np.ndarray, sequential: bool = False) -> np.ndarray:
     """Class probabilities from a fitted forest, with an optional sequential path.
 
     The fitted forests carry n_jobs=-1, and sklearn's predict_proba builds and
-    tears down a joblib thread pool on every call. That overhead is ~30-60 ms per
-    call on the dev machine, which is fine for a 25k-row matrix and ruinous for a
-    single-row request (see artifacts/benchmark.json). `sequential=True` walks the
+    tears down a joblib thread pool on every call. That fixed cost is mean
+    44.664 ms per call on the dev machine (artifacts/benchmark.json:
+    single_row_native_pool, p50 29.806 / p95 84.289), which is fine for a 25k-row
+    matrix and ruinous for a single-row request. `sequential=True` walks the
     trees in order with input validation hoisted out of the loop, which is the
     same accumulate-then-divide computation sklearn runs, so the result is
     bit-identical to predict_proba with n_jobs=1 (a test asserts exact equality).

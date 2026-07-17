@@ -173,12 +173,12 @@ machine: 12-core Windows, Python 3.13, scikit-learn 1.9). Measured there:
 | batch, whole 25,615-flow sample | ~125,000 flows/s |
 
 The p95/p99 tail is real: it contains the flows that escalate to Stage 2. An earlier version of
-this service scored ~20 flows/s; profiling showed the cost was not the model but sklearn
+this service scored ~22 flows/s; profiling showed the cost was not the model but sklearn
 re-spawning a joblib thread pool inside every single-row `predict_proba` call. The fix
 (`scoring.py` + [ADR 007](docs/adr/007-sequential-scoring-path.md)) walks the trees sequentially,
 which a test asserts is bit-identical to the native path, and switches to the threaded path for
 large batches. The pre-fix path is still measured by the benchmark (`single_row_native_pool`,
-~45 ms/flow) so the comparison stays reproducible. These are stored-flow scoring numbers on one
+mean 44.7 ms/flow) so the comparison stays reproducible. These are stored-flow scoring numbers on one
 machine, not a live tap under concurrent load; a proper load test is roadmap. A perf regression
 test fails CI if the per-call pool behavior ever comes back.
 

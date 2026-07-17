@@ -35,7 +35,7 @@ from .stream import load_stream
 
 BATCH_SIZES = [1024, 8192, 0]  # 0 = the whole committed sample
 BATCH_REPS = 5
-NATIVE_POOL_ROWS = 100  # the slow path gets fewer reps; it costs ~40 ms per call
+NATIVE_POOL_ROWS = 100  # the slow path gets fewer reps; it costs ~45 ms per call
 
 
 def _percentiles(latencies_ms: np.ndarray) -> dict:

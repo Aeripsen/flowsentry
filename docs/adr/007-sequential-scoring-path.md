@@ -4,10 +4,12 @@ Status: accepted
 
 ## Context
 
-The serving path measured ~23 flows/s. Profiling (see the bench commit) showed
-the model was innocent: sklearn's forest predict_proba spins up and tears down a
-joblib thread pool on every call, ~30-60 ms of overhead per single-row request,
-against ~0.3 ms of actual imputation and ~2 ms of tree work.
+The serving path measured ~22 flows/s (artifacts/benchmark.json:
+single_row_native_pool, mean 44.664 ms per call, p50 29.806, p95 84.289).
+Profiling (see the bench commit) showed the model was innocent: sklearn's forest
+predict_proba spins up and tears down a joblib thread pool on every call. That
+fixed cost is nothing next to a 25k-row matrix and is essentially the entire
+runtime of a single-row request, where the real work is ~2 ms.
 
 ## Decision
 
@@ -19,9 +21,9 @@ deleted, not tuned. FlowScorer picks the strategy by batch size: sequential wins
 below ~1k rows, the native threaded path wins above ~4k (measured; cutoff 2048).
 Non-forest estimators fall back to their native path.
 
-Measured result (artifacts/benchmark.json): single flow mean 42.7 ms to 2.4 ms
-(p95 5.6 ms), full-sample batch ~125k flows/s. The pre-fix path stays in the
-benchmark as `single_row_native_pool` so the claim remains reproducible.
+Measured result (artifacts/benchmark.json): single flow mean 44.664 ms to
+2.407 ms (p95 5.619 ms), full-sample batch ~125k flows/s. The pre-fix path stays
+in the benchmark as `single_row_native_pool` so the claim remains reproducible.
 
 ## Alternatives rejected
 

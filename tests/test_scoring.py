@@ -2,7 +2,7 @@
 they are provably equivalent to the sklearn-native paths, so most of this file is
 exact-equality guards. The tail is a performance guard with generous bounds: it is
 not a micro-benchmark, it exists to fail if the per-call thread-pool regression
-(the old 40 ms/flow serving path) ever comes back.
+(the old ~45 ms/flow serving path) ever comes back.
 """
 import time
 
@@ -130,9 +130,10 @@ def test_real_sequential_labels_match_native(real_fitted):
 
 
 def test_perf_guard_single_row(real_fitted):
-    """Fails if the serving path regresses toward the old ~40 ms/flow thread-pool
+    """Fails if the serving path regresses toward the old ~45 ms/flow thread-pool
     behavior. Bound is generous (measured ~2-6 ms on the dev machine) so a slow
-    CI runner passes, but a per-call pool spin-up (30-60 ms) cannot."""
+    CI runner passes, but a per-call pool spin-up (mean 44.7 ms, p50 29.8 in
+    artifacts/benchmark.json:single_row_native_pool) cannot."""
     scorer, Xte = real_fitted
     lat = []
     scorer.score_batch(Xte[:1])  # warmup
@@ -146,8 +147,9 @@ def test_perf_guard_single_row(real_fitted):
 
 
 def test_perf_guard_batch_throughput(real_fitted):
-    """Batch scoring must stay in bulk territory. Measured ~58k flows/s at this
-    size on the dev machine; the 2,000 floor only catches an
+    """Batch scoring must stay in bulk territory. The committed benchmark brackets
+    this size at 34,398 flows/s (1,024 rows) and 59,895 flows/s (8,192 rows), see
+    artifacts/benchmark.json:batch; the 2,000 floor only catches an
     order-of-magnitude regression, not machine variance."""
     scorer, Xte = real_fitted
     n = min(6000, Xte.shape[0])
