@@ -286,7 +286,12 @@ regression guard) run in CI.
 - [ ] Load test under concurrent HTTP traffic (the benchmark measures scoring, not the ASGI stack)
 - [ ] Adversarial probe: perturbed flows vs the reject knob (designed in
       [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md))
-- [ ] Cross-day / cross-dataset evaluation for host and campaign generalization
+- [ ] Cross-day / cross-dataset evaluation for host and campaign generalization. This is the one
+      that would decide whether UDP-RAW's 0.9986 PR-AUC is detection or campaign recognition, and it
+      is **blocked on the shipped sample**: `scripts/build_sample.py` drops `timestamp` along with
+      the other identifier columns, so the committed 25,615 flows carry no day field to split on.
+      Doing it honestly means rebuilding the sample from the full dataset with the timestamp kept,
+      not inventing a split from what ships here.
 
 ## Attribution
 
