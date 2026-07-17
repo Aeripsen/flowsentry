@@ -21,10 +21,13 @@ else produced.
   pickle, so the trust boundary is "only load what this repo trained"; that rule
   lives in `scoring.load_bundle` and docs/THREAT_MODEL.md section 6.
 - Measured evidence: metrics.json, benchmark.json, calibration_experiment.json,
-  split_comparison.json ARE committed. They are small, diffable, and `make
-  reproduce` checks the retrained metrics.json is byte-identical to the committed
-  one. The rule they enforce: a number that appears in the README, an ADR, the
-  model card or a code comment cites one of these files, or it does not ship.
+  split_comparison.json, hierarchy_benchmark.json ARE committed. They are small,
+  diffable, and `make reproduce` checks the retrained metrics.json is
+  byte-identical to the committed one. The rule they enforce: a number that appears
+  in the README, an ADR, the model card or a code comment cites one of these files,
+  or it does not ship. That rule cuts both ways: hierarchy_benchmark.json is
+  committed even though its verdict is that the repo's own headline architecture
+  does not beat a simpler baseline.
 
 ## Alternatives rejected
 

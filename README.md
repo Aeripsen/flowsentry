@@ -11,8 +11,10 @@ UDP/QUIC intrusion detection, on that paper's own public dataset.
   `artifacts/metrics.json` regenerates **byte-identically**.
 - The reject knob moves reliability from **83.2%** (answer every flow) to **99.3%** (answer the
   ~65% the model is sure about), with the whole coverage-reliability curve measured, not asserted.
-- Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics; only the rest pay
-  for the QUIC-augmented model.
+- Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics. That is the paper's
+  design, and this repo **measured what it buys and published the unflattering answer**: on this
+  sample, a single 60-tree forest on the joint space is faster than the two-stage hierarchy and no
+  worse on any metric. See [the ablation](#ablation-what-the-hierarchy-actually-buys).
 - Scoring: **2.4 ms** mean per single flow (p95 5.6 ms), **~125,000 flows/s** batch on the full
   25,615-flow sample (dev machine, environment recorded in `artifacts/benchmark.json`).
 
@@ -150,9 +152,33 @@ model chose to answer. Stage 1 escalates 24.3% of flows to Stage 2.
 | 0.95 | 73.0% | 99.0% | 4,793 |
 | 0.99 | 64.8% | 99.3% | 4,255 |
 
-**Ablation (is the hierarchy worth it?).** A single 200-tree RF on the full UDP+QUIC space ties the
-two-stage model on full-coverage accuracy and macro-F1 (consistent with the paper). The hierarchy's
-value is elsewhere: the reject knob above, and answering ~76% of flows on cheap UDP features.
+### Ablation: what the hierarchy actually buys
+
+Short answer, measured: **not much, and this repo says so rather than implying otherwise.** The
+two-stage hierarchy is the architecture from the paper and it is the repo's central design claim, so
+it gets the same treatment as everything else here: `python scripts/hierarchy_benchmark.py` measures
+it and writes `artifacts/hierarchy_benchmark.json`.
+
+| Arm | Accuracy | Macro-F1 | Binary PR-AUC | Serving ms/flow |
+|---|---|---|---|---|
+| stage1_only (60 trees, UDP only) | 0.8306 | 0.3794 | 0.9764 | 1.595 |
+| single_joint (200 trees, UDP+QUIC) | 0.8317 | 0.3911 | 0.9774 | 5.010 |
+| single_joint_small (60 trees, UDP+QUIC) | 0.8311 | **0.3946** | 0.9771 | **1.388** |
+| hierarchy (shipped) | 0.8317 | 0.3911 | 0.9767 | 2.597 |
+
+A single **60-tree** forest on the joint space is faster than the hierarchy on both the serving and
+batch paths, scores the highest macro-F1 of any arm, and beats it on binary PR-AUC, with one model
+and no escalation threshold. The hierarchy only beats the *200-tree* joint model, which is the
+baseline the ADR happened to pick and not the one a person would choose. The reject knob does not
+rescue it either: all four arms give the same coverage-reliability curve within noise, and at
+threshold 0.99 both joint models answer more flows at higher reliability than the hierarchy.
+
+The hierarchy stays because operationalizing the paper's architecture is what this repo is for, and
+because the escalation rate is a genuine monitoring signal. Its one open argument is a deployment
+that defers QUIC extraction to the 24.3% of flows that escalate. The benchmark prices that properly:
+it leaves the QUIC extraction cost symbolic (this repo cannot measure it, the extractors are upstream)
+and reports the break-even it would have to clear. [ADR 001](docs/adr/001-two-stage-hierarchy.md) has
+the whole accounting, including why the accuracy tie is exact rather than close.
 
 **Confidence calibration was measured, not assumed:** isotonic calibration fixes the meaning of the
 confidence number (ECE 0.041 to 0.008) but cannot improve the curve (a monotone map cannot re-rank

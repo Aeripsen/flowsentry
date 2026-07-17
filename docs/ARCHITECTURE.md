@@ -74,3 +74,7 @@ of what was cut and why is ADR 008.
 - `artifacts/split_comparison.json`: what the connection-grouped split buys on
   this sample (grouped vs stratified head to head), and the connection/host
   structure that explains the answer.
+- `artifacts/hierarchy_benchmark.json`: what the two-stage hierarchy buys against
+  stage-1-only and against single joint forests at two tree budgets, in accuracy,
+  reject curve and latency, with the QUIC-extraction term left symbolic and its
+  break-even reported. The answer is unflattering and it ships anyway (ADR 001).

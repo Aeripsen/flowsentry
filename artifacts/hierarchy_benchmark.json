@@ -1,0 +1,323 @@
+{
+  "what": "what the two-stage hierarchy buys: stage1-only vs a 200-tree joint forest vs a 60-tree joint forest vs the hierarchy, on the same held-out rows, with the QUIC-extraction term handled symbolically rather than invented",
+  "environment": {
+    "timestamp": "2026-07-17T03:35:43+00:00",
+    "python": "3.13.13",
+    "platform": "Windows",
+    "cpu_count": 12,
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "scikit_learn": "1.9.0",
+    "joblib": "1.5.3"
+  },
+  "timing_stability_note": "the quality numbers are seeded and reproduce exactly; the latency numbers are a snapshot of one run and the absolute values move by tens of percent between runs on a loaded machine. The RATIOS between arms, and therefore every verdict below, held across repeated runs and across both the single-row and batch paths. Do not quote an absolute ms figure from here without re-running it.",
+  "n_test": 6570,
+  "escalation_rate": 0.2429,
+  "hierarchy_agrees_with_joint_on_escalated_rows": 1.0,
+  "quality": {
+    "stage1_only": {
+      "accuracy_full_coverage": 0.8306,
+      "macro_f1_full_coverage": 0.3794,
+      "binary_attack_detection_pr_auc": 0.9764
+    },
+    "single_joint": {
+      "accuracy_full_coverage": 0.8317,
+      "macro_f1_full_coverage": 0.3911,
+      "binary_attack_detection_pr_auc": 0.9774
+    },
+    "single_joint_small": {
+      "accuracy_full_coverage": 0.8311,
+      "macro_f1_full_coverage": 0.3946,
+      "binary_attack_detection_pr_auc": 0.9771
+    },
+    "hierarchy": {
+      "accuracy_full_coverage": 0.8317,
+      "macro_f1_full_coverage": 0.3911,
+      "binary_attack_detection_pr_auc": 0.9767
+    }
+  },
+  "reject_curves": {
+    "note": "the reject knob does not require a hierarchy: any model that emits a probability has one. This compares the curve each arm produces, which is the comparison that decides whether the two-stage design earns its place.",
+    "stage1_only": [
+      {
+        "threshold": 0.0,
+        "coverage": 1.0,
+        "reliability": 0.8306,
+        "n_covered": 6570
+      },
+      {
+        "threshold": 0.5,
+        "coverage": 0.8804,
+        "reliability": 0.9321,
+        "n_covered": 5784
+      },
+      {
+        "threshold": 0.7,
+        "coverage": 0.8184,
+        "reliability": 0.974,
+        "n_covered": 5377
+      },
+      {
+        "threshold": 0.8,
+        "coverage": 0.7927,
+        "reliability": 0.98,
+        "n_covered": 5208
+      },
+      {
+        "threshold": 0.9,
+        "coverage": 0.7571,
+        "reliability": 0.9869,
+        "n_covered": 4974
+      },
+      {
+        "threshold": 0.95,
+        "coverage": 0.728,
+        "reliability": 0.99,
+        "n_covered": 4783
+      },
+      {
+        "threshold": 0.99,
+        "coverage": 0.6475,
+        "reliability": 0.9932,
+        "n_covered": 4254
+      }
+    ],
+    "single_joint": [
+      {
+        "threshold": 0.0,
+        "coverage": 1.0,
+        "reliability": 0.8317,
+        "n_covered": 6570
+      },
+      {
+        "threshold": 0.5,
+        "coverage": 0.8755,
+        "reliability": 0.9362,
+        "n_covered": 5752
+      },
+      {
+        "threshold": 0.7,
+        "coverage": 0.8187,
+        "reliability": 0.9745,
+        "n_covered": 5379
+      },
+      {
+        "threshold": 0.8,
+        "coverage": 0.7912,
+        "reliability": 0.9811,
+        "n_covered": 5198
+      },
+      {
+        "threshold": 0.9,
+        "coverage": 0.7565,
+        "reliability": 0.9873,
+        "n_covered": 4970
+      },
+      {
+        "threshold": 0.95,
+        "coverage": 0.7279,
+        "reliability": 0.9906,
+        "n_covered": 4782
+      },
+      {
+        "threshold": 0.99,
+        "coverage": 0.6662,
+        "reliability": 0.9941,
+        "n_covered": 4377
+      }
+    ],
+    "single_joint_small": [
+      {
+        "threshold": 0.0,
+        "coverage": 1.0,
+        "reliability": 0.8311,
+        "n_covered": 6570
+      },
+      {
+        "threshold": 0.5,
+        "coverage": 0.8756,
+        "reliability": 0.935,
+        "n_covered": 5753
+      },
+      {
+        "threshold": 0.7,
+        "coverage": 0.8207,
+        "reliability": 0.9733,
+        "n_covered": 5392
+      },
+      {
+        "threshold": 0.8,
+        "coverage": 0.7948,
+        "reliability": 0.9797,
+        "n_covered": 5222
+      },
+      {
+        "threshold": 0.9,
+        "coverage": 0.7606,
+        "reliability": 0.986,
+        "n_covered": 4997
+      },
+      {
+        "threshold": 0.95,
+        "coverage": 0.7285,
+        "reliability": 0.9902,
+        "n_covered": 4786
+      },
+      {
+        "threshold": 0.99,
+        "coverage": 0.6536,
+        "reliability": 0.9942,
+        "n_covered": 4294
+      }
+    ],
+    "hierarchy": [
+      {
+        "threshold": 0.0,
+        "coverage": 1.0,
+        "reliability": 0.8317,
+        "n_covered": 6570
+      },
+      {
+        "threshold": 0.5,
+        "coverage": 0.8755,
+        "reliability": 0.9362,
+        "n_covered": 5752
+      },
+      {
+        "threshold": 0.7,
+        "coverage": 0.8187,
+        "reliability": 0.9745,
+        "n_covered": 5379
+      },
+      {
+        "threshold": 0.8,
+        "coverage": 0.7918,
+        "reliability": 0.9812,
+        "n_covered": 5202
+      },
+      {
+        "threshold": 0.9,
+        "coverage": 0.7664,
+        "reliability": 0.9859,
+        "n_covered": 5035
+      },
+      {
+        "threshold": 0.95,
+        "coverage": 0.7295,
+        "reliability": 0.99,
+        "n_covered": 4793
+      },
+      {
+        "threshold": 0.99,
+        "coverage": 0.6476,
+        "reliability": 0.9932,
+        "n_covered": 4255
+      }
+    ]
+  },
+  "latency_single_row_sequential": {
+    "what": "model-side scoring cost per flow, from an already-imputed feature row, sequential path (the per-request serving path, ADR 007). Excludes feature extraction and the dict->row build, which are identical across arms.",
+    "stage1_only": {
+      "mean_ms": 1.5945,
+      "p50_ms": 1.2971,
+      "p95_ms": 2.7012,
+      "p99_ms": 4.4219,
+      "implied_flows_per_s": 627.2,
+      "n_calls": 500
+    },
+    "single_joint": {
+      "mean_ms": 5.0095,
+      "p50_ms": 4.2217,
+      "p95_ms": 7.9701,
+      "p99_ms": 14.3463,
+      "implied_flows_per_s": 199.6,
+      "n_calls": 500
+    },
+    "single_joint_small": {
+      "mean_ms": 1.3879,
+      "p50_ms": 1.2082,
+      "p95_ms": 2.2354,
+      "p99_ms": 3.1182,
+      "implied_flows_per_s": 720.5,
+      "n_calls": 500
+    },
+    "hierarchy": {
+      "mean_ms": 2.5969,
+      "p50_ms": 1.3199,
+      "p95_ms": 6.9565,
+      "p99_ms": 9.8966,
+      "implied_flows_per_s": 385.1,
+      "n_calls": 500
+    }
+  },
+  "latency_batch_threaded": {
+    "what": "model-side scoring cost per flow over the whole 6570-row test matrix, native threaded path, median of 7 reps. Much more stable than the single-row numbers, which is why the verdict is checked against both.",
+    "stage1_only": {
+      "median_wall_s": 0.0505,
+      "per_flow_ms": 0.00769,
+      "flows_per_s": 130048.5,
+      "reps": 7
+    },
+    "single_joint": {
+      "median_wall_s": 0.118,
+      "per_flow_ms": 0.01796,
+      "flows_per_s": 55664.7,
+      "reps": 7
+    },
+    "single_joint_small": {
+      "median_wall_s": 0.0463,
+      "per_flow_ms": 0.00704,
+      "flows_per_s": 142037.5,
+      "reps": 7
+    },
+    "hierarchy": {
+      "median_wall_s": 0.1612,
+      "per_flow_ms": 0.02453,
+      "flows_per_s": 40758.3,
+      "reps": 7
+    }
+  },
+  "cost_model": {
+    "what": "per-flow cost of a deployment that defers QUIC extraction until a flow escalates, against BOTH joint baselines. C_quic (per-flow QUIC feature-extraction cost) is NOT measured by this repo and is left symbolic; see this script's docstring. breakeven_c_quic_ms is the QUIC extraction cost at which the hierarchy and the baseline cost the same: negative means the hierarchy is already ahead on model compute alone, positive means QUIC extraction must cost at least that much per flow before the hierarchy pays.",
+    "escalation_rate_e": 0.2429,
+    "formula": "advantage = (1 - e) * C_quic + [T_baseline - T_stage1 - e * T_stage2]",
+    "single_row_sequential": {
+      "vs_single_joint_200": {
+        "baseline_per_flow_ms": "C_quic + 5.0095",
+        "hierarchy_per_flow_ms": "2.8114 + 0.2429 * C_quic",
+        "model_side_bracket_ms": 2.1981,
+        "hierarchy_wins_for_any_c_quic": true,
+        "breakeven_c_quic_ms": -2.9034,
+        "measured_speedup_model_side": 1.929
+      },
+      "vs_single_joint_small_60": {
+        "baseline_per_flow_ms": "C_quic + 1.3879",
+        "hierarchy_per_flow_ms": "2.8114 + 0.2429 * C_quic",
+        "model_side_bracket_ms": -1.4235,
+        "hierarchy_wins_for_any_c_quic": false,
+        "breakeven_c_quic_ms": 1.8802,
+        "measured_speedup_model_side": 0.534
+      }
+    },
+    "batch_threaded": {
+      "vs_single_joint_200": {
+        "baseline_per_flow_ms": "C_quic + 0.0180",
+        "hierarchy_per_flow_ms": "0.0121 + 0.2429 * C_quic",
+        "model_side_bracket_ms": 0.0059,
+        "hierarchy_wins_for_any_c_quic": true,
+        "breakeven_c_quic_ms": -0.0078,
+        "measured_speedup_model_side": 0.732
+      },
+      "vs_single_joint_small_60": {
+        "baseline_per_flow_ms": "C_quic + 0.0070",
+        "hierarchy_per_flow_ms": "0.0121 + 0.2429 * C_quic",
+        "model_side_bracket_ms": -0.005,
+        "hierarchy_wins_for_any_c_quic": false,
+        "breakeven_c_quic_ms": 0.0066,
+        "measured_speedup_model_side": 0.287
+      }
+    }
+  },
+  "caveat": "FlowSentry as implemented does NOT defer QUIC extraction: scoring.row_from_features builds all 132 columns before Stage 1 runs, so the served path pays for the QUIC features regardless of escalation. The deferred-extraction deployment the cost model prices is what the architecture permits, not what this code does.",
+  "verdict": "The hierarchy does not pay for itself on this sample. It ties the 200-tree joint forest on accuracy and macro-F1 (structurally: stage2_ IS that forest, and the two agree on 100% of escalated rows), and it beats that forest on serving latency. But a 60-tree forest on the same joint space is faster than the hierarchy on BOTH paths, scores the highest macro-F1 of any arm, and beats the hierarchy on binary PR-AUC, from one model with no escalation threshold. The reject knob does not rescue the design either: all four arms produce the same coverage-reliability curve within noise, and at threshold 0.99 both joint models dominate the hierarchy on coverage AND reliability at once. The hierarchy's compute argument only survives against the 200-tree baseline that ADR 001 happened to pick, and that baseline is not the one a person would choose. The one argument still open is deferred QUIC extraction, which needs C_quic to clear the break-even above, which this repo cannot measure and this code does not implement."
+}
