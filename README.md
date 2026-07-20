@@ -13,8 +13,9 @@ UDP/QUIC intrusion detection, on that paper's own public dataset.
   ~65% the model is sure about), with the whole coverage-reliability curve measured, not asserted.
 - Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics. That is the paper's
   design, and this repo **measured what it buys and published the unflattering answer**: on this
-  sample, a single 60-tree forest on the joint space is faster than the two-stage hierarchy and no
-  worse on any metric. See [the ablation](#ablation-what-the-hierarchy-actually-buys).
+  sample, a single 60-tree forest on the joint space is faster than the two-stage hierarchy, scores
+  the highest macro-F1 of any arm, and beats it on binary PR-AUC, at a cost of 0.0006 lower accuracy
+  (0.8311 vs 0.8317). See [the ablation](#ablation-what-the-hierarchy-actually-buys).
 - Scoring: **2.4 ms** mean per single flow (p95 5.6 ms), **~125,000 flows/s** batch on the full
   25,615-flow sample (dev machine, environment recorded in `artifacts/benchmark.json`).
 

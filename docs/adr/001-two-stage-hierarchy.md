@@ -109,7 +109,8 @@ Three things survive. None of them is speed and none of them is accuracy.
 ## Alternatives rejected
 
 - **Single joint-space model: no longer rejected on the evidence.** A 60-tree joint
-  forest is simpler, faster, and not worse on any metric this repo publishes. It is
+  forest is simpler and faster, scores the highest macro-F1 of any arm, and beats the
+  hierarchy on binary PR-AUC, at a cost of 0.0006 lower accuracy (0.8311 vs 0.8317). It is
   kept as the permanent ablation and as the benchmark's control arm. The hierarchy
   stays because the repo's job is to implement the paper, and this ADR says plainly
   what that costs rather than inventing a benefit.
