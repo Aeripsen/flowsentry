@@ -35,6 +35,45 @@ def per_family(y_true: np.ndarray, y_pred: np.ndarray, classes: list[str]) -> di
     }
 
 
+def benign_absorption(rows: dict, benign_label: str = "benign") -> dict:
+    """How much attack traffic the confusion rows lose to the benign class.
+
+    A missed family shows up as a low recall either way, but "called a different
+    flood" and "called benign" are different incidents: the first still raises an
+    alert, the second is silence. Reported separately for the dominant flood and
+    for the rest, because the dominant flood's near-perfect recall otherwise
+    averages the rare families out of view.
+    """
+    attack = [c for c in rows if c != benign_label]
+    if not attack:
+        return {}
+    dominant = max(attack, key=lambda c: rows[c]["n_flows"])
+    rare = [c for c in attack if c != dominant]
+
+    def block(names: list[str]) -> dict:
+        flows = sum(rows[c]["n_flows"] for c in names)
+        called_benign = sum(rows[c]["called"].get(benign_label, 0) for c in names)
+        return {
+            "flows": flows,
+            "called_benign": called_benign,
+            "share": round(called_benign / flows, 4) if flows else None,
+        }
+
+    return {
+        "dominant_family": dominant,
+        "all_attack": block(attack),
+        "rare_families": block(rare),
+    }
+
+
+def predicted_label_counts(rows: dict) -> dict:
+    counts: dict[str, int] = {}
+    for row in rows.values():
+        for label, n in row["called"].items():
+            counts[label] = counts.get(label, 0) + n
+    return dict(sorted(counts.items(), key=lambda kv: -kv[1]))
+
+
 def confusion_rows(y_true: np.ndarray, y_pred: np.ndarray, classes: list[str]) -> dict:
     """For each true class, what it was called, most frequent first."""
     rows = {}

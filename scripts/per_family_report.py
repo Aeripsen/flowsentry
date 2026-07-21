@@ -44,7 +44,12 @@ from flowsentry.data import (  # noqa: E402
     leakage_safe_split,
     load_sample,
 )
-from flowsentry.evaluation import confusion_rows, per_family  # noqa: E402
+from flowsentry.evaluation import (  # noqa: E402
+    benign_absorption,
+    confusion_rows,
+    per_family,
+    predicted_label_counts,
+)
 from flowsentry.model import UNKNOWN, TwoStageRejectClassifier  # noqa: E402
 from flowsentry.registry import make_stage_estimator  # noqa: E402
 
@@ -96,6 +101,8 @@ def main() -> dict:
         key=lambda c: full[c]["recall"],
     )
 
+    confusion = confusion_rows(yte, labels, classes)
+
     report = {
         "what": (
             "per-attack-family precision and recall on the connection-grouped "
@@ -112,7 +119,9 @@ def main() -> dict:
         "n_test": int(len(te)),
         "accuracy_full_coverage": round(float((labels == yte).mean()), 4),
         "per_family_full_coverage": full,
-        "confusion_full_coverage": confusion_rows(yte, labels, classes),
+        "confusion_full_coverage": confusion,
+        "predicted_label_counts": predicted_label_counts(confusion),
+        "benign_absorption": benign_absorption(confusion),
         "per_family_under_reject": under_reject,
         "weak_families_recall_below": WEAK_RECALL,
         "weak_families": weak,

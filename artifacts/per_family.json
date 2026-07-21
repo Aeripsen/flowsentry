@@ -153,6 +153,29 @@
       }
     }
   },
+  "predicted_label_counts": {
+    "UDP-RAW": 3069,
+    "benign": 2545,
+    "UDP-bypass-v1": 776,
+    "UDP-VSE": 58,
+    "UDP-MULTI": 45,
+    "UDP-HULK": 36,
+    "UDP-GAME": 21,
+    "UDP-OVH": 20
+  },
+  "benign_absorption": {
+    "dominant_family": "UDP-RAW",
+    "all_attack": {
+      "flows": 3482,
+      "called_benign": 235,
+      "share": 0.0675
+    },
+    "rare_families": {
+      "flows": 406,
+      "called_benign": 228,
+      "share": 0.5616
+    }
+  },
   "per_family_under_reject": [
     {
       "reject_threshold": 0.5,

@@ -6,7 +6,12 @@ reject numbers become an advertisement instead of a measurement.
 """
 import numpy as np
 
-from flowsentry.evaluation import confusion_rows, per_family
+from flowsentry.evaluation import (
+    benign_absorption,
+    confusion_rows,
+    per_family,
+    predicted_label_counts,
+)
 from flowsentry.model import UNKNOWN
 
 CLASSES = ["a", "b"]
@@ -37,3 +42,25 @@ def test_confusion_row_names_where_the_misses_went():
     assert rows["a"]["n_flows"] == 3
     assert list(rows["a"]["called"]) == ["b", "a"]  # most frequent first
     assert rows["a"]["called"]["b"] == 2
+
+
+def test_benign_absorption_separates_the_dominant_flood_from_the_rare_ones():
+    rows = {
+        "big": {"n_flows": 100, "called": {"big": 99, "benign": 1}},
+        "rare": {"n_flows": 10, "called": {"benign": 6, "rare": 4}},
+        "benign": {"n_flows": 50, "called": {"benign": 50}},
+    }
+    out = benign_absorption(rows)
+    assert out["dominant_family"] == "big"
+    assert out["all_attack"] == {"flows": 110, "called_benign": 7, "share": 0.0636}
+    # the number that matters: the rare family is silent 60% of the time, and
+    # averaging it with the dominant flood hides that
+    assert out["rare_families"] == {"flows": 10, "called_benign": 6, "share": 0.6}
+
+
+def test_predicted_label_counts_totals_a_column_of_the_confusion():
+    rows = {
+        "a": {"n_flows": 3, "called": {"a": 2, "b": 1}},
+        "b": {"n_flows": 4, "called": {"b": 4}},
+    }
+    assert predicted_label_counts(rows) == {"b": 5, "a": 2}
