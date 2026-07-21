@@ -11,9 +11,10 @@ Design, leakage-safe end to end:
     isotonic mapping confidence -> P(correct) is fit on the calibration split.
 
 Two measurements on the untouched test split:
-  1. ECE (expected calibration error, 10 equal-width bins) of the raw two-stage
-     max-probability confidence, before and after the isotonic mapping. This asks:
-     does "confidence 0.9" actually mean 90% correct?
+  1. ECE (expected calibration error, 10 equal-width bins, from
+     flowsentry.calibration) of the raw two-stage max-probability confidence,
+     before and after the isotonic mapping. This asks: does "confidence 0.9"
+     actually mean 90% correct?
   2. The coverage-reliability curve under raw vs calibrated confidence at matched
      coverage. Isotonic regression is monotone, so it cannot re-rank flows, so the
      curve should not improve; this measures that expectation instead of assuming
@@ -39,6 +40,7 @@ from sklearn.model_selection import GroupShuffleSplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from flowsentry.calibration import ece  # noqa: E402
 from flowsentry.data import (  # noqa: E402
     STAGE1_INDICES,
     build_matrices,
@@ -48,20 +50,7 @@ from flowsentry.data import (  # noqa: E402
 from flowsentry.model import TwoStageRejectClassifier  # noqa: E402
 
 OUT = Path(__file__).resolve().parents[1] / "artifacts" / "calibration_experiment.json"
-N_BINS = 10
 THRESHOLDS = np.round(np.linspace(0.0, 0.99, 34), 3)
-
-
-def ece(conf: np.ndarray, correct: np.ndarray, n_bins: int = N_BINS) -> float:
-    """Expected calibration error: coverage-weighted |confidence - accuracy| over
-    equal-width confidence bins."""
-    edges = np.linspace(0.0, 1.0, n_bins + 1)
-    total = 0.0
-    for lo, hi in zip(edges[:-1], edges[1:], strict=True):
-        mask = (conf >= lo) & (conf < hi) if hi < 1.0 else (conf >= lo) & (conf <= hi)
-        if mask.any():
-            total += mask.mean() * abs(conf[mask].mean() - correct[mask].mean())
-    return float(total)
 
 
 def curve(conf: np.ndarray, correct: np.ndarray, thresholds) -> list[dict]:
