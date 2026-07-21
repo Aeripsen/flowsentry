@@ -170,7 +170,8 @@ Two things this shows that the PR-AUC table did not:
 
 **The reject knob does not fix this, it hides it.** The 99.3% reliability at threshold 0.99 is
 bought by abstaining on exactly the families that are hard: at that threshold the model answers
-95.3% of UDP-RAW flows and 6.4% to 10.3% of each rare family, and recall against all their flows is
+95.3% of UDP-RAW flows and 6.4% to 10.3% of five of the six rare families (UDP-VSE is the
+exception, 33.0%), and recall against all their flows is
 0.000 for UDP-GAME, UDP-MULTI, UDP-OVH and UDP-bypass-v1, 0.048 for UDP-HULK, 0.280 for UDP-VSE.
 Reliability climbs because the answered set becomes mostly UDP-RAW and benign. That is a defensible
 way to run a detector, since an abstention routes to a human instead of a wrong label, but the

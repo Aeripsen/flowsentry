@@ -118,7 +118,8 @@ them, and the confusion rows in the artifact say where each family's flows went.
   is acting as a low-confidence sink, which is also why its PR-AUC (0.0424) is the second worst.
 - **The reject knob buys reliability by dropping these families, not by fixing them.** At threshold
   0.99 (coverage 0.6476, reliability 0.9932) the model answers 95.3% of UDP-RAW flows and 40.9% of
-  benign, against 6.4% to 10.3% of each rare family. Recall over all flows of a family falls to
+  benign, against 6.4% to 10.3% of five of the six rare families and 33.0% of UDP-VSE, the one that
+  is partly separable. Recall over all flows of a family falls to
   0.0000 for UDP-GAME, UDP-MULTI, UDP-OVH and UDP-bypass-v1, 0.0476 for UDP-HULK and 0.2800 for
   UDP-VSE. Precision on what it does answer is high (UDP-VSE 0.9655, UDP-HULK 1.0000), which is the
   reject option working as designed, but a deployment that needs rare-family coverage cannot get it
@@ -230,8 +231,9 @@ confidence -> P(correct) mapping fit on the calibration split, everything evalua
 test split. Measured:
 
 - The raw confidence of that refit model is overconfident: mean confidence 0.870 vs actual accuracy
-  0.832, ECE 0.041 (the shipped model measures 0.0362 by the same method, see above). Isotonic calibration fixes the meaning: ECE drops to 0.008, mean calibrated
-  confidence 0.833, right on the true accuracy.
+  0.832, ECE 0.041 (the shipped model measures 0.0362 by the same method, see above). Isotonic
+  calibration fixes the meaning: ECE drops to 0.008, mean calibrated confidence 0.833, right on the
+  true accuracy.
 - The curve does not improve: at every matched coverage (0.95 down to 0.65), reliability under
   calibrated confidence is identical or a few tenths of a point lower (isotonic's flat segments
   introduce ties that coarsen the threshold grid). This is expected, a monotone mapping cannot
