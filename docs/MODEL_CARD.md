@@ -246,6 +246,63 @@ change every published number for a cosmetic gain. Operators should pick thresho
 measured curve above, which is exact for this model and dataset. If a future retrain reserves a
 calibration split, the experiment script is the recipe.
 
+## Boosted-tree comparison and SHAP attribution
+
+The two-stage forest is the published architecture and stays the reference point; nothing in this
+section revises the paper, whose result stands on its own dataset and protocol. What the repo does
+here is keep asking the next question, the same way it did with the hierarchy ablation: this time
+about the model family, since bagged trees were a design choice and boosted trees are the strongest
+competing family for tabular data.
+
+`scripts/gbdt_comparison.py` (writes `artifacts/gbdt_comparison.json`, needs the `[gbdt]` extra)
+runs LightGBM and XGBoost single-stage joint models on the same 132 features, the same imputed
+matrices and the same grouped leakage-safe split. Tuning is a printed 8-config grid per family,
+scored by binary attack PR-AUC on a grouped validation carve out of the training connections (seed
+43); the winners refit on the full training split so the test numbers are comparable to the shipped
+model's. Both arms get balanced class weights, the same imbalance policy as the shipped forest.
+Measured, on the untouched test split:
+
+| Arm | Binary PR-AUC | Benign PR-AUC | Accuracy | Macro-F1 | ECE (raw) | Brier (top label) |
+|---|---|---|---|---|---|---|
+| two-stage forest (shipped) | 0.9767 | 0.9537 | **0.8317** | **0.3911** | **0.0362** | **0.0446** |
+| lightgbm (lr 0.05, 200 iter, 31 leaves) | 0.9837 | 0.9695 | 0.7973 | 0.3825 | 0.0559 | 0.0612 |
+| xgboost (lr 0.05, 200 iter, depth 6) | **0.9852** | **0.9708** | 0.7533 | 0.3487 | 0.0399 | 0.0553 |
+
+The result is genuinely split, and both halves are stated:
+
+- **The boosted arms are better scorers.** XGBoost beats the shipped forest by 0.0085 on the
+  headline binary PR-AUC and by 0.0171 on benign PR-AUC. Full-coverage recall on the rare
+  families roughly doubles (XGBoost vs forest: UDP-OVH 0.2545 vs 0.0182, UDP-GAME 0.2500 vs
+  0.1154, UDP-HULK 0.2540 vs 0.1905, UDP-bypass-v1 0.4483 vs 0.2931; per-family precision for
+  every arm is in the artifact).
+- **The forest is the better hard labeller.** Full-coverage accuracy drops by 3.4 points
+  (LightGBM) and 7.8 points (XGBoost), macro-F1 does not improve, and benign recall falls to
+  0.6635 / 0.5693 against the forest's 0.7481: the boosted arms spend benign precision to buy
+  rare-family recall and ranking. A deployment that must answer every flow with one label keeps
+  the forest; one that ranks flows for triage wants the booster.
+- **The reject knob favours LightGBM at the strict end.** At threshold 0.99 LightGBM answers
+  66.9% of flows at 0.9964 reliability against the forest's 64.8% at 0.9932; XGBoost answers
+  59.1% at 0.9982. Full curves at the repo's standard thresholds are in the artifact.
+- **Raw boosted confidence is less calibrated than the forest's** (ECE above). Isotonic and Platt
+  maps were fit on one grouped half of the validation carve and picked by ECE on the other half,
+  so the more flexible map could not win by overfitting the pick; isotonic won for both arms and
+  brings test ECE from 0.0397 to 0.0174 (XGBoost) and 0.0625 to 0.0150 (LightGBM), measured on
+  the validation-fit models for the same reason the calibration experiment above refit its own.
+
+`scripts/shap_attribution.py` (writes `artifacts/shap_top_features.json` and
+`artifacts/shap_summary.png`) commits exact TreeExplainer attribution for the comparison winner
+over the full test split: top 15 features by mean |SHAP| with the per-class breakdown. The leading
+features are `fwd_bwd_byte_ratio`, `min_pkt`, `pkt_size_entropy`, `delta_pay_size_min` and
+`median_iat`, and the per-class values in the artifact show which family each one serves (for
+example `delta_pay_size_min` is almost entirely a UDP-RAW signal, while `pkt_size_entropy` spreads
+across the rare floods). The attribution covers the single-stage winner only: the two-stage model
+routes each flow through one of two ensembles with different feature views, so a single averaged
+SHAP story for it would misattribute across the escalation gate, and none is claimed.
+
+None of this changes what ships. Swapping the serving model for the XGBoost arm would trade
+committed full-coverage accuracy for ranking, and that decision belongs to a deployment with a
+stated triage workflow, not to a benchmark table.
+
 ## Why the rare-family numbers look low (and why they are reported anyway)
 
 The seven UDP DDoS families are all volumetric floods; at the flow-statistics level several of them
