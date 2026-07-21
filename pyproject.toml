@@ -21,6 +21,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.4", "httpx>=0.27", "mypy>=1.10"]
 dashboard = ["streamlit>=1.30"]
+# the boosted-tree comparison arms + SHAP attribution; optional because the
+# shipped serving path does not depend on them
+gbdt = ["lightgbm>=4.6", "xgboost>=3.0", "shap>=0.48", "matplotlib>=3.9"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -58,5 +61,5 @@ module = [
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = ["sklearn.*", "joblib.*", "pandas.*"]
+module = ["sklearn.*", "joblib.*", "pandas.*", "lightgbm.*", "xgboost.*", "shap.*"]
 ignore_missing_imports = true
