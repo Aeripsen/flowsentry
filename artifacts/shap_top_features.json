@@ -1,0 +1,251 @@
+{
+  "what": "top 15 features by mean |SHAP| (TreeExplainer, exact) for the GBDT comparison winner, computed over the full held-out test split; mean_abs_shap sums the per-class means, the same aggregation the summary plot stacks",
+  "model": {
+    "arm": "xgboost",
+    "params": {
+      "learning_rate": 0.05,
+      "n_estimators": 200,
+      "max_depth": 6
+    },
+    "seed": 42
+  },
+  "n_rows_explained": 6570,
+  "n_features": 132,
+  "classes": [
+    "UDP-GAME",
+    "UDP-HULK",
+    "UDP-MULTI",
+    "UDP-OVH",
+    "UDP-RAW",
+    "UDP-VSE",
+    "UDP-bypass-v1",
+    "benign"
+  ],
+  "top_features": [
+    {
+      "rank": 1,
+      "feature": "fwd_bwd_byte_ratio",
+      "mean_abs_shap": 2.4104,
+      "per_class": {
+        "UDP-GAME": 0.3092,
+        "UDP-HULK": 0.033,
+        "UDP-MULTI": 0.1117,
+        "UDP-OVH": 0.3209,
+        "UDP-RAW": 1.4661,
+        "UDP-VSE": 0.0459,
+        "UDP-bypass-v1": 0.0365,
+        "benign": 0.0871
+      }
+    },
+    {
+      "rank": 2,
+      "feature": "min_pkt",
+      "mean_abs_shap": 2.3159,
+      "per_class": {
+        "UDP-GAME": 0.4528,
+        "UDP-HULK": 0.1243,
+        "UDP-MULTI": 0.1714,
+        "UDP-OVH": 0.097,
+        "UDP-RAW": 0.9165,
+        "UDP-VSE": 0.2366,
+        "UDP-bypass-v1": 0.1077,
+        "benign": 0.2094
+      }
+    },
+    {
+      "rank": 3,
+      "feature": "pkt_size_entropy",
+      "mean_abs_shap": 2.2525,
+      "per_class": {
+        "UDP-GAME": 0.1103,
+        "UDP-HULK": 1.1335,
+        "UDP-MULTI": 0.061,
+        "UDP-OVH": 0.4794,
+        "UDP-RAW": 0.011,
+        "UDP-VSE": 0.2911,
+        "UDP-bypass-v1": 0.0009,
+        "benign": 0.1654
+      }
+    },
+    {
+      "rank": 4,
+      "feature": "delta_pay_size_min",
+      "mean_abs_shap": 1.9499,
+      "per_class": {
+        "UDP-GAME": 0.0,
+        "UDP-HULK": 0.0,
+        "UDP-MULTI": 0.0,
+        "UDP-OVH": 0.0,
+        "UDP-RAW": 1.9434,
+        "UDP-VSE": 0.0,
+        "UDP-bypass-v1": 0.0,
+        "benign": 0.0065
+      }
+    },
+    {
+      "rank": 5,
+      "feature": "median_iat",
+      "mean_abs_shap": 1.5753,
+      "per_class": {
+        "UDP-GAME": 0.2442,
+        "UDP-HULK": 0.5211,
+        "UDP-MULTI": 0.3814,
+        "UDP-OVH": 0.0703,
+        "UDP-RAW": 0.1622,
+        "UDP-VSE": 0.1184,
+        "UDP-bypass-v1": 0.0266,
+        "benign": 0.0512
+      }
+    },
+    {
+      "rank": 6,
+      "feature": "max_pkt",
+      "mean_abs_shap": 1.5127,
+      "per_class": {
+        "UDP-GAME": 0.049,
+        "UDP-HULK": 0.0405,
+        "UDP-MULTI": 0.0084,
+        "UDP-OVH": 0.0082,
+        "UDP-RAW": 0.1891,
+        "UDP-VSE": 0.0366,
+        "UDP-bypass-v1": 1.0992,
+        "benign": 0.0817
+      }
+    },
+    {
+      "rank": 7,
+      "feature": "iat_25th_percentile",
+      "mean_abs_shap": 1.2939,
+      "per_class": {
+        "UDP-GAME": 0.4598,
+        "UDP-HULK": 0.0171,
+        "UDP-MULTI": 0.3075,
+        "UDP-OVH": 0.0109,
+        "UDP-RAW": 0.0374,
+        "UDP-VSE": 0.148,
+        "UDP-bypass-v1": 0.1307,
+        "benign": 0.1823
+      }
+    },
+    {
+      "rank": 8,
+      "feature": "directional_asymmetry",
+      "mean_abs_shap": 1.0814,
+      "per_class": {
+        "UDP-GAME": 0.0289,
+        "UDP-HULK": 0.0857,
+        "UDP-MULTI": 0.0209,
+        "UDP-OVH": 0.0072,
+        "UDP-RAW": 0.0,
+        "UDP-VSE": 0.0215,
+        "UDP-bypass-v1": 0.0,
+        "benign": 0.9172
+      }
+    },
+    {
+      "rank": 9,
+      "feature": "median_pkt_size",
+      "mean_abs_shap": 0.9346,
+      "per_class": {
+        "UDP-GAME": 0.0001,
+        "UDP-HULK": 0.0,
+        "UDP-MULTI": 0.0181,
+        "UDP-OVH": 0.0133,
+        "UDP-RAW": 0.0274,
+        "UDP-VSE": 0.0,
+        "UDP-bypass-v1": 0.8022,
+        "benign": 0.0734
+      }
+    },
+    {
+      "rank": 10,
+      "feature": "idle_period_max",
+      "mean_abs_shap": 0.8959,
+      "per_class": {
+        "UDP-GAME": 0.172,
+        "UDP-HULK": 0.1359,
+        "UDP-MULTI": 0.1276,
+        "UDP-OVH": 0.137,
+        "UDP-RAW": 0.0,
+        "UDP-VSE": 0.0817,
+        "UDP-bypass-v1": 0.1095,
+        "benign": 0.1321
+      }
+    },
+    {
+      "rank": 11,
+      "feature": "iat_mad",
+      "mean_abs_shap": 0.8735,
+      "per_class": {
+        "UDP-GAME": 0.0617,
+        "UDP-HULK": 0.2688,
+        "UDP-MULTI": 0.2201,
+        "UDP-OVH": 0.0733,
+        "UDP-RAW": 0.0,
+        "UDP-VSE": 0.0074,
+        "UDP-bypass-v1": 0.1801,
+        "benign": 0.0622
+      }
+    },
+    {
+      "rank": 12,
+      "feature": "pkt_size_mad",
+      "mean_abs_shap": 0.7264,
+      "per_class": {
+        "UDP-GAME": 0.0143,
+        "UDP-HULK": 0.0,
+        "UDP-MULTI": 0.0004,
+        "UDP-OVH": 0.0239,
+        "UDP-RAW": 0.0722,
+        "UDP-VSE": 0.6137,
+        "UDP-bypass-v1": 0.0,
+        "benign": 0.0018
+      }
+    },
+    {
+      "rank": 13,
+      "feature": "byte_count",
+      "mean_abs_shap": 0.5944,
+      "per_class": {
+        "UDP-GAME": 0.0728,
+        "UDP-HULK": 0.0293,
+        "UDP-MULTI": 0.0357,
+        "UDP-OVH": 0.0155,
+        "UDP-RAW": 0.143,
+        "UDP-VSE": 0.103,
+        "UDP-bypass-v1": 0.0087,
+        "benign": 0.1864
+      }
+    },
+    {
+      "rank": 14,
+      "feature": "mean_iat",
+      "mean_abs_shap": 0.586,
+      "per_class": {
+        "UDP-GAME": 0.0717,
+        "UDP-HULK": 0.0218,
+        "UDP-MULTI": 0.217,
+        "UDP-OVH": 0.1431,
+        "UDP-RAW": 0.0018,
+        "UDP-VSE": 0.069,
+        "UDP-bypass-v1": 0.0331,
+        "benign": 0.0286
+      }
+    },
+    {
+      "rank": 15,
+      "feature": "pps",
+      "mean_abs_shap": 0.5102,
+      "per_class": {
+        "UDP-GAME": 0.0928,
+        "UDP-HULK": 0.032,
+        "UDP-MULTI": 0.0172,
+        "UDP-OVH": 0.0627,
+        "UDP-RAW": 0.1584,
+        "UDP-VSE": 0.0237,
+        "UDP-bypass-v1": 0.0639,
+        "benign": 0.0594
+      }
+    }
+  ]
+}
