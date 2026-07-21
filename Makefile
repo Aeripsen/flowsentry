@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench splits hierarchy families calibration reproduce serve
+.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap reproduce serve
 
 train:
 	python -m flowsentry.train
@@ -33,6 +33,14 @@ families:
 # reliability curve, ECE/MCE and Brier for the shipped model's confidence
 calibration:
 	python scripts/calibration_report.py
+
+# boosted trees vs the shipped forest, printed grid + calibration; needs [gbdt]
+gbdt:
+	python scripts/gbdt_comparison.py
+
+# SHAP attribution for the gbdt comparison winner; needs [gbdt], run gbdt first
+shap:
+	python scripts/shap_attribution.py
 
 # the reproducibility contract: retrain and require artifacts/metrics.json to
 # regenerate byte-identically (exact bytes promised under requirements.lock)
