@@ -11,6 +11,9 @@ UDP/QUIC intrusion detection, on that paper's own public dataset.
   `artifacts/metrics.json` regenerates **byte-identically**.
 - The reject knob moves reliability from **83.2%** (answer every flow) to **99.3%** (answer the
   ~65% the model is sure about), with the whole coverage-reliability curve measured, not asserted.
+  The per-family artifact says where that reliability comes from, and it is not flattering: the
+  answered set is mostly UDP-RAW and benign, and at threshold 0.99 four of the six rare families
+  have **recall 0.000**. See [per-family](#results-real-measured).
 - Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics. That is the paper's
   design, and this repo **measured what it buys and published the unflattering answer**: on this
   sample, a single 60-tree forest on the joint space is faster than the two-stage hierarchy, scores
@@ -37,7 +40,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"          # package + runtime deps + test tooling
 
 python -m flowsentry.train      # trains on the committed BCCC sample, writes artifacts/ (~30 s)
-pytest                          # 46 tests
+pytest                          # 55 tests
 uvicorn flowsentry.service:app  # serve on http://localhost:8000
 ```
 
@@ -140,6 +143,40 @@ The dominant flood (UDP-RAW) and benign traffic separate cleanly; the rare campa
 hard, which is why full-coverage macro-F1 is modest. That is the honest picture, and the reject
 option is the engineering answer to it: abstain on the uncertain rare-flow tail instead of bluffing.
 
+**Which families does it actually detect?** PR-AUC scores a ranking and F1 folds misses and false
+alarms into one number, so neither answers the operator question. `python scripts/per_family_report.py`
+writes `artifacts/per_family.json` with precision and recall on the same held-out split, at full
+coverage:
+
+| Class | Precision | Recall | Support |
+|---|---|---|---|
+| UDP-RAW | 0.996 | 0.994 | 3,076 |
+| benign | 0.908 | 0.748 | 3,088 |
+| UDP-VSE | 0.655 | 0.380 | 100 |
+| UDP-MULTI | 0.489 | 0.282 | 78 |
+| UDP-HULK | 0.333 | 0.191 | 63 |
+| UDP-GAME | 0.286 | 0.115 | 52 |
+| UDP-OVH | 0.050 | 0.018 | 55 |
+| UDP-bypass-v1 | 0.022 | 0.293 | 58 |
+
+Two things this shows that the PR-AUC table did not:
+
+- **The misses are silent, not noisy.** 56.2% of rare-family flows (228 of 406) are labelled
+  `benign`. Only 6.8% of all attack flows are, because UDP-RAW dominates the count and is caught;
+  averaging over families hides it.
+- **UDP-bypass-v1 is where the false alarms pile up.** It is predicted 776 times when 58 flows are
+  really it, and 703 of those predictions are benign traffic, 22.8% of all benign flows in the test
+  split. Its recall (0.293) is the second best of the rare families and means nothing on its own.
+
+**The reject knob does not fix this, it hides it.** The 99.3% reliability at threshold 0.99 is
+bought by abstaining on exactly the families that are hard: at that threshold the model answers
+95.3% of UDP-RAW flows and 6.4% to 10.3% of each rare family, and recall against all their flows is
+0.000 for UDP-GAME, UDP-MULTI, UDP-OVH and UDP-bypass-v1, 0.048 for UDP-HULK, 0.280 for UDP-VSE.
+Reliability climbs because the answered set becomes mostly UDP-RAW and benign. That is a defensible
+way to run a detector, since an abstention routes to a human instead of a wrong label, but the
+number means "the model is right about what it chose to answer", not "the rare families are
+covered".
+
 **Coverage vs reliability (the reject knob working).** Reliability = accuracy on the flows the
 model chose to answer. Stage 1 escalates 24.3% of flows to Stage 2.
 
@@ -181,11 +218,25 @@ it leaves the QUIC extraction cost symbolic (this repo cannot measure it, the ex
 and reports the break-even it would have to clear. [ADR 001](docs/adr/001-two-stage-hierarchy.md) has
 the whole accounting, including why the accuracy tie is exact rather than close.
 
-**Confidence calibration was measured, not assumed:** isotonic calibration fixes the meaning of the
-confidence number (ECE 0.041 to 0.008) but cannot improve the curve (a monotone map cannot re-rank
-flows), so the knob ships on raw confidence with the measured curve as the operating guide. The
-experiment and the shipping trade-off are in the [model card](docs/MODEL_CARD.md);
-`scripts/calibration_experiment.py` reruns it.
+### Calibration of the confidence number
+
+`python scripts/calibration_report.py` measures the shipped model's confidence against what it is
+worth and writes `artifacts/calibration.json`: **ECE 0.036**, worst bin 0.271, **Brier 0.045**
+top-label (0.178 multiclass), mean confidence 0.867 against 0.832 accuracy. The reliability curve is
+not uniformly bad, it is bad in one place: the 0.9-1.0 bin holds 76.6% of flows and is nearly
+honest (gap 0.007), while the 0.2-0.3 bin holds 659 flows that are right 2.4% of the time and the
+0.5-0.6 bin is confident 0.53 and right 0.26.
+
+Split by scoring path the asymmetry is the whole story: flows Stage 1 answers are close to
+calibrated (ECE 0.007, accuracy 0.987), flows escalated to Stage 2 are not (ECE 0.127, mean
+confidence 0.470 against 0.348 accuracy, 1,596 flows). The reject threshold is one number applied
+to both, which is why the threshold's face value is not a probability and the coverage-reliability
+curve is the operating guide.
+
+Isotonic calibration was tried separately and fixes the meaning of the number (ECE 0.041 to 0.008
+on a model refit for that experiment) but cannot improve the curve, since a monotone map cannot
+re-rank flows, so the knob ships on raw confidence. The experiment and the shipping trade-off are in
+the [model card](docs/MODEL_CARD.md); `scripts/calibration_experiment.py` reruns it.
 
 Source: `artifacts/metrics.json`, regenerated by every training run. Full detail and limitations in
 [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
@@ -276,7 +327,7 @@ make reproduce            # or: python scripts/reproduce.py
 Retrains from the committed sample and fails unless `artifacts/metrics.json` regenerates
 **byte-identically** (seeded end to end: split, imputer, forests). Exact bytes are promised under
 `requirements.lock` (the environment the published numbers came from); on other versions the test
-suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (46 tests, including
+suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (55 tests, including
 the leakage guard, the metrics regression, exact-equality guards on both fast paths, and the perf
 regression guard) run in CI.
 

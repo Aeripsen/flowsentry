@@ -92,6 +92,39 @@ Per-class (test support in parentheses):
 | UDP-OVH | 0.0451 | 0.0267 | 55 |
 | UDP-bypass-v1 | 0.0424 | 0.0408 | 58 |
 
+### Per-family precision and recall
+
+`scripts/per_family_report.py` (writes `artifacts/per_family.json`) reports the operator-facing pair
+on the same split. PR-AUC above scores a ranking and F1 merges the two failure modes; these separate
+them, and the confusion rows in the artifact say where each family's flows went.
+
+| Class | Precision | Recall | Support |
+|---|---|---|---|
+| UDP-RAW | 0.9964 | 0.9941 | 3,076 |
+| benign | 0.9077 | 0.7481 | 3,088 |
+| UDP-VSE | 0.6552 | 0.3800 | 100 |
+| UDP-MULTI | 0.4889 | 0.2821 | 78 |
+| UDP-HULK | 0.3333 | 0.1905 | 63 |
+| UDP-GAME | 0.2857 | 0.1154 | 52 |
+| UDP-OVH | 0.0500 | 0.0182 | 55 |
+| UDP-bypass-v1 | 0.0219 | 0.2931 | 58 |
+
+- **Misses land on `benign`.** 228 of the 406 rare-family test flows (56.2%) are labelled benign, so
+  the dominant failure is silence, not a mislabelled alert. Across all attack flows the share is
+  6.8%, because UDP-RAW is 88% of them and is caught; that average is the one to distrust.
+- **UDP-bypass-v1 absorbs the false alarms.** It is predicted 776 times against 58 true flows, and
+  703 of those predictions are benign flows, 22.8% of all benign traffic in the test split. Its
+  recall of 0.2931 is second best among the rare families and is not evidence of anything: the class
+  is acting as a low-confidence sink, which is also why its PR-AUC (0.0424) is the second worst.
+- **The reject knob buys reliability by dropping these families, not by fixing them.** At threshold
+  0.99 (coverage 0.6476, reliability 0.9932) the model answers 95.3% of UDP-RAW flows and 40.9% of
+  benign, against 6.4% to 10.3% of each rare family. Recall over all flows of a family falls to
+  0.0000 for UDP-GAME, UDP-MULTI, UDP-OVH and UDP-bypass-v1, 0.0476 for UDP-HULK and 0.2800 for
+  UDP-VSE. Precision on what it does answer is high (UDP-VSE 0.9655, UDP-HULK 1.0000), which is the
+  reject option working as designed, but a deployment that needs rare-family coverage cannot get it
+  from this threshold. Abstentions are counted as misses in these recall numbers, never as
+  successes.
+
 **Coverage vs reliability** (reliability = accuracy on the answered subset; escalation happens
 before rejection, so the escalation rate is constant across thresholds):
 
@@ -139,7 +172,56 @@ flows that escalate; the benchmark states the break-even that would need to clea
 this repo can neither measure QUIC extraction cost nor currently defer it. Full reasoning in
 [ADR 001](adr/001-two-stage-hierarchy.md).
 
-## Confidence calibration (measured, and why it is not shipped)
+## Confidence calibration
+
+### What the shipped model's confidence is worth
+
+`scripts/calibration_report.py` (writes `artifacts/calibration.json`) measures the model people
+actually get: same config, seed and full training split as `train.py`, no calibrator, scored on the
+held-out test split.
+
+| Measure | Value |
+|---|---|
+| mean confidence | 0.8668 |
+| accuracy | 0.8317 |
+| ECE (10 equal-width bins) | 0.0362 |
+| MCE (worst bin) | 0.2712 |
+| Brier, top-label | 0.0446 |
+| Brier, multiclass | 0.1779 |
+
+Both Brier scores are reported because ECE is not a proper scoring rule: a model that always says
+0.83 and is right 83% of the time scores a perfect ECE and is useless per flow. Brier only improves
+when the confidence is calibrated *and* discriminating.
+
+The reliability curve is not uniformly off, it is off in one region:
+
+| Confidence bin | n | Mean confidence | Accuracy | Gap |
+|---|---|---|---|---|
+| 0.2-0.3 | 659 | 0.2119 | 0.0243 | +0.1876 |
+| 0.3-0.4 | 69 | 0.3577 | 0.3478 | +0.0099 |
+| 0.4-0.5 | 90 | 0.4532 | 0.4333 | +0.0199 |
+| 0.5-0.6 | 227 | 0.5311 | 0.2599 | +0.2712 |
+| 0.6-0.7 | 153 | 0.6540 | 0.5948 | +0.0592 |
+| 0.7-0.8 | 170 | 0.7510 | 0.7706 | -0.0196 |
+| 0.8-0.9 | 167 | 0.8453 | 0.8383 | +0.0070 |
+| 0.9-1.0 | 5,035 | 0.9932 | 0.9859 | +0.0073 |
+
+(The 0.0-0.2 bins are empty: with 8 classes the top vote fraction rarely falls that low.)
+
+Split by scoring path, the confidence number means two different things:
+
+| Path | n | Mean confidence | Accuracy | ECE | Brier |
+|---|---|---|---|---|---|
+| Stage 1 answered | 4,974 | 0.9940 | 0.9869 | 0.0071 | 0.0126 |
+| escalated to Stage 2 | 1,596 | 0.4705 | 0.3477 | 0.1269 | 0.1442 |
+
+Stage 2 sees only the flows Stage 1 was unsure about, so its accuracy being low is expected; its
+confidence being 0.12 above that accuracy is the finding. One reject threshold is applied to both
+paths, and that is the mechanical reason the threshold's face value is not a probability and the
+coverage-reliability curve is the operating guide. It is also another cost line for the hierarchy,
+alongside the ablation above: the escalation path produces the badly calibrated confidence.
+
+### Would calibrating help? (measured, and why it is not shipped)
 
 `scripts/calibration_experiment.py` (seeded, writes `artifacts/calibration_experiment.json`)
 answers "should the reject knob run on calibrated confidence?" with a leakage-safe experiment: a
@@ -147,8 +229,8 @@ grouped calibration split is carved out of training, the model refit on the rest
 confidence -> P(correct) mapping fit on the calibration split, everything evaluated on the untouched
 test split. Measured:
 
-- The raw confidence is overconfident: mean confidence 0.870 vs actual accuracy 0.832,
-  ECE 0.041. Isotonic calibration fixes the meaning: ECE drops to 0.008, mean calibrated
+- The raw confidence of that refit model is overconfident: mean confidence 0.870 vs actual accuracy
+  0.832, ECE 0.041 (the shipped model measures 0.0362 by the same method, see above). Isotonic calibration fixes the meaning: ECE drops to 0.008, mean calibrated
   confidence 0.833, right on the true accuracy.
 - The curve does not improve: at every matched coverage (0.95 down to 0.65), reliability under
   calibrated confidence is identical or a few tenths of a point lower (isotonic's flat segments
@@ -176,9 +258,13 @@ harder picture.
 
 ## Limitations (honest)
 
-1. **Rare families are hard at full coverage.** Several UDP campaign variants have F1 well below
-   0.5. The reject option mitigates the damage (uncertain flows abstain) but does not fix
-   fine-grained family separation.
+1. **Rare families are hard at full coverage, and the reject option does not fix that.** Recall is
+   below 0.40 for all six rare families and below 0.20 for three of them, 56.2% of their flows are
+   called benign, and UDP-bypass-v1 is predicted 13x more often than it occurs
+   (`artifacts/per_family.json`). Raising the reject threshold does not recover them: at 0.99 four
+   of the six have recall 0.0000. It contains the damage (an abstention is routed, not alerted on)
+   and it is honest about coverage, but a deployment that needs rare-family detection needs
+   different features or more data, not a different threshold.
 2. **Sampled subset, not the full dataset.** Numbers are on the committed 25,615-flow balanced
    sample. Full-dataset numbers (826,953 UDP flows, 94% UDP-RAW) will differ, binary detection gets
    easier, macro metrics shift with the class mix. Training on a larger slice is roadmap.
@@ -193,9 +279,11 @@ harder picture.
    sample from the full dataset with the timestamp retained.
 4. **No adversarial evaluation yet.** Whether the reject option catches deliberately perturbed
    flows is a hypothesis until the adversarial probe measures it. See `docs/THREAT_MODEL.md`.
-5. **Uncalibrated confidence, by measured choice.** Raw confidence overstates itself (ECE 0.041);
-   thresholds are meaningful only against the measured curve for this dataset. See the calibration
-   section for the experiment and the shipping trade-off.
+5. **Uncalibrated confidence, by measured choice.** The shipped model's confidence overstates
+   itself (ECE 0.0362, worst bin 0.2712, Brier 0.0446), and almost all of that error sits on the
+   escalated path (ECE 0.1269 against Stage 1's 0.0071). Thresholds are meaningful only against the
+   measured curve for this dataset. See the calibration section for both measurements and the
+   shipping trade-off.
 6. **Latency/throughput are measured on one machine** (`python -m flowsentry.bench`, environment
    recorded in `artifacts/benchmark.json`), scoring stored flows, not under sustained concurrent
    HTTP load. A proper load test is roadmap.
