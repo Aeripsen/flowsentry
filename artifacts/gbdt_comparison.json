@@ -1,0 +1,396 @@
+{
+  "what": "LightGBM and XGBoost single-stage joint models against the shipped two-stage forest: same features, same grouped leakage-safe split, same metrics battery; grids printed, winners refit on the full training split",
+  "config": {
+    "test_size": 0.25,
+    "seed": 42,
+    "validation_carve": "grouped, 25% of training connections, seed 43",
+    "calibration_halves": "grouped halves of the validation carve, seed 44",
+    "reject_thresholds": [
+      0.0,
+      0.5,
+      0.7,
+      0.8,
+      0.9,
+      0.95,
+      0.99
+    ]
+  },
+  "n_train": 19045,
+  "n_fit": 14515,
+  "n_validation": 4530,
+  "n_test": 6570,
+  "environment": {
+    "python": "3.13.13",
+    "numpy": "2.4.6",
+    "scikit_learn": "1.9.0",
+    "lightgbm": "4.7.0",
+    "xgboost": "3.3.0"
+  },
+  "baseline": {
+    "source": "artifacts/metrics.json + artifacts/calibration.json (committed, unchanged)",
+    "model": "two-stage random forest with reject (the shipped model)",
+    "binary_attack_pr_auc": 0.9767,
+    "benign_pr_auc": 0.9537,
+    "accuracy_full_coverage": 0.8317,
+    "macro_f1_full_coverage": 0.3911,
+    "ece_raw_confidence": 0.0362,
+    "brier_top_label": 0.0446
+  },
+  "arms": {
+    "lightgbm": {
+      "grid": [
+        {
+          "learning_rate": 0.05,
+          "n_estimators": 200,
+          "num_leaves": 31,
+          "val_binary_pr_auc": 0.9836
+        },
+        {
+          "learning_rate": 0.05,
+          "n_estimators": 200,
+          "num_leaves": 63,
+          "val_binary_pr_auc": 0.9826
+        },
+        {
+          "learning_rate": 0.05,
+          "n_estimators": 400,
+          "num_leaves": 31,
+          "val_binary_pr_auc": 0.9826
+        },
+        {
+          "learning_rate": 0.05,
+          "n_estimators": 400,
+          "num_leaves": 63,
+          "val_binary_pr_auc": 0.9824
+        },
+        {
+          "learning_rate": 0.1,
+          "n_estimators": 200,
+          "num_leaves": 31,
+          "val_binary_pr_auc": 0.983
+        },
+        {
+          "learning_rate": 0.1,
+          "n_estimators": 200,
+          "num_leaves": 63,
+          "val_binary_pr_auc": 0.9827
+        },
+        {
+          "learning_rate": 0.1,
+          "n_estimators": 400,
+          "num_leaves": 31,
+          "val_binary_pr_auc": 0.9827
+        },
+        {
+          "learning_rate": 0.1,
+          "n_estimators": 400,
+          "num_leaves": 63,
+          "val_binary_pr_auc": 0.9829
+        }
+      ],
+      "winner_params": {
+        "learning_rate": 0.05,
+        "n_estimators": 200,
+        "num_leaves": 31
+      },
+      "winner_val_binary_pr_auc": 0.9836,
+      "test": {
+        "binary_attack_pr_auc": 0.9837,
+        "benign_pr_auc": 0.9695,
+        "accuracy_full_coverage": 0.7973,
+        "macro_f1_full_coverage": 0.3825,
+        "calibration_raw_confidence": {
+          "mean_confidence": 0.8531,
+          "ece": 0.0559,
+          "mce": 0.2529,
+          "brier_top_label": 0.0612,
+          "brier_multiclass": 0.2239
+        },
+        "per_family_full_coverage": {
+          "UDP-GAME": {
+            "precision": 0.1333,
+            "recall": 0.2692,
+            "f1": 0.1783,
+            "support": 52
+          },
+          "UDP-HULK": {
+            "precision": 0.186,
+            "recall": 0.254,
+            "f1": 0.2148,
+            "support": 63
+          },
+          "UDP-MULTI": {
+            "precision": 0.3,
+            "recall": 0.3462,
+            "f1": 0.3214,
+            "support": 78
+          },
+          "UDP-OVH": {
+            "precision": 0.102,
+            "recall": 0.1818,
+            "f1": 0.1307,
+            "support": 55
+          },
+          "UDP-RAW": {
+            "precision": 0.9958,
+            "recall": 0.9938,
+            "f1": 0.9948,
+            "support": 3076
+          },
+          "UDP-VSE": {
+            "precision": 0.3554,
+            "recall": 0.43,
+            "f1": 0.3891,
+            "support": 100
+          },
+          "UDP-bypass-v1": {
+            "precision": 0.0259,
+            "recall": 0.3793,
+            "f1": 0.0485,
+            "support": 58
+          },
+          "benign": {
+            "precision": 0.9526,
+            "recall": 0.6635,
+            "f1": 0.7822,
+            "support": 3088
+          }
+        },
+        "reject_curve": [
+          {
+            "threshold": 0.0,
+            "coverage": 1.0,
+            "reliability": 0.7973,
+            "n_covered": 6570
+          },
+          {
+            "threshold": 0.5,
+            "coverage": 0.8592,
+            "reliability": 0.9084,
+            "n_covered": 5645
+          },
+          {
+            "threshold": 0.7,
+            "coverage": 0.7912,
+            "reliability": 0.9542,
+            "n_covered": 5198
+          },
+          {
+            "threshold": 0.8,
+            "coverage": 0.7592,
+            "reliability": 0.9721,
+            "n_covered": 4988
+          },
+          {
+            "threshold": 0.9,
+            "coverage": 0.7254,
+            "reliability": 0.9868,
+            "n_covered": 4766
+          },
+          {
+            "threshold": 0.95,
+            "coverage": 0.7058,
+            "reliability": 0.9922,
+            "n_covered": 4637
+          },
+          {
+            "threshold": 0.99,
+            "coverage": 0.6689,
+            "reliability": 0.9964,
+            "n_covered": 4395
+          }
+        ]
+      },
+      "confidence_calibration": {
+        "note": "measured on the validation-fit model, not the refit one; the refit model trained on every non-test connection, so no honest data was left to fit its calibrator on",
+        "chosen": "isotonic",
+        "pick_ece_on_held_out_half": {
+          "isotonic": 0.0133,
+          "platt": 0.0313
+        },
+        "test_ece_raw": 0.0625,
+        "test_ece_calibrated": 0.015,
+        "test_brier_top_label_raw": 0.0642,
+        "test_brier_top_label_calibrated": 0.0527
+      }
+    },
+    "xgboost": {
+      "grid": [
+        {
+          "learning_rate": 0.05,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "val_binary_pr_auc": 0.9863
+        },
+        {
+          "learning_rate": 0.05,
+          "n_estimators": 200,
+          "max_depth": 8,
+          "val_binary_pr_auc": 0.9857
+        },
+        {
+          "learning_rate": 0.05,
+          "n_estimators": 400,
+          "max_depth": 6,
+          "val_binary_pr_auc": 0.9854
+        },
+        {
+          "learning_rate": 0.05,
+          "n_estimators": 400,
+          "max_depth": 8,
+          "val_binary_pr_auc": 0.9838
+        },
+        {
+          "learning_rate": 0.1,
+          "n_estimators": 200,
+          "max_depth": 6,
+          "val_binary_pr_auc": 0.985
+        },
+        {
+          "learning_rate": 0.1,
+          "n_estimators": 200,
+          "max_depth": 8,
+          "val_binary_pr_auc": 0.9839
+        },
+        {
+          "learning_rate": 0.1,
+          "n_estimators": 400,
+          "max_depth": 6,
+          "val_binary_pr_auc": 0.9837
+        },
+        {
+          "learning_rate": 0.1,
+          "n_estimators": 400,
+          "max_depth": 8,
+          "val_binary_pr_auc": 0.983
+        }
+      ],
+      "winner_params": {
+        "learning_rate": 0.05,
+        "n_estimators": 200,
+        "max_depth": 6
+      },
+      "winner_val_binary_pr_auc": 0.9863,
+      "test": {
+        "binary_attack_pr_auc": 0.9852,
+        "benign_pr_auc": 0.9708,
+        "accuracy_full_coverage": 0.7533,
+        "macro_f1_full_coverage": 0.3487,
+        "calibration_raw_confidence": {
+          "mean_confidence": 0.7922,
+          "ece": 0.0399,
+          "mce": 0.254,
+          "brier_top_label": 0.0553,
+          "brier_multiclass": 0.2551
+        },
+        "per_family_full_coverage": {
+          "UDP-GAME": {
+            "precision": 0.0765,
+            "recall": 0.25,
+            "f1": 0.1171,
+            "support": 52
+          },
+          "UDP-HULK": {
+            "precision": 0.1168,
+            "recall": 0.254,
+            "f1": 0.16,
+            "support": 63
+          },
+          "UDP-MULTI": {
+            "precision": 0.2131,
+            "recall": 0.3333,
+            "f1": 0.26,
+            "support": 78
+          },
+          "UDP-OVH": {
+            "precision": 0.0921,
+            "recall": 0.2545,
+            "f1": 0.1353,
+            "support": 55
+          },
+          "UDP-RAW": {
+            "precision": 0.9964,
+            "recall": 0.9932,
+            "f1": 0.9948,
+            "support": 3076
+          },
+          "UDP-VSE": {
+            "precision": 0.313,
+            "recall": 0.41,
+            "f1": 0.355,
+            "support": 100
+          },
+          "UDP-bypass-v1": {
+            "precision": 0.0266,
+            "recall": 0.4483,
+            "f1": 0.0503,
+            "support": 58
+          },
+          "benign": {
+            "precision": 0.9681,
+            "recall": 0.5693,
+            "f1": 0.717,
+            "support": 3088
+          }
+        },
+        "reject_curve": [
+          {
+            "threshold": 0.0,
+            "coverage": 1.0,
+            "reliability": 0.7533,
+            "n_covered": 6570
+          },
+          {
+            "threshold": 0.5,
+            "coverage": 0.7571,
+            "reliability": 0.9421,
+            "n_covered": 4974
+          },
+          {
+            "threshold": 0.7,
+            "coverage": 0.7018,
+            "reliability": 0.984,
+            "n_covered": 4611
+          },
+          {
+            "threshold": 0.8,
+            "coverage": 0.6865,
+            "reliability": 0.9916,
+            "n_covered": 4510
+          },
+          {
+            "threshold": 0.9,
+            "coverage": 0.672,
+            "reliability": 0.9957,
+            "n_covered": 4415
+          },
+          {
+            "threshold": 0.95,
+            "coverage": 0.6603,
+            "reliability": 0.9975,
+            "n_covered": 4338
+          },
+          {
+            "threshold": 0.99,
+            "coverage": 0.5912,
+            "reliability": 0.9982,
+            "n_covered": 3884
+          }
+        ]
+      },
+      "confidence_calibration": {
+        "note": "measured on the validation-fit model, not the refit one; the refit model trained on every non-test connection, so no honest data was left to fit its calibrator on",
+        "chosen": "isotonic",
+        "pick_ece_on_held_out_half": {
+          "isotonic": 0.0154,
+          "platt": 0.0424
+        },
+        "test_ece_raw": 0.0397,
+        "test_ece_calibrated": 0.0174,
+        "test_brier_top_label_raw": 0.0609,
+        "test_brier_top_label_calibrated": 0.054
+      }
+    }
+  },
+  "best_arm_by_test_binary_pr_auc": "xgboost"
+}
