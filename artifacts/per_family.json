@@ -1,0 +1,353 @@
+{
+  "what": "per-attack-family precision and recall on the connection-grouped leakage-safe held-out test split, at full coverage and under the reject knob; same shipped config as train.py",
+  "config": {
+    "test_size": 0.25,
+    "seed": 42,
+    "stage_estimator": "random_forest",
+    "escalate_threshold": 0.9
+  },
+  "n_train": 19045,
+  "n_test": 6570,
+  "accuracy_full_coverage": 0.8317,
+  "per_family_full_coverage": {
+    "UDP-GAME": {
+      "precision": 0.2857,
+      "recall": 0.1154,
+      "f1": 0.1644,
+      "support": 52
+    },
+    "UDP-HULK": {
+      "precision": 0.3333,
+      "recall": 0.1905,
+      "f1": 0.2424,
+      "support": 63
+    },
+    "UDP-MULTI": {
+      "precision": 0.4889,
+      "recall": 0.2821,
+      "f1": 0.3577,
+      "support": 78
+    },
+    "UDP-OVH": {
+      "precision": 0.05,
+      "recall": 0.0182,
+      "f1": 0.0267,
+      "support": 55
+    },
+    "UDP-RAW": {
+      "precision": 0.9964,
+      "recall": 0.9941,
+      "f1": 0.9953,
+      "support": 3076
+    },
+    "UDP-VSE": {
+      "precision": 0.6552,
+      "recall": 0.38,
+      "f1": 0.481,
+      "support": 100
+    },
+    "UDP-bypass-v1": {
+      "precision": 0.0219,
+      "recall": 0.2931,
+      "f1": 0.0408,
+      "support": 58
+    },
+    "benign": {
+      "precision": 0.9077,
+      "recall": 0.7481,
+      "f1": 0.8202,
+      "support": 3088
+    }
+  },
+  "confusion_full_coverage": {
+    "UDP-GAME": {
+      "n_flows": 52,
+      "called": {
+        "benign": 29,
+        "UDP-bypass-v1": 13,
+        "UDP-GAME": 6,
+        "UDP-HULK": 1,
+        "UDP-RAW": 1,
+        "UDP-MULTI": 1,
+        "UDP-VSE": 1
+      }
+    },
+    "UDP-HULK": {
+      "n_flows": 63,
+      "called": {
+        "benign": 38,
+        "UDP-HULK": 12,
+        "UDP-bypass-v1": 5,
+        "UDP-GAME": 4,
+        "UDP-MULTI": 2,
+        "UDP-OVH": 1,
+        "UDP-RAW": 1
+      }
+    },
+    "UDP-MULTI": {
+      "n_flows": 78,
+      "called": {
+        "benign": 39,
+        "UDP-MULTI": 22,
+        "UDP-bypass-v1": 9,
+        "UDP-HULK": 3,
+        "UDP-RAW": 2,
+        "UDP-OVH": 2,
+        "UDP-GAME": 1
+      }
+    },
+    "UDP-OVH": {
+      "n_flows": 55,
+      "called": {
+        "benign": 40,
+        "UDP-bypass-v1": 13,
+        "UDP-OVH": 1,
+        "UDP-MULTI": 1
+      }
+    },
+    "UDP-RAW": {
+      "n_flows": 3076,
+      "called": {
+        "UDP-RAW": 3058,
+        "benign": 7,
+        "UDP-bypass-v1": 3,
+        "UDP-VSE": 3,
+        "UDP-OVH": 2,
+        "UDP-MULTI": 1,
+        "UDP-GAME": 1,
+        "UDP-HULK": 1
+      }
+    },
+    "UDP-VSE": {
+      "n_flows": 100,
+      "called": {
+        "benign": 43,
+        "UDP-VSE": 38,
+        "UDP-bypass-v1": 13,
+        "UDP-HULK": 2,
+        "UDP-MULTI": 2,
+        "UDP-GAME": 1,
+        "UDP-RAW": 1
+      }
+    },
+    "UDP-bypass-v1": {
+      "n_flows": 58,
+      "called": {
+        "benign": 39,
+        "UDP-bypass-v1": 17,
+        "UDP-VSE": 1,
+        "UDP-MULTI": 1
+      }
+    },
+    "benign": {
+      "n_flows": 3088,
+      "called": {
+        "benign": 2310,
+        "UDP-bypass-v1": 703,
+        "UDP-HULK": 17,
+        "UDP-MULTI": 15,
+        "UDP-VSE": 15,
+        "UDP-OVH": 14,
+        "UDP-GAME": 8,
+        "UDP-RAW": 6
+      }
+    }
+  },
+  "per_family_under_reject": [
+    {
+      "reject_threshold": 0.5,
+      "coverage": 0.8755,
+      "per_family": {
+        "UDP-GAME": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 52,
+          "answered_share": 0.4423
+        },
+        "UDP-HULK": {
+          "precision": 0.4,
+          "recall": 0.0952,
+          "f1": 0.1538,
+          "support": 63,
+          "answered_share": 0.5873
+        },
+        "UDP-MULTI": {
+          "precision": 0.7308,
+          "recall": 0.2436,
+          "f1": 0.3654,
+          "support": 78,
+          "answered_share": 0.6538
+        },
+        "UDP-OVH": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 55,
+          "answered_share": 0.6727
+        },
+        "UDP-RAW": {
+          "precision": 0.9967,
+          "recall": 0.9941,
+          "f1": 0.9954,
+          "support": 3076,
+          "answered_share": 0.999
+        },
+        "UDP-VSE": {
+          "precision": 0.6981,
+          "recall": 0.37,
+          "f1": 0.4837,
+          "support": 100,
+          "answered_share": 0.74
+        },
+        "UDP-bypass-v1": {
+          "precision": 0.0388,
+          "recall": 0.0862,
+          "f1": 0.0535,
+          "support": 58,
+          "answered_share": 0.6379
+        },
+        "benign": {
+          "precision": 0.9243,
+          "recall": 0.7319,
+          "f1": 0.8169,
+          "support": 3088,
+          "answered_share": 0.7837
+        }
+      }
+    },
+    {
+      "reject_threshold": 0.9,
+      "coverage": 0.7664,
+      "per_family": {
+        "UDP-GAME": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 52,
+          "answered_share": 0.1731
+        },
+        "UDP-HULK": {
+          "precision": 0.8,
+          "recall": 0.0635,
+          "f1": 0.1176,
+          "support": 63,
+          "answered_share": 0.1905
+        },
+        "UDP-MULTI": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 78,
+          "answered_share": 0.1538
+        },
+        "UDP-OVH": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 55,
+          "answered_share": 0.1818
+        },
+        "UDP-RAW": {
+          "precision": 0.9987,
+          "recall": 0.9893,
+          "f1": 0.994,
+          "support": 3076,
+          "answered_share": 0.9906
+        },
+        "UDP-VSE": {
+          "precision": 0.9677,
+          "recall": 0.3,
+          "f1": 0.458,
+          "support": 100,
+          "answered_share": 0.39
+        },
+        "UDP-bypass-v1": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 58,
+          "answered_share": 0.2931
+        },
+        "benign": {
+          "precision": 0.9667,
+          "recall": 0.6111,
+          "f1": 0.7488,
+          "support": 3088,
+          "answered_share": 0.6117
+        }
+      }
+    },
+    {
+      "reject_threshold": 0.99,
+      "coverage": 0.6476,
+      "per_family": {
+        "UDP-GAME": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 52,
+          "answered_share": 0.0962
+        },
+        "UDP-HULK": {
+          "precision": 1.0,
+          "recall": 0.0476,
+          "f1": 0.0909,
+          "support": 63,
+          "answered_share": 0.0952
+        },
+        "UDP-MULTI": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 78,
+          "answered_share": 0.0641
+        },
+        "UDP-OVH": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 55,
+          "answered_share": 0.0727
+        },
+        "UDP-RAW": {
+          "precision": 1.0,
+          "recall": 0.9529,
+          "f1": 0.9759,
+          "support": 3076,
+          "answered_share": 0.9532
+        },
+        "UDP-VSE": {
+          "precision": 0.9655,
+          "recall": 0.28,
+          "f1": 0.4341,
+          "support": 100,
+          "answered_share": 0.33
+        },
+        "UDP-bypass-v1": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 58,
+          "answered_share": 0.1034
+        },
+        "benign": {
+          "precision": 0.9783,
+          "recall": 0.4093,
+          "f1": 0.5772,
+          "support": 3088,
+          "answered_share": 0.4093
+        }
+      }
+    }
+  ],
+  "weak_families_recall_below": 0.5,
+  "weak_families": [
+    "UDP-OVH",
+    "UDP-GAME",
+    "UDP-HULK",
+    "UDP-MULTI",
+    "UDP-bypass-v1",
+    "UDP-VSE"
+  ]
+}
