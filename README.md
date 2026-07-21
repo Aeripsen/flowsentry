@@ -335,6 +335,11 @@ regression guard) run in CI.
 
 - [ ] Public deploy with a live URL + a dashboard screenshot/GIF in this README
 - [ ] Train on a larger slice of the full dataset and report those numbers alongside these
+- [ ] Rare-family coverage. The per-family artifact shows the reject knob cannot buy it, and the
+      ablation already showed more trees do not either. Untested candidates: a larger slice of the
+      full dataset (each rare family has only 200-400 flows here), and whether the QUIC handshake
+      features separate the families that actually produce QUIC subflows. Neither has been measured,
+      so neither is claimed.
 - [ ] Load test under concurrent HTTP traffic (the benchmark measures scoring, not the ASGI stack)
 - [ ] Adversarial probe: perturbed flows vs the reject knob (designed in
       [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md))
