@@ -1,5 +1,7 @@
 # FlowSentry
 
+[![ci](https://github.com/Aeripsen/flowsentry/actions/workflows/ci.yml/badge.svg)](https://github.com/Aeripsen/flowsentry/actions/workflows/ci.yml)
+
 Per-flow hierarchical UDP/QUIC intrusion detection with a tunable reject option, served over
 FastAPI. It operationalizes the architecture from my accepted **SECRYPT 2026** paper on hierarchical
 UDP/QUIC intrusion detection, on that paper's own public dataset.
