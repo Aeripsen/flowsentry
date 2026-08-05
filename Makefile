@@ -43,7 +43,7 @@ shap:
 	python scripts/shap_attribution.py
 
 # leave-one-family-out: what the model does with an attack family it never saw,
-# with a shuffled-label control. Fills in the paper's placeholder zero-day table
+# with a shuffled-label control. The open-set case, measured
 zero-day:
 	python scripts/zero_day_lofo.py
 

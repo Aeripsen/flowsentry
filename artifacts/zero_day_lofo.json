@@ -1,7 +1,7 @@
 {
-  "what": "leave-one-family-out open-set measurement: for each attack family, train with that family entirely absent and measure what the model does with its flows - reject them as unknown, call them benign, or confidently name a different attack. Fills in the metrics the SECRYPT 2026 paper reports as placeholders",
+  "what": "leave-one-family-out open-set measurement: for each attack family, train with that family entirely absent and measure what the model does with its flows - reject them as unknown, call them benign, or confidently name a different attack. The open-set case the architecture defines formally, measured",
   "environment": {
-    "timestamp": "2026-08-05T21:29:28+00:00",
+    "timestamp": "2026-08-05T21:39:43+00:00",
     "python": "3.13.13",
     "platform": "Windows",
     "cpu_count": 12,
@@ -11,7 +11,7 @@
     "joblib": "1.5.3"
   },
   "protocol": {
-    "train": "standard connection-grouped training split minus every flow of the held-out family",
+    "train": "the standard connection-grouped training split, minus every flow of the held-out family",
     "unseen_eval": "all flows of the held-out family, minus any flow whose connection 5-tuple still appears in that round's training rows under another label (ADR 002's leakage rule, enforced on the unseen side too). n_unseen_dropped_shared_connection reports how many that removed",
     "seen_eval": "the standard held-out test split minus the held-out family",
     "imputer": "median, refit on each round's training rows only",
@@ -57,7 +57,7 @@
       }
     },
     "forced_to_answer_threshold_0": {
-      "what": "no reject knob: the closed-set baseline that must name a class. called_benign is the silent miss, and it is the number the paper's placeholder table was going to hold",
+      "what": "no reject knob: the closed-set baseline that must name a class. called_benign is the silent miss, and it is the number the whole open-set decomposition exists to bound",
       "per_arm": {
         "hierarchy": {
           "mean_called_benign": 0.7053,

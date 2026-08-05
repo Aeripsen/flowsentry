@@ -19,8 +19,7 @@ UDP/QUIC intrusion detection, on that paper's own public dataset.
 - **Zero-day, measured rather than assumed.** Under leave-one-family-out, a model forced to name a
   class calls **70.5%** of an unseen attack family's flows **benign**. The reject knob at 0.99 turns
   that into **91.4% rejected as unknown** and 7.7% still silent, with a novelty lift of **+0.579**
-  over its own abstention rate on seen traffic and **-0.005** under a shuffled-label control. The
-  paper this repo implements reports those metrics as placeholders; this is them.
+  over its own abstention rate on seen traffic and **-0.005** under a shuffled-label control.
   See [zero-day](#zero-day-what-happens-when-the-attack-family-was-never-in-training).
 - Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics. That is the paper's
   design, and this repo **measured what it buys and published the unflattering answer**: on this
@@ -255,8 +254,8 @@ called a different attack (an alert still fires, triage is wrong), or **called b
 | UDP-RAW (dominant flood) | 11,999 | 96.2% | 99.7% | 0.2% |
 
 **Forced to name a class, the model calls 70.5% of an unseen family's flows benign** (mean over the
-six rare families). That is the number the paper's open-set table was going to hold, and it is the
-case for shipping a reject option rather than a nicer confusion matrix. At threshold 0.99 the knob
+six rare families). That is the number the whole open-set decomposition exists to bound, and it is
+the case for shipping a reject option rather than a nicer confusion matrix. At threshold 0.99 the knob
 rejects **91.4%** of unseen traffic as unknown and cuts the silent misses to **7.7%**, paying 66.5%
 coverage at 99.4% reliability on the families it does know.
 

@@ -3,15 +3,13 @@ Run:  python scripts/zero_day_lofo.py     (or `make zero-day`)
 
 Writes artifacts/zero_day_lofo.json and prints the same numbers.
 
-Why this exists. The SECRYPT 2026 paper this repo implements defines the open-set
-case formally (a withheld family set, a rejection-rate estimator, a three-way
-decomposition of what a rejected flow could have been instead) and then reports the
-numbers themselves as placeholders: "The corresponding empirical metrics are
-reported as placeholders in the previous table". The method is written down and the
-experiment was never run. Everything this repo publishes is closed-set: trained on
-eight labels, scored on the same eight. So the claim a reader is most likely to take
-away, that a reject option protects you against attacks the model has not seen, is
-the one claim with nothing behind it.
+Why this exists. Everything this repo publishes is closed-set: trained on eight
+labels, scored on the same eight. The architecture it implements defines the
+open-set case formally (a withheld family set, a rejection-rate estimator, a
+three-way decomposition of what a rejected flow could have been instead), and this
+repo never measured any of it. So the claim a reader is most likely to take away,
+that a reject option protects you against attacks the model has not seen, was the
+one claim here with nothing behind it.
 
 It also happens to be the last live argument for the architecture. ADR 001's compute
 justification was measured and withdrawn (`make hierarchy`: a 60-tree joint forest is
@@ -328,8 +326,8 @@ def _summarize(rounds: list[dict], control: list[dict], arms: list[str]) -> dict
         "forced_to_answer_threshold_0": {
             "what": (
                 "no reject knob: the closed-set baseline that must name a class. "
-                "called_benign is the silent miss, and it is the number the paper's "
-                "placeholder table was going to hold"
+                "called_benign is the silent miss, and it is the number the whole "
+                "open-set decomposition exists to bound"
             ),
             "per_arm": forced,
         },
@@ -381,8 +379,8 @@ def main() -> dict:
             "leave-one-family-out open-set measurement: for each attack family, train "
             "with that family entirely absent and measure what the model does with its "
             "flows - reject them as unknown, call them benign, or confidently name a "
-            "different attack. Fills in the metrics the SECRYPT 2026 paper reports as "
-            "placeholders"
+            "different attack. The open-set case the architecture defines formally, "
+            "measured"
         ),
         "environment": environment(),
         "protocol": {
