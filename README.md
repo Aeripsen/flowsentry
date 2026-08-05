@@ -16,6 +16,12 @@ UDP/QUIC intrusion detection, on that paper's own public dataset.
   The per-family artifact says where that reliability comes from, and it is not flattering: the
   answered set is mostly UDP-RAW and benign, and at threshold 0.99 four of the six rare families
   have **recall 0.000**. See [per-family](#results-real-measured).
+- **Zero-day, measured rather than assumed.** Under leave-one-family-out, a model forced to name a
+  class calls **70.5%** of an unseen attack family's flows **benign**. The reject knob at 0.99 turns
+  that into **91.4% rejected as unknown** and 7.7% still silent, with a novelty lift of **+0.579**
+  over its own abstention rate on seen traffic and **-0.005** under a shuffled-label control. The
+  paper this repo implements reports those metrics as placeholders; this is them.
+  See [zero-day](#zero-day-what-happens-when-the-attack-family-was-never-in-training).
 - Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics. That is the paper's
   design, and this repo **measured what it buys and published the unflattering answer**: on this
   sample, a single 60-tree forest on the joint space is faster than the two-stage hierarchy, scores
@@ -47,7 +53,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"          # package + runtime deps + test tooling
 
 python -m flowsentry.train      # trains on the committed BCCC sample, writes artifacts/ (~30 s)
-pytest                          # 64 tests; 2 skip unless the [gbdt] extra is installed
+pytest                          # 72 tests; 2 skip unless the [gbdt] extra is installed
 uvicorn flowsentry.service:app  # serve on http://localhost:8000
 ```
 
@@ -226,6 +232,57 @@ it leaves the QUIC extraction cost symbolic (this repo cannot measure it, the ex
 and reports the break-even it would have to clear. [ADR 001](docs/adr/001-two-stage-hierarchy.md) has
 the whole accounting, including why the accuracy tie is exact rather than close.
 
+### Zero-day: what happens when the attack family was never in training
+
+Every other number here is closed-set: trained on eight labels, scored on the same eight. The
+question an operator actually asks is what comes out of the box when a family the model has never
+seen shows up. `python scripts/zero_day_lofo.py` (`make zero-day`) answers it by leave-one-family-out:
+for each attack family in turn, train with that family entirely absent and measure its flows against
+the model that never saw them. Writes `artifacts/zero_day_lofo.json`.
+
+On a family with no label in the output space there is no correct answer, so the three outcomes are
+exhaustive and what gets measured is the *shape* of the failure: rejected as unknown (a human looks),
+called a different attack (an alert still fires, triage is wrong), or **called benign (silence)**.
+
+| Held out | Flows | Called benign, forced to answer | Rejected at 0.99 | Still called benign at 0.99 |
+|---|---|---|---|---|
+| UDP-VSE | 356 | 53.6% | 93.5% | 6.5% |
+| UDP-OVH | 239 | 71.6% | 92.9% | 6.7% |
+| UDP-MULTI | 261 | 71.7% | 94.3% | 5.8% |
+| UDP-HULK | 246 | 63.0% | 90.2% | 5.3% |
+| UDP-bypass-v1 | 210 | **92.9%** | 84.3% | **15.2%** |
+| UDP-GAME | 193 | 70.5% | 93.3% | 6.7% |
+| UDP-RAW (dominant flood) | 11,999 | 96.2% | 99.7% | 0.2% |
+
+**Forced to name a class, the model calls 70.5% of an unseen family's flows benign** (mean over the
+six rare families). That is the number the paper's open-set table was going to hold, and it is the
+case for shipping a reject option rather than a nicer confusion matrix. At threshold 0.99 the knob
+rejects **91.4%** of unseen traffic as unknown and cuts the silent misses to **7.7%**, paying 66.5%
+coverage at 99.4% reliability on the families it does know.
+
+That rejection is real novelty detection, not a strict threshold. Two controls say so. The
+**novelty lift** subtracts the abstention rate on *seen* families measured in the same run at the
+same threshold, and it is **+0.579**. The **shuffled-label control** runs the identical protocol with
+the training labels permuted, which destroys the family structure and holds the rows, the marginals
+and the threshold fixed; its lift collapses to **-0.005**. A model that abstains on everything would
+score a perfect unknown-detection rate and both controls would catch it.
+
+None of this belongs to the hierarchy. All four arms land within 0.03 lift of each other and the
+plain 200-tree joint forest is the best of them (0.605 against the hierarchy's 0.579), so the open-set
+case does not rescue the two-stage design any more than the compute case did. It makes it look worse:
+**Stage 1's escalation rate goes from 22.7% on seen traffic to 79.7% on an unseen family**, so the
+cheap path stops being cheap exactly when a zero-day arrives, which is the one moment the architecture
+was built for. That number is new here; nothing in this repo had measured escalation on novel traffic.
+
+Two protocol details, because they change the numbers. The unseen set is *all* flows of the held-out
+family rather than its quarter of the test split, since none of them was trained on and the rare
+families only have 193-356 flows to begin with. And [ADR 002](docs/adr/002-connection-grouped-split.md)'s
+leakage rule is enforced on the unseen side too: a flow whose connection 5-tuple still appears in
+training under another label is dropped, because the model would be recognising the connection rather
+than generalising. That removed 65 of UDP-OVH's 304 flows and 27 of UDP-VSE's 383. Keeping them moved
+the headline benign-absorption number by 0.3 points, so the leak was not driving the result, but the
+rule is the repo's own and it holds everywhere.
+
 ### Calibration of the confidence number
 
 `python scripts/calibration_report.py` measures the shipped model's confidence against what it is
@@ -375,7 +432,7 @@ make reproduce            # or: python scripts/reproduce.py
 Retrains from the committed sample and fails unless `artifacts/metrics.json` regenerates
 **byte-identically** (seeded end to end: split, imputer, forests). Exact bytes are promised under
 `requirements.lock` (the environment the published numbers came from); on other versions the test
-suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (64 tests, including
+suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (72 tests, including
 the leakage guard, the metrics regression, exact-equality guards on both fast paths, and the perf
 regression guard) run in CI.
 
@@ -388,6 +445,10 @@ regression guard) run in CI.
       full dataset (each rare family has only 200-400 flows here), and whether the QUIC handshake
       features separate the families that actually produce QUIC subflows. Neither has been measured,
       so neither is claimed.
+- [x] Open-set / zero-day behaviour under leave-one-family-out, with a shuffled-label control
+      (`make zero-day`). Done and reported above. What is still open: rerunning it on the full
+      dataset, and whether a dedicated novelty detector beats a thresholded closed-set model, which
+      this does not test.
 - [ ] Load test under concurrent HTTP traffic (the benchmark measures scoring, not the ASGI stack)
 - [ ] Adversarial probe: perturbed flows vs the reject knob (designed in
       [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md))

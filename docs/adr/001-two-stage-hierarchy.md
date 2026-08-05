@@ -130,3 +130,27 @@ Scope, stated so this is not over-read: this is a result about the committed 25,
 balanced sample, with this feature set and this estimator. It is not a claim about the
 paper's own evaluation, which uses a different sample, different preprocessing and a
 different protocol. Two numbers computed on different protocols are not a scoreboard.
+
+## Addendum 2026-08-05: the open-set case does not rescue it either
+
+When the compute argument was withdrawn, the one thing left that a staged confidence
+signal could plausibly do better than a single model was open-set behaviour: notice
+that a flow belongs to no family it was trained on. `scripts/zero_day_lofo.py`
+(`make zero-day`) measures it by leave-one-family-out, and it does not go the
+hierarchy's way.
+
+- All four arms sit within 0.03 novelty lift of each other, and the best is the plain
+  200-tree joint forest (0.605) against the hierarchy's 0.579. Whatever protection the
+  reject knob gives against unseen families, it does not come from the two stages.
+- On unseen traffic **Stage 1's escalation rate rises from 22.7% to 79.7%**
+  (`artifacts/zero_day_lofo.json`, `summary.stage1_escalation_on_unseen`). The cheap
+  path is cheap only on traffic the model already knows. The deferred-QUIC-extraction
+  deployment this ADR still holds open as its last argument is priced on e = 0.243; at
+  e = 0.797 the same formula gives back almost none of the saving, and the arrival of a
+  new attack family is exactly when it would be needed.
+
+That does not change the decision. The hierarchy is the paper's architecture and
+implementing it is this repo's job. It does mean the honest reading of this ADR is now
+"kept for fidelity, with two measured arguments against it and none for it", and the
+escalation rate should be read as a novelty signal (it moves sharply on unfamiliar
+traffic) rather than as a compute saving.

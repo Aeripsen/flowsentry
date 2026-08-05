@@ -336,14 +336,22 @@ harder picture.
    the committed sample cannot support one: `scripts/build_sample.py` drops the `timestamp` column,
    so the shipped data carries no day field to split on. Doing this properly means rebuilding the
    sample from the full dataset with the timestamp retained.
-4. **No adversarial evaluation yet.** Whether the reject option catches deliberately perturbed
+4. **Attack families outside the training set are absorbed into benign unless the knob is on.**
+   Measured by leave-one-family-out (`artifacts/zero_day_lofo.json`): forced to name a class, the
+   model calls **70.5%** of an unseen family's flows benign, and 92.9% of UDP-bypass-v1's. At
+   threshold 0.99 it rejects 91.4% as unknown and 7.7% are still called benign, so the reject option
+   contains this failure but does not close it. The rejection is genuine novelty detection (novelty
+   lift +0.579 over the abstention rate on seen families, against -0.005 under a shuffled-label
+   control), and it is not the hierarchy's doing: a single joint forest scores a higher lift. Deploy
+   this model with the knob on, and treat an unknown as "look at this", not as "nothing happened".
+5. **No adversarial evaluation yet.** Whether the reject option catches deliberately perturbed
    flows is a hypothesis until the adversarial probe measures it. See `docs/THREAT_MODEL.md`.
-5. **Uncalibrated confidence, by measured choice.** The shipped model's confidence overstates
+6. **Uncalibrated confidence, by measured choice.** The shipped model's confidence overstates
    itself (ECE 0.0362, worst bin 0.2712, Brier 0.0446), and almost all of that error sits on the
    escalated path (ECE 0.1269 against Stage 1's 0.0071). Thresholds are meaningful only against the
    measured curve for this dataset. See the calibration section for both measurements and the
    shipping trade-off.
-6. **Latency/throughput are measured on one machine** (`python -m flowsentry.bench`, environment
+7. **Latency/throughput are measured on one machine** (`python -m flowsentry.bench`, environment
    recorded in `artifacts/benchmark.json`), scoring stored flows, not under sustained concurrent
    HTTP load. A proper load test is roadmap.
 
