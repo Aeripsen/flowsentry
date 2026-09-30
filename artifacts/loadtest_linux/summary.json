@@ -1,0 +1,909 @@
+{
+  "arms": {
+    "lock": "per-process scoring lock on (service.py, as shipped)",
+    "nolock": "FLOWSENTRY_SCORE_LOCK=0: scoring threads run unserialized (before the fix)"
+  },
+  "files": [
+    "lock_w1_r1.json",
+    "lock_w1_r2.json",
+    "lock_w1_r3.json",
+    "lock_w4_r1.json",
+    "lock_w4_r2.json",
+    "lock_w4_r3.json",
+    "nolock_w1_r1.json",
+    "nolock_w1_r2.json",
+    "nolock_w1_r3.json",
+    "nolock_w4_r1.json",
+    "nolock_w4_r2.json",
+    "nolock_w4_r3.json"
+  ],
+  "git_shas": [
+    "a440c54642b11d6021dc0a6b38e92acc39fcd6ad"
+  ],
+  "machine_cpu_busy_percent_before_runs": [
+    0.0,
+    3.8
+  ],
+  "rows": [
+    {
+      "endpoint": "/predict",
+      "workers": 1,
+      "concurrency": 1,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          407.2,
+          413.6,
+          413.9
+        ],
+        "p99_ms": [
+          4.732,
+          4.836,
+          5.039
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          96.7,
+          96.6,
+          96.6
+        ],
+        "machine_cpu_percent": [
+          26.9,
+          26.4,
+          26.5
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          412.1,
+          415.0,
+          415.4
+        ],
+        "p99_ms": [
+          4.722,
+          4.741,
+          4.91
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          96.7,
+          96.7,
+          96.7
+        ],
+        "machine_cpu_percent": [
+          26.4,
+          26.5,
+          26.4
+        ]
+      },
+      "median_ratio": 1.0,
+      "worst_case_ratio": 0.98
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 1,
+      "concurrency": 2,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          289.6,
+          293.8,
+          295.4
+        ],
+        "p99_ms": [
+          17.748,
+          18.413,
+          18.686
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          125.9,
+          127.2,
+          126.4
+        ],
+        "machine_cpu_percent": [
+          30.7,
+          29.3,
+          29.7
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          272.8,
+          278.1,
+          286.5
+        ],
+        "p99_ms": [
+          21.634,
+          22.834,
+          23.298
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          127.9,
+          128.4,
+          128.3
+        ],
+        "machine_cpu_percent": [
+          29.9,
+          29.5,
+          29.5
+        ]
+      },
+      "median_ratio": 1.06,
+      "worst_case_ratio": 1.01
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 1,
+      "concurrency": 4,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          252.0,
+          261.1,
+          262.7
+        ],
+        "p99_ms": [
+          35.933,
+          37.495,
+          38.394
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          131.0,
+          134.5,
+          132.2
+        ],
+        "machine_cpu_percent": [
+          30.3,
+          30.5,
+          30.4
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          205.4,
+          208.0,
+          209.8
+        ],
+        "p99_ms": [
+          55.505,
+          60.106,
+          68.935
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          145.8,
+          145.5,
+          145.2
+        ],
+        "machine_cpu_percent": [
+          32.1,
+          31.7,
+          31.9
+        ]
+      },
+      "median_ratio": 1.26,
+      "worst_case_ratio": 1.2
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 1,
+      "concurrency": 8,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          268.5,
+          268.5,
+          273.1
+        ],
+        "p99_ms": [
+          59.888,
+          61.608,
+          63.447
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          130.5,
+          131.9,
+          132.0
+        ],
+        "machine_cpu_percent": [
+          29.7,
+          29.8,
+          30.0
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          194.3,
+          198.5,
+          199.3
+        ],
+        "p99_ms": [
+          96.586,
+          100.995,
+          122.029
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          149.9,
+          148.3,
+          148.7
+        ],
+        "machine_cpu_percent": [
+          32.2,
+          31.8,
+          31.7
+        ]
+      },
+      "median_ratio": 1.35,
+      "worst_case_ratio": 1.35
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 1,
+      "concurrency": 16,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          263.4,
+          263.9,
+          268.3
+        ],
+        "p99_ms": [
+          103.044,
+          103.854,
+          107.537
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          130.2,
+          132.1,
+          132.0
+        ],
+        "machine_cpu_percent": [
+          30.4,
+          30.5,
+          30.5
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          203.8,
+          205.7,
+          206.4
+        ],
+        "p99_ms": [
+          150.879,
+          152.931,
+          175.557
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          148.2,
+          148.0,
+          148.0
+        ],
+        "machine_cpu_percent": [
+          32.2,
+          32.0,
+          32.0
+        ]
+      },
+      "median_ratio": 1.28,
+      "worst_case_ratio": 1.28
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 1,
+      "concurrency": 32,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          264.2,
+          271.0,
+          271.1
+        ],
+        "p99_ms": [
+          187.9,
+          189.053,
+          196.061
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          130.3,
+          132.0,
+          131.7
+        ],
+        "machine_cpu_percent": [
+          29.9,
+          29.9,
+          29.9
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          192.8,
+          196.2,
+          196.4
+        ],
+        "p99_ms": [
+          245.269,
+          246.023,
+          284.017
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          149.0,
+          149.2,
+          149.0
+        ],
+        "machine_cpu_percent": [
+          31.7,
+          31.9,
+          31.7
+        ]
+      },
+      "median_ratio": 1.38,
+      "worst_case_ratio": 1.35
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 1,
+      "concurrency": 64,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          253.3,
+          263.5,
+          267.9
+        ],
+        "p99_ms": [
+          322.429,
+          339.206,
+          351.11
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          128.7,
+          130.3,
+          129.8
+        ],
+        "machine_cpu_percent": [
+          29.8,
+          29.9,
+          30.2
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          188.9,
+          190.2,
+          191.4
+        ],
+        "p99_ms": [
+          405.574,
+          409.468,
+          431.121
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          148.6,
+          148.4,
+          149.0
+        ],
+        "machine_cpu_percent": [
+          32.0,
+          31.9,
+          31.9
+        ]
+      },
+      "median_ratio": 1.39,
+      "worst_case_ratio": 1.32
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 1,
+      "concurrency": 128,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          248.2,
+          255.7,
+          264.7
+        ],
+        "p99_ms": [
+          589.093,
+          608.133,
+          611.499
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          128.6,
+          129.9,
+          129.9
+        ],
+        "machine_cpu_percent": [
+          29.7,
+          29.7,
+          29.9
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          183.1,
+          186.4,
+          187.2
+        ],
+        "p99_ms": [
+          737.385,
+          739.161,
+          791.709
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          148.1,
+          147.9,
+          148.4
+        ],
+        "machine_cpu_percent": [
+          32.0,
+          31.9,
+          32.2
+        ]
+      },
+      "median_ratio": 1.37,
+      "worst_case_ratio": 1.33
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 4,
+      "concurrency": 1,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          411.1,
+          414.3,
+          415.7
+        ],
+        "p99_ms": [
+          4.751,
+          4.892,
+          4.9
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          97.1,
+          97.1,
+          96.8
+        ],
+        "machine_cpu_percent": [
+          26.5,
+          26.6,
+          26.5
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          409.3,
+          409.8,
+          414.2
+        ],
+        "p99_ms": [
+          4.732,
+          4.796,
+          4.797
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          97.0,
+          97.3,
+          97.2
+        ],
+        "machine_cpu_percent": [
+          26.4,
+          26.5,
+          26.5
+        ]
+      },
+      "median_ratio": 1.01,
+      "worst_case_ratio": 0.99
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 4,
+      "concurrency": 2,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          300.2,
+          622.5,
+          631.0
+        ],
+        "p99_ms": [
+          8.624,
+          8.631,
+          17.968
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          192.1,
+          127.2,
+          192.6
+        ],
+        "machine_cpu_percent": [
+          54.0,
+          29.6,
+          54.0
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          282.2,
+          286.2,
+          292.8
+        ],
+        "p99_ms": [
+          19.974,
+          23.08,
+          23.13
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          128.6,
+          128.4,
+          128.5
+        ],
+        "machine_cpu_percent": [
+          29.6,
+          29.7,
+          29.6
+        ]
+      },
+      "median_ratio": 2.18,
+      "worst_case_ratio": 1.03
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 4,
+      "concurrency": 4,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          261.6,
+          530.1,
+          702.2
+        ],
+        "p99_ms": [
+          19.592,
+          24.998,
+          37.029
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          286.8,
+          132.9,
+          211.7
+        ],
+        "machine_cpu_percent": [
+          80.2,
+          30.2,
+          57.2
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          397.4,
+          405.0,
+          409.1
+        ],
+        "p99_ms": [
+          26.987,
+          28.185,
+          28.49
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          239.4,
+          240.7,
+          240.6
+        ],
+        "machine_cpu_percent": [
+          62.9,
+          62.6,
+          62.8
+        ]
+      },
+      "median_ratio": 1.31,
+      "worst_case_ratio": 0.64
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 4,
+      "concurrency": 8,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          783.2,
+          797.1,
+          801.6
+        ],
+        "p99_ms": [
+          25.63,
+          26.418,
+          34.619
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          355.6,
+          358.1,
+          359.4
+        ],
+        "machine_cpu_percent": [
+          99.7,
+          99.6,
+          99.8
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          582.4,
+          785.9,
+          788.4
+        ],
+        "p99_ms": [
+          34.513,
+          34.618,
+          91.116
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          303.6,
+          357.8,
+          356.5
+        ],
+        "machine_cpu_percent": [
+          84.4,
+          99.7,
+          99.6
+        ]
+      },
+      "median_ratio": 1.01,
+      "worst_case_ratio": 0.99
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 4,
+      "concurrency": 16,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          775.3,
+          775.6,
+          790.9
+        ],
+        "p99_ms": [
+          44.882,
+          49.499,
+          65.891
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          358.6,
+          359.0,
+          356.0
+        ],
+        "machine_cpu_percent": [
+          99.7,
+          99.8,
+          99.2
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          764.8,
+          770.3,
+          776.4
+        ],
+        "p99_ms": [
+          69.092,
+          69.676,
+          75.447
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          357.5,
+          356.9,
+          358.5
+        ],
+        "machine_cpu_percent": [
+          99.6,
+          99.9,
+          99.9
+        ]
+      },
+      "median_ratio": 1.01,
+      "worst_case_ratio": 1.0
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 4,
+      "concurrency": 32,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          693.2,
+          709.9,
+          725.6
+        ],
+        "p99_ms": [
+          85.876,
+          110.206,
+          123.51
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          336.9,
+          343.7,
+          346.2
+        ],
+        "machine_cpu_percent": [
+          93.5,
+          95.5,
+          95.9
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          768.9,
+          777.0,
+          778.5
+        ],
+        "p99_ms": [
+          102.355,
+          104.201,
+          104.425
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          361.1,
+          360.9,
+          361.4
+        ],
+        "machine_cpu_percent": [
+          99.9,
+          99.9,
+          99.9
+        ]
+      },
+      "median_ratio": 0.91,
+      "worst_case_ratio": 0.89
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 4,
+      "concurrency": 64,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          652.3,
+          661.4,
+          665.1
+        ],
+        "p99_ms": [
+          185.323,
+          208.801,
+          215.928
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          329.2,
+          330.9,
+          333.3
+        ],
+        "machine_cpu_percent": [
+          91.6,
+          91.8,
+          92.4
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          733.4,
+          736.9,
+          755.6
+        ],
+        "p99_ms": [
+          180.765,
+          181.11,
+          183.282
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          361.3,
+          361.1,
+          360.9
+        ],
+        "machine_cpu_percent": [
+          99.5,
+          99.6,
+          99.6
+        ]
+      },
+      "median_ratio": 0.9,
+      "worst_case_ratio": 0.86
+    },
+    {
+      "endpoint": "/predict",
+      "workers": 4,
+      "concurrency": 128,
+      "lock": {
+        "runs": 3,
+        "req_per_s": [
+          637.1,
+          650.0,
+          654.5
+        ],
+        "p99_ms": [
+          382.483,
+          386.812,
+          444.107
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          327.6,
+          327.8,
+          328.6
+        ],
+        "machine_cpu_percent": [
+          91.1,
+          91.5,
+          91.5
+        ]
+      },
+      "nolock": {
+        "runs": 3,
+        "req_per_s": [
+          676.7,
+          706.2,
+          722.6
+        ],
+        "p99_ms": [
+          344.314,
+          355.827,
+          371.377
+        ],
+        "errors": 0,
+        "server_cpu_percent": [
+          360.3,
+          359.4,
+          358.5
+        ],
+        "machine_cpu_percent": [
+          99.1,
+          98.6,
+          98.6
+        ]
+      },
+      "median_ratio": 0.92,
+      "worst_case_ratio": 0.88
+    }
+  ]
+}

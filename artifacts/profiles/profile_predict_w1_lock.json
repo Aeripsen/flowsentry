@@ -1,0 +1,146 @@
+{
+  "what": "closed-loop HTTP load test against the service process; client-side latency, send to last byte; real held-out rows as payloads",
+  "label": "profile_predict_w1_lock",
+  "arm": "lock",
+  "arm_what": "per-process scoring lock on (service.py, as shipped)",
+  "endpoint": "/predict",
+  "batch_size": 1,
+  "data_source": "bccc_udp_quic_sample_test_split",
+  "is_synthetic": false,
+  "warmup_s": 2.0,
+  "measure_s": 10.0,
+  "provenance": {
+    "git_sha": "2fc047641d7f9a554057a70c1f1dc9a1ad56715e",
+    "git_dirty_outside_artifacts": false,
+    "dirty_paths": [],
+    "model_artifact_sha256": "f1718353567d75c8f497b6f7c9cc2b707e121f39b0f6b6fb4cc7e07a48755f61",
+    "harness_argv": [
+      "--arm",
+      "lock",
+      "--levels",
+      "4",
+      "--pyspy-at",
+      "4",
+      "--label",
+      "profile_predict_w1_lock",
+      "--out",
+      "artifacts/profiles/profile_predict_w1_lock.json"
+    ],
+    "git_sha_changed_during_run": false
+  },
+  "server": {
+    "mode": "started by the harness",
+    "cmd": [
+      "python.exe",
+      "-m",
+      "uvicorn",
+      "flowsentry.service:app",
+      "--app-dir",
+      "src",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "58792"
+    ],
+    "workers_via": "WEB_CONCURRENCY",
+    "thread_env": {},
+    "thread_env_source": "Dockerfile ENV",
+    "env_overrides": {},
+    "arm_resolved": {
+      "score_lock": true,
+      "OMP_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null
+    },
+    "openmp_probe": {
+      "hgb_predict_openmp_threads": 6,
+      "openmp_runtime": "vcomp",
+      "openmp_pool_num_threads": 12,
+      "OMP_NUM_THREADS": null
+    }
+  },
+  "meta": {},
+  "environment": {
+    "cpu": "Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz",
+    "physical_cores": 6,
+    "logical_cpus": 12,
+    "ram_gb": 15.9,
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.13",
+    "fastapi": "0.139.2",
+    "uvicorn": "0.52.4",
+    "http_parser": "httptools",
+    "event_loop": "asyncio",
+    "scikit_learn": "1.9.0",
+    "numpy": "2.4.6",
+    "uvicorn_workers": 1,
+    "machine_cpu_busy_percent_before_run": 3.0,
+    "client": "stdlib asyncio keep-alive HTTP/1.1, same machine as the server",
+    "measured_at": "2026-09-30T22:40:06Z"
+  },
+  "levels": [
+    {
+      "concurrency": 4,
+      "client_processes": 4,
+      "requests": 1579,
+      "ok": 1579,
+      "errors": 0,
+      "error_rate": 0.0,
+      "req_per_s": 157.9,
+      "p50_ms": 23.604,
+      "p95_ms": 41.785,
+      "p99_ms": 50.806,
+      "max_ms": 58.441,
+      "mean_ms": 25.276,
+      "server_cpu_percent": 114.7,
+      "machine_cpu_percent": 16.0
+    }
+  ],
+  "summary": {
+    "peak": {
+      "concurrency": 4,
+      "req_per_s": 157.9,
+      "p50_ms": 23.604,
+      "p99_ms": 50.806
+    },
+    "knee": null,
+    "best_with_p99_under_budget": null,
+    "latency_budget_ms": 10.0,
+    "total_errors": 0
+  },
+  "profile": {
+    "concurrency": 4,
+    "command": "py-spy record --pid <server pid> --duration 10 --rate 100 --gil --format raw --output profile_predict_w1_lock_c4.txt",
+    "pid_target": "the uvicorn process the harness started",
+    "file": "profile_predict_w1_lock_c4.txt",
+    "samples": 924,
+    "bucket_regex": {
+      "per-tree loop (forest_proba)": "forest_proba",
+      "scoring (flowsentry/scoring.py)": "flowsentry[\\\\/]scoring\\.py",
+      "sklearn": "sklearn[\\\\/]",
+      "json decode": "json[\\\\/]decoder\\.py",
+      "pydantic validation": "pydantic",
+      "logging": "logging[\\\\/]"
+    },
+    "share_percent": {
+      "per-tree loop (forest_proba)": 69.0,
+      "scoring (flowsentry/scoring.py)": 74.1,
+      "sklearn": 63.0,
+      "json decode": 2.1,
+      "pydantic validation": 0.6,
+      "logging": 4.7
+    },
+    "top_leaf_frames_percent": {
+      "predict_proba (sklearn\\tree\\_classes.py:1052)": 30.3,
+      "_is_fitted (sklearn\\utils\\validation.py:1629)": 6.7,
+      "forest_proba (flowsentry\\model.py:56)": 5.3,
+      "raw_decode (json\\decoder.py:361)": 2.1,
+      "_num_features (sklearn\\utils\\validation.py:331)": 1.8,
+      "__init__ (<string>:13)": 1.6,
+      "predict_proba (sklearn\\tree\\_classes.py:1055)": 1.6,
+      "_run (asyncio\\events.py:89)": 1.4,
+      "predict_proba (sklearn\\tree\\_classes.py:1050)": 1.4,
+      "issparse (scipy\\_lib\\_sparse.py:41)": 1.3
+    }
+  }
+}

@@ -534,58 +534,86 @@ regression test fails CI if the per-call pool behavior ever comes back.
 
 ### Load test: the HTTP service under concurrent clients
 
-`python scripts/loadtest.py` (or `make loadtest`) starts the service the way the Dockerfile does
-(uvicorn, access log on, httptools parser) and drives `POST /predict` with 1, 2, 4 ... 128
-concurrent keep-alive connections. It is a closed loop: each connection sends its next request as
-soon as the last response is read. Payloads are the real held-out test flows. Each level runs 2 s
-of warmup and 10 s of measurement, and latency is client-side, send to last byte. Every run writes
-`artifacts/loadtest_<label>.json` with the environment it ran on;
-`python scripts/loadtest.py --table "artifacts/loadtest_*.json"` prints every level of every run.
+`make loadtest` runs an A/B against a real uvicorn server and drives `POST /predict` with 1, 2, 4
+... 128 concurrent keep-alive connections over the real held-out test flows. The shipped arm
+scores under the per-process lock in `service.py`; the before arm is the same commit with
+`FLOWSENTRY_SCORE_LOCK=0` (`--arm nolock`), which turns the lock off. The arms alternate (ABBA)
+over 3 rounds at 1 and 4 workers. It is a closed loop: each connection sends its next request as
+soon as the last response is read. Each level runs 2 s of warmup and 10 s of measurement, and
+latency is client-side, send to last byte. It serves the image's app and command (uvicorn, access
+log on, httptools), but it is not the image: host 127.0.0.1, this machine's Python and uvicorn, and
+workers set through `WEB_CONCURRENCY`, which the image's uvicorn reads and which neither the
+Dockerfile nor the k8s manifests set. It needs `pip install -e ".[loadtest]"` (psutil for the CPU
+columns; the harness stops without it).
 
-Machine for every number here: Intel Core i7-10750H (6 cores, 12 threads), 16 GB RAM, Windows 11,
-Python 3.13, uvicorn 0.52 with httptools. Client and server share that one laptop, with other work
-running in the background; each file records the machine's CPU load in the second before the run
-(6% to 78%).
+Every result file records the commit (`2fc0476`, clean tree), the model file's sha256, whether the
+lock was on in the server's environment (computed by the same function `service.py` uses), the
+machine, and its CPU load in the second before the run. All 12 runs are in
+`artifacts/loadtest_ab/predict/`; `python scripts/loadtest.py --ab-summary
+artifacts/loadtest_ab/predict` rebuilds `summary.json` and the numbers below from them, and
+`--table` prints every level of every run. No run was left out, and none had a failed request.
+(The previous round of this section had one 4-worker run that stalled and was not committed; that
+round's files are all replaced by these.)
 
-| server | 1 client | 4 clients | 32 clients | 128 clients |
-|---|---|---|---|---|
-| 1 worker, before | 175.5 req/s, p99 13.7 ms | 102.4 req/s, p99 97.0 ms | 105.4 req/s, p99 466.9 ms | 92.6 req/s, p99 1,417 ms |
-| 1 worker, scoring lock | 152.7 req/s, p99 18.4 ms | 148.6 req/s, p99 48.1 ms | 147.4 req/s, p99 259.4 ms | 137.4 req/s, p99 935.1 ms |
-| 4 workers, before | 172.7 req/s, p99 14.3 ms | 598.6 req/s, p99 14.8 ms | 424.6 req/s, p99 204.9 ms | 415.7 req/s, p99 572.7 ms |
-| 4 workers, scoring lock | 176.8 req/s, p99 13.3 ms | 463.6 req/s, p99 26.1 ms | 537.8 req/s, p99 95.9 ms | 491.1 req/s, p99 355.8 ms |
+Machine: Intel Core i7-10750H (6 cores, 12 threads), 16 GB RAM, Windows 11, Python 3.13.13, uvicorn
+0.52.4 with httptools. Client and server share the laptop with other work running; the files record
+3.0% to 10.7% machine CPU in the second before each run.
 
-Zero failed requests in every run.
+Median req/s over 3 runs (min to max), median p99:
 
-**The bottleneck it found.** Before the fix, one worker got slower as clients were added: 175.5
-req/s with 1 client, 92.6 to 105.4 req/s from 4 clients up, while the server used only about 1.2
-cores. py-spy on the running server (20 s at 4 clients, sampling only the thread that held the GIL)
-put 69% of GIL time in `forest_proba`, the per-tree loop from ADR 007. Each tree's Cython step
-releases the GIL for a moment, so with several request threads in flight every release hands the
-GIL to another thread and the scorer waits to get it back, up to 260 times per flow: a GIL convoy. The fix is a
-per-process lock around scoring in `service.py`. Threads waiting on a lock do not compete for the
-GIL, and parallelism comes from processes (`uvicorn --workers`, or replicas) instead. A test pins
-that both endpoints score under the lock.
+| server, `POST /predict` | 1 client | 4 clients | 32 clients | 128 clients | server CPU (100 = one core) |
+|---|---|---|---|---|---|
+| 1 worker, lock (shipped) | 212.3 (208.5 to 212.9), 10.1 ms | 160.8 (160.8 to 160.8), 45.9 ms | 153.3 (152.6 to 154.1), 242.3 ms | 141.6 (141.4 to 142.3), 901.8 ms | 96 to 121 |
+| 1 worker, no lock (before) | 212.0 (210.5 to 217.0), 9.8 ms | 117.5 (117.2 to 118.2), 86.8 ms | 117.9 (117.2 to 118.6), 412.1 ms | 104.9 (104.7 to 105.0), 1,229.2 ms | 97 to 127 |
+| 4 workers, lock | 205.2 (190.8 to 215.3), 12.2 ms | 480.5 (309.8 to 614.4), 25.4 ms | 556.0 (544.5 to 561.4), 98.6 ms | 545.4 (535.5 to 547.5), 305.8 ms | 98 to 456 |
+| 4 workers, no lock | 211.1 (209.7 to 214.4), 10.9 ms | 633.4 (462.6 to 640.4), 14.2 ms | 433.4 (424.4 to 435.5), 190.9 ms | 426.3 (422.8 to 430.3), 577.4 ms | 98 to 499 |
 
-**What it bought, read carefully.** Single-client throughput on this machine moves a lot between
-runs (139.6 to 177.1 req/s across eight single-client measurements), so the 1-client column is
-noise. Under load, one worker held up in every repeat: 145.5 and 129.1 req/s at 4 clients against
-105.2 and 104.8 before, and 142.0 and 142.9 at 32 clients against 99.0 and 107.8
-(`artifacts/loadtest_repeats/ab_*.json`, alternating the commit before the fix and this one). With
-4 workers the lock keeps throughput from sagging once clients outnumber workers (491 to 550 req/s
-against 415 to 425 from 16 clients up) and cuts p99 there to 47% to 62% of its before value. It
-does not help everywhere: at exactly 4 clients on 4 workers it measured lower in both runs (463.6
-and 404.8 req/s against 598.6 and 462.9). The 404.8 run started with the machine at 78% CPU from
-other work, but I have not isolated the cause, so the 4-client case stays an open question.
+**The bottleneck it found.** Without the lock, one worker gets slower as clients are added: 212.0
+req/s at 1 client, 117.5 at 4, 104.9 at 128, while the server uses 1.2 to 1.3 cores from 4 clients up. A py-spy
+`--gil` profile at 4 clients (`artifacts/profiles/profile_predict_w1_nolock_c4.txt`, 872 samples;
+the command is in the JSON next to it) has 77.3% of GIL-holding samples inside `forest_proba`, the
+per-tree loop from ADR 007 (69.0% of 924 samples with the lock on). That loop calls into
+scikit-learn's Cython tree code once per tree, up to 260 times per flow, and that code releases the
+GIL. The explanation: with several request threads in flight, each release lets another thread take
+the GIL and the scorer waits to get it back, a GIL convoy. That mechanism is an inference, not a
+measurement: a `--gil` profile shows where the GIL holder spends its time, not how long threads
+wait for it. What is measured is throughput falling as clients are added on a flat 1.2 to 1.3 cores, and
+the lock bringing it back. The fix is a per-process lock around scoring in `service.py`; threads
+waiting on a lock do not compete for the GIL. Tests pin that both endpoints score under the lock
+and that the before arm really scores without it.
 
-**What these numbers are not.** One laptop, with client and server sharing its cores, under
-synthetic closed-loop load. A closed loop understates the tail past saturation, because the
-clients slow down with the server. Not production traffic. The in-cluster k6 run in `DEPLOY.md`
-found per-pod throughput far below the scoring benchmark; this convoy is one measured cause of that
-gap on this machine, but the kind run has not been repeated with the fix, so no in-cluster gain is
-claimed. The cost of one flow (about 4.5 ms p50 over HTTP, 1.3 ms in-process) is still the per-tree
-Python loop; scoring all trees in one vectorized pass is the next step and is not done. One
-4-worker run stalled with no server error logged; the cause is not isolated, and the harness now
-times out a request after 30 s and counts it as failed instead of waiting.
+**What it bought, and where it did not.** One worker: the lock's median is 1.29x to 1.37x the
+before arm's from 4 clients up, and the worst case (slowest lock run over fastest no-lock run) is at
+least 1.28x; 1.16x at 2 clients; no difference at 1 client. With 4 workers on the laptop the lock is
+1.27x to 1.32x from 16 clients up (worst case at least 1.24x), but at 4 clients it lost (480.5
+against 633.4 req/s median), and at 2 and 8 clients the runs overlap.
+
+**On the real image, on Linux.** `.github/workflows/loadtest-linux.yml` builds the image and runs
+the same A/B against the container on a GitHub-hosted runner (run 36786215837, commit `a440c54`,
+`artifacts/loadtest_linux/`): `docker run --network host` with no `--cpus` limit, the image's own
+command, workers through `WEB_CONCURRENCY`, and `-e FLOWSENTRY_SCORE_LOCK=0` for the before arm. A
+probe inside the image records what the server runs: Python 3.12.14, uvicorn 0.54.0, FastAPI
+0.142.2 and scikit-learn 1.9.1 (the image resolves `pyproject.toml`'s ranges at build time, so they
+are newer than the laptop's). The runner has 4 vCPUs (2 physical cores, AMD EPYC 7763) shared with
+the client. 12 runs, 3 per arm and worker count, no failed requests. One worker, which is what the
+image and the k8s pods run: the lock's median is 1.26x to 1.39x the before arm's from 4 clients up,
+worst case at least 1.20x, 1.06x at 2 clients and no difference at 1, so the drop in throughput
+without the lock, and the fix, reproduce on Linux. Four workers: the lock did not help. The arms were level at 8 and 16 clients,
+and from 32 clients up the lock was slower (median 0.90x to 0.92x, worst case 0.86x), with the
+server at 3.3 to 3.5 cores against 3.6 without it; at 2 and 4 clients the lock runs split into a
+fast and a slow mode, cause not isolated. So the lock is claimed for one worker per process, not
+for several workers sharing a small machine. Two earlier runs of this workflow were replaced and
+are not committed: 36780959526 read the machine's load while the container was still starting, and
+36783474934 recorded the runner's Python and library versions as if they were the server's.
+
+**What these numbers are not.** A laptop and a shared 4-vCPU runner, with the client on the same
+machine as the server, under synthetic closed-loop load in 10 s windows. A closed loop understates
+the tail past saturation. Not production traffic. The in-cluster k6 run in `DEPLOY.md` found
+per-pod throughput far below the scoring benchmark; the convoy is a candidate cause of part of that
+gap, measured on the laptop and the runner, not in the cluster. The kind runs from commit `10a38c8`
+on include the lock, but no kind run compares with and without it, so no in-cluster gain is
+claimed. The cost of one flow is still the per-tree Python loop (the 77% above); scoring all trees
+in one vectorized pass is the next step and is not done.
 
 ## API
 
@@ -773,8 +801,9 @@ regression guard) run in CI.
       this does not test.
 - [x] Load test under concurrent HTTP traffic: k6 through the Kubernetes Service on kind in CI,
       including a rolling restart under load ([DEPLOY.md](DEPLOY.md)), and a local stepped-concurrency
-      sweep (`make loadtest`) that found and fixed a GIL convoy in the service (see "Load test"
-      above). The kind runs include the fix from commit `10a38c8` on. Open: vectorizing the
+      A/B (`make loadtest`, and on the real image on a GitHub-hosted runner) that found a GIL
+      convoy with one worker per process and added a scoring lock: a repeated win with one
+      worker, mixed with four (see "Load test" above). The kind runs include the fix from commit `10a38c8` on. Open: vectorizing the
       per-tree loop
 - [ ] Adversarial probe: perturbed flows vs the reject knob (designed in
       [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md))

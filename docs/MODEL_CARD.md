@@ -354,8 +354,9 @@ harder picture.
    measured curve for this dataset. See the calibration section for both measurements and the
    shipping trade-off.
 7. **Latency/throughput are measured on one machine** (`python -m flowsentry.bench`, environment
-   recorded in `artifacts/benchmark.json`), scoring stored flows, not under sustained concurrent
-   HTTP load. A proper load test is roadmap.
+   recorded in `artifacts/benchmark.json`), scoring stored flows. The HTTP service under concurrent
+   clients is measured separately (README "Load test": one laptop and one GitHub-hosted runner,
+   synthetic closed-loop load, not production traffic).
 
 ## Attribution
 

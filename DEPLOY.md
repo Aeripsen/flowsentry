@@ -203,10 +203,11 @@ that balances per request. Not done here.
 **Per-pod HTTP throughput.** In the master run the 2 busy pods, each at its 1-CPU
 limit, served 176.8 req/s between them. That is well below the in-process scoring
 benchmark (`python -m flowsentry.bench`). README's load-test section measures the
-HTTP service on one laptop and traces part of the gap to a GIL convoy in the
-per-tree scoring loop, now scored under a per-process lock; the kind runs from
-commit `10a38c8` on include that change. Nothing in the kind runs isolates the rest
-of the gap, so no further cause is claimed.
+HTTP service on one laptop and finds a GIL convoy in the per-tree scoring loop,
+now scored under a per-process lock. That is a candidate cause of part of this
+gap, measured on the laptop, not in the cluster: the kind runs from commit
+`10a38c8` on include the lock, but no kind run compares with and without it, so
+no in-cluster gain and no cause of the gap is claimed.
 
 **CPU and memory.** The HPA's `averageUtilization` peaked at 337% of the 250m
 request in the master run. It cannot pass 400% here, because the limit is 1000m: a

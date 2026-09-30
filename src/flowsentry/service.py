@@ -52,10 +52,13 @@ _scorer: FlowScorer | None = None
 # threadpool, and a flow walks up to 260 trees in a Python loop whose Cython
 # step drops the GIL once per tree. With several requests in flight, every drop
 # hands the GIL to another request thread and the scorer waits to get it back:
-# a GIL convoy. Measured under load (artifacts/loadtest_*.json, README "Load
-# test"): throughput FELL from 175 req/s at 1 client to ~102 at 4, on ~1.2 cores.
+# a GIL convoy. Measured under load with the lock switched off (README "Load
+# test", artifacts/loadtest_ab/): throughput FELL as clients were added, on a
+# flat ~1.2 cores, and the lock brought it back.
 # Threads blocked on this lock do not compete for the GIL, so the handoffs stop.
 # Parallelism comes from processes (uvicorn --workers / replicas), not threads.
+# Measured as a win with one worker per process, which is what the image and the
+# k8s pods run; with 4 workers per process group it was mixed (README).
 _SCORE_LOCK = threading.Lock()
 
 # FLOWSENTRY_SCORE_LOCK=0 turns the lock off. It exists so the load test's
