@@ -66,5 +66,6 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = [
     "sklearn.*", "joblib.*", "pandas.*", "lightgbm.*", "xgboost.*", "shap.*", "mlflow.*",
+    "psutil.*",  # optional in loadtest.py, ships no stubs
 ]
 ignore_missing_imports = true

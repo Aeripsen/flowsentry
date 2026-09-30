@@ -523,7 +523,7 @@ def run(
         if proc is not None:
             stop_server(proc)
 
-    out = {
+    out: dict[str, Any] = {
         "what": (
             "closed-loop HTTP load test against the service process; client-side "
             "latency, send to last byte; real held-out rows as payloads"
