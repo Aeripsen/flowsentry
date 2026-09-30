@@ -16,3 +16,8 @@ data/*.csv
 flowsentry.yaml
 # private handoff notes
 HANDOFF.md
+# MLflow tracking store (local SQLite + run artifacts); rebuilt by `make train`
+# and `make track`, never committed: it holds absolute paths and 60 MB models
+mlflow.db
+mlruns/
+mlartifacts/

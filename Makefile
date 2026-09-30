@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business demo-data reproduce serve
+.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business demo-data reproduce serve track drift-report mlflow-ui
 
 train:
 	python -m flowsentry.train
@@ -65,3 +65,17 @@ reproduce:
 
 serve:
 	uvicorn flowsentry.service:app
+
+# MLflow: the model comparison (two-stage forest, single joint forest, tuned
+# XGBoost, tuned LightGBM) as one run per arm, cross-checked against the committed
+# artifacts; needs [gbdt,mlops]. `make train` also logs a run once mlflow is installed
+track:
+	python scripts/track_arms.py
+
+mlflow-ui:
+	mlflow ui --backend-store-uri sqlite:///mlflow.db
+
+# Evidently: data drift over the 132 features + classification quality, training
+# connections (out-of-fold) vs held-out connections -> reports/*.html; needs [mlops]
+drift-report:
+	python scripts/evidently_report.py

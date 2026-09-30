@@ -25,6 +25,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import average_precision_score, classification_report, f1_score
 from sklearn.preprocessing import label_binarize
 
+from . import tracking
 from .config import get_settings
 from .data import (
     STAGE1_INDICES,
@@ -178,6 +179,20 @@ def main() -> dict:
 
     print(json.dumps(metrics, indent=2))
     print(f"[save] {artifact_dir / 'flowsentry.joblib'}")
+
+    # Experiment tracking, after metrics.json is written so it can never change the
+    # bytes reproduce.py checks. A no-op unless mlflow is installed (the [mlops]
+    # extra) and FLOWSENTRY_MLFLOW is not 0; see tracking.py.
+    if tracking.enabled():
+        run_id = tracking.log_training_run(
+            settings=cfg,
+            metrics=metrics,
+            imputer=imputer,
+            model=model,
+            X_example=Xte[:5],
+            metrics_path=artifact_dir / "metrics.json",
+        )
+        print(f"[mlflow] logged run {run_id} to {tracking.tracking_uri()}")
     return metrics
 
 

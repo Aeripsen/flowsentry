@@ -54,3 +54,38 @@ jobs:
           pip install -e . --no-deps
       - name: Reproduce metrics byte-identically
         run: python scripts/reproduce.py
+
+  # MLflow + Evidently from a clean checkout, in the locked environment: train
+  # (logs a run), log the arm comparison, rebuild the drift/performance report,
+  # then require the committed summaries to come back unchanged. The tracking
+  # store and the HTML report are uploaded so a run can be opened in `mlflow ui`.
+  mlops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install locked environment + gbdt + mlops extras (pinned)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e . --no-deps
+          pip install "lightgbm==4.7.0" "xgboost==3.3.0" "mlflow==3.16.1" "evidently==0.7.23"
+      - name: Train (logs a run to the local MLflow store)
+        run: python -m flowsentry.train
+      - name: Log the model comparison to MLflow, one run per arm
+        run: python scripts/track_arms.py
+      - name: Evidently drift + performance report
+        run: python scripts/evidently_report.py
+      - name: Committed summaries regenerate exactly
+        run: git diff --exit-code artifacts/metrics.json artifacts/mlflow_arms.json artifacts/evidently_summary.json
+      - name: Upload the tracking store and the report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-store-and-evidently-report
+          path: |
+            mlflow.db
+            reports/evidently_drift_performance.html
+          retention-days: 30

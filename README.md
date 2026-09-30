@@ -474,6 +474,61 @@ streamlit run dashboard/app.py
 No screenshot or GIF is committed yet; capturing one is a manual follow-up for whoever publishes
 the repo.
 
+## Experiment tracking and drift reports (MLflow, Evidently)
+
+```bash
+pip install -e ".[gbdt,mlops]"
+python -m flowsentry.train             # every training run is logged to MLflow
+python scripts/track_arms.py           # make track: the model comparison, one run per arm
+python scripts/evidently_report.py     # make drift-report: Evidently HTML + summary
+mlflow ui --backend-store-uri sqlite:///mlflow.db   # then open http://127.0.0.1:5000
+```
+
+**MLflow.** `src/flowsentry/tracking.py` is an optional seam: with mlflow installed, `train.py`
+logs every run to a local SQLite store (`mlflow.db`, artifacts in `mlruns/`, both gitignored)
+with all training params, every scalar metric, the per-family PR-AUC and F1, the
+coverage-reliability curve as a stepped metric, `metrics.json`, and the fitted imputer+model.
+It logs after `metrics.json` is written, so it cannot change the bytes `make reproduce` checks.
+`FLOWSENTRY_MLFLOW=0` turns it off; `MLFLOW_TRACKING_URI` points it at a server instead.
+
+`scripts/track_arms.py` puts the comparison this README already reports into experiment
+`flowsentry-arms`, one run per arm on the same grouped split: the shipped two-stage forest, the
+single joint forest, and the tuned XGBoost and LightGBM arms (grid winners from
+`gbdt_comparison.json`, refit on the full training split). Two checks make the store
+trustworthy rather than decorative: every arm's metrics must equal the committed artifact that
+already reports it (`metrics.json`, `calibration.json`, `hierarchy_benchmark.json`,
+`gbdt_comparison.json`), or the script exits 1; and every logged model is loaded back from the
+store and must reproduce its in-memory predictions on all 6,570 held-out flows. The runs are
+then read back from the store into `artifacts/mlflow_arms.json`. Sklearn models are saved with
+skops (not pickle) against an explicit, reviewed list of trusted types; the two boosters cannot
+be walked by skops and are logged as a pyfunc with cloudpickle, which the script says in a
+comment.
+
+**Evidently.** The committed sample has no timestamp (see the roadmap), so there is no honest
+time window. The two windows are the split the repo already uses: reference = the 19,045
+training flows, current = the 6,570 flows from connections the model never saw. Reference
+predictions are 3-fold grouped out-of-fold, so neither window is scored by a model that trained
+on it. From `artifacts/evidently_summary.json` and `reports/evidently_drift_performance.html`:
+
+| | Result |
+|---|---|
+| Evidently data drift (normed Wasserstein on 111 numeric columns, Jensen-Shannon on 21 low-cardinality ones, 0.1 threshold) | 3 of 132 features drift; no dataset drift |
+| Repo PSI (`drift.py`, training deciles) on the same windows | 0 of 132 at 0.10 or above; max PSI 0.0214 |
+| Accuracy, out-of-fold on training connections vs held-out | 0.8256 vs 0.8317 |
+| Macro-F1, out-of-fold vs held-out | 0.342 vs 0.3911 |
+
+How to read it: unseen connections look like training traffic, and the two tests disagree only
+at the margin (the three Evidently flags score 0.101 to 0.128 against a 0.1 threshold, which PSI
+on deciles does not see). The held-out window scoring higher than out-of-fold is not
+improvement from drift: each fold model trains on two thirds of the training connections, and
+the rare families have 200 to 400 flows each, so the fold models see fewer of them. What this
+cannot tell you is whether future traffic drifts; that needs the sample rebuilt with its
+timestamps.
+
+The `mlops` CI job runs all of this from a clean checkout in the locked environment, fails if
+either committed summary changes, and uploads `mlflow.db` and the HTML report as a build
+artifact.
+
 ## Configuration
 
 Defaults live in code (`src/flowsentry/config.py`) and are the exact values every reported number
@@ -494,7 +549,7 @@ make reproduce            # or: python scripts/reproduce.py
 Retrains from the committed sample and fails unless `artifacts/metrics.json` regenerates
 **byte-identically** (seeded end to end: split, imputer, forests). Exact bytes are promised under
 `requirements.lock` (the environment the published numbers came from); on other versions the test
-suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (85 tests, including
+suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (91 tests, including
 the leakage guard, the metrics regression, exact-equality guards on both fast paths, and the perf
 regression guard) run in CI.
 

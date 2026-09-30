@@ -1,0 +1,155 @@
+{
+  "what": "Evidently data drift + classification quality, reference = training connections (out-of-fold predictions), current = held-out connections (shipped model). No time axis: the sample has no timestamp column.",
+  "html_report": "reports/evidently_drift_performance.html",
+  "evidently_version": "0.7.23",
+  "n_reference": 19045,
+  "n_current": 6570,
+  "n_features_checked": 132,
+  "reference_predictions": "3-fold GroupKFold out-of-fold over training connections",
+  "data_drift": {
+    "drifted_columns": 3,
+    "drifted_share": 0.0227,
+    "dataset_drift": false,
+    "rule": "dataset drifts if >= 50% of columns drift (Evidently default)",
+    "methods_used": {
+      "Jensen-Shannon distance": 21,
+      "Wasserstein distance (normed)": 111
+    },
+    "top_10_by_score": {
+      "delta_hdr_size_mean": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.1278,
+        "drifted": true
+      },
+      "delta_hdr_size_std": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.1045,
+        "drifted": true
+      },
+      "payload_size_25th_percentile": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.1009,
+        "drifted": true
+      },
+      "pkt_size_25th_percentile": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.0983,
+        "drifted": false
+      },
+      "delta_hdr_size_max": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.0974,
+        "drifted": false
+      },
+      "delta_pkt_size_var": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.0918,
+        "drifted": false
+      },
+      "avg_pkt_size": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.0912,
+        "drifted": false
+      },
+      "payload_size_skew": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.0903,
+        "drifted": false
+      },
+      "payload_size_median": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.0889,
+        "drifted": false
+      },
+      "median_pkt_size": {
+        "method": "Wasserstein distance (normed)",
+        "threshold": 0.1,
+        "score": 0.0887,
+        "drifted": false
+      }
+    }
+  },
+  "repo_psi_same_windows": {
+    "moderate_or_major": 0,
+    "major": 0,
+    "max_psi": 0.0214,
+    "agreement": {
+      "both_flag": 0,
+      "evidently_only": [
+        "delta_hdr_size_mean",
+        "delta_hdr_size_std",
+        "payload_size_25th_percentile"
+      ],
+      "psi_only": [],
+      "neither": 129
+    }
+  },
+  "performance": {
+    "reference_out_of_fold": {
+      "accuracy": 0.8256,
+      "precision_macro": 0.398,
+      "recall_macro": 0.3457,
+      "f1_macro": 0.342,
+      "roc_auc_ovr": 0.8269,
+      "log_loss": 0.9891,
+      "f1_by_label": {
+        "UDP-GAME": 0.0394,
+        "UDP-HULK": 0.2109,
+        "UDP-MULTI": 0.2045,
+        "UDP-OVH": 0.0508,
+        "UDP-RAW": 0.9967,
+        "UDP-VSE": 0.3758,
+        "UDP-bypass-v1": 0.0444,
+        "benign": 0.8135
+      },
+      "recall_by_label": {
+        "UDP-GAME": 0.0258,
+        "UDP-HULK": 0.1694,
+        "UDP-MULTI": 0.1475,
+        "UDP-OVH": 0.0361,
+        "UDP-RAW": 0.9952,
+        "UDP-VSE": 0.3074,
+        "UDP-bypass-v1": 0.3397,
+        "benign": 0.7441
+      }
+    },
+    "current_held_out": {
+      "accuracy": 0.8317,
+      "precision_macro": 0.4674,
+      "recall_macro": 0.3777,
+      "f1_macro": 0.3911,
+      "roc_auc_ovr": 0.8476,
+      "log_loss": 0.8708,
+      "f1_by_label": {
+        "UDP-GAME": 0.1644,
+        "UDP-HULK": 0.2424,
+        "UDP-MULTI": 0.3577,
+        "UDP-OVH": 0.0267,
+        "UDP-RAW": 0.9953,
+        "UDP-VSE": 0.481,
+        "UDP-bypass-v1": 0.0408,
+        "benign": 0.8202
+      },
+      "recall_by_label": {
+        "UDP-GAME": 0.1154,
+        "UDP-HULK": 0.1905,
+        "UDP-MULTI": 0.2821,
+        "UDP-OVH": 0.0182,
+        "UDP-RAW": 0.9941,
+        "UDP-VSE": 0.38,
+        "UDP-bypass-v1": 0.2931,
+        "benign": 0.7481
+      }
+    },
+    "current_matches_metrics_json": true
+  }
+}

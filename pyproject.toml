@@ -24,6 +24,9 @@ dashboard = ["streamlit>=1.30"]
 # the boosted-tree comparison arms + SHAP attribution; optional because the
 # shipped serving path does not depend on them
 gbdt = ["lightgbm>=4.6", "xgboost>=3.0", "shap>=0.48", "matplotlib>=3.9"]
+# experiment tracking (MLflow) and the drift/performance report (Evidently);
+# optional because nothing on the serving or reproduce path imports them
+mlops = ["mlflow>=3.16", "evidently>=0.7.23"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -61,5 +64,7 @@ module = [
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = ["sklearn.*", "joblib.*", "pandas.*", "lightgbm.*", "xgboost.*", "shap.*"]
+module = [
+    "sklearn.*", "joblib.*", "pandas.*", "lightgbm.*", "xgboost.*", "shap.*", "mlflow.*",
+]
 ignore_missing_imports = true

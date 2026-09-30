@@ -1,0 +1,99 @@
+{
+  "what": "the flowsentry model comparison as MLflow runs, read back from the tracking store; one run per arm in experiment flowsentry-arms",
+  "how_to_view": "make track && mlflow ui --backend-store-uri sqlite:///mlflow.db",
+  "split": {
+    "seed": 42,
+    "test_size": 0.25,
+    "n_train": 19045,
+    "n_test": 6570
+  },
+  "sample_sha256": "3707e5f5e9bee8efb0a6ee8be6e285343d38a4b24c28cf7bc308276b428f9f3b",
+  "arms": {
+    "lightgbm_tuned": {
+      "family": "lightgbm",
+      "shipped": false,
+      "params": {
+        "seed": "42",
+        "grid_size": "8",
+        "num_leaves": "31",
+        "selected_by": "grouped validation carve (seed 43), binary PR-AUC",
+        "learning_rate": "0.05",
+        "n_estimators": "200"
+      },
+      "metrics": {
+        "binary_attack_pr_auc": 0.9837,
+        "benign_pr_auc": 0.9695,
+        "accuracy_full_coverage": 0.7973,
+        "macro_f1_full_coverage": 0.3825,
+        "ece_top_label": 0.0559
+      },
+      "matches_committed": true,
+      "logged_model_reproduces_predictions": true
+    },
+    "random_forest_joint": {
+      "family": "random_forest (single joint model, no hierarchy, no escalation)",
+      "shipped": false,
+      "params": {
+        "n_estimators": "200",
+        "random_state": "42",
+        "stage_estimator": "random_forest"
+      },
+      "metrics": {
+        "binary_attack_pr_auc": 0.9774,
+        "benign_pr_auc": 0.9566,
+        "accuracy_full_coverage": 0.8317,
+        "macro_f1_full_coverage": 0.3911,
+        "ece_top_label": 0.0359
+      },
+      "matches_committed": true,
+      "logged_model_reproduces_predictions": true
+    },
+    "two_stage_hierarchy": {
+      "family": "random_forest x2 (stage 1 UDP-only, stage 2 UDP+QUIC)",
+      "shipped": true,
+      "params": {
+        "stage_estimator": "random_forest",
+        "stage2.random_state": "42",
+        "stage1.n_estimators": "60",
+        "stage2.n_estimators": "200",
+        "stage1.random_state": "42",
+        "escalate_threshold": "0.9"
+      },
+      "metrics": {
+        "binary_attack_pr_auc": 0.9767,
+        "benign_pr_auc": 0.9537,
+        "accuracy_full_coverage": 0.8317,
+        "macro_f1_full_coverage": 0.3911,
+        "ece_top_label": 0.0362,
+        "escalation_rate": 0.2429
+      },
+      "matches_committed": true,
+      "logged_model_reproduces_predictions": true
+    },
+    "xgboost_tuned": {
+      "family": "xgboost",
+      "shipped": false,
+      "params": {
+        "seed": "42",
+        "grid_size": "8",
+        "selected_by": "grouped validation carve (seed 43), binary PR-AUC",
+        "learning_rate": "0.05",
+        "n_estimators": "200",
+        "max_depth": "6"
+      },
+      "metrics": {
+        "binary_attack_pr_auc": 0.9852,
+        "benign_pr_auc": 0.9708,
+        "accuracy_full_coverage": 0.7533,
+        "macro_f1_full_coverage": 0.3487,
+        "ece_top_label": 0.0399
+      },
+      "matches_committed": true,
+      "logged_model_reproduces_predictions": true
+    }
+  },
+  "best_by_binary_attack_pr_auc": "xgboost_tuned",
+  "shipped": "two_stage_hierarchy",
+  "why_the_best_is_not_shipped": "see README and gbdt_comparison.json: the boosters rank flows better (PR-AUC) but lose on accuracy and macro-F1 at full coverage and on raw calibration of the confidence the reject knob thresholds",
+  "all_arms_match_committed_artifacts": true
+}
