@@ -1,0 +1,90 @@
+{
+  "what": "closed-loop HTTP load test against the service process; client-side latency, send to last byte; real held-out rows as payloads",
+  "label": "ab",
+  "endpoint": "/predict",
+  "batch_size": 1,
+  "data_source": "bccc_udp_quic_sample_test_split",
+  "is_synthetic": false,
+  "warmup_s": 2.0,
+  "measure_s": 8.0,
+  "server_env_overrides": {},
+  "environment": {
+    "cpu": "Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz",
+    "physical_cores": 6,
+    "logical_cpus": 12,
+    "ram_gb": 15.9,
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.13",
+    "fastapi": "0.139.2",
+    "uvicorn": "0.52.4",
+    "http_parser": "httptools",
+    "event_loop": "asyncio",
+    "scikit_learn": "1.9.0",
+    "numpy": "2.4.6",
+    "uvicorn_workers": 1,
+    "machine_cpu_percent_idle_before_run": 29.9,
+    "client": "stdlib asyncio keep-alive HTTP/1.1, same machine as the server",
+    "measured_at": "2026-09-30T20:22:50Z"
+  },
+  "levels": [
+    {
+      "concurrency": 1,
+      "client_processes": 1,
+      "requests": 1417,
+      "ok": 1417,
+      "errors": 0,
+      "error_rate": 0.0,
+      "req_per_s": 177.1,
+      "p50_ms": 4.496,
+      "p95_ms": 12.243,
+      "p99_ms": 13.007,
+      "max_ms": 14.663,
+      "mean_ms": 5.643
+    },
+    {
+      "concurrency": 4,
+      "client_processes": 4,
+      "requests": 1033,
+      "ok": 1033,
+      "errors": 0,
+      "error_rate": 0.0,
+      "req_per_s": 129.1,
+      "p50_ms": 29.134,
+      "p95_ms": 48.613,
+      "p99_ms": 58.963,
+      "max_ms": 94.517,
+      "mean_ms": 30.877
+    },
+    {
+      "concurrency": 32,
+      "client_processes": 4,
+      "requests": 1143,
+      "ok": 1143,
+      "errors": 0,
+      "error_rate": 0.0,
+      "req_per_s": 142.9,
+      "p50_ms": 216.208,
+      "p95_ms": 251.961,
+      "p99_ms": 266.35,
+      "max_ms": 275.805,
+      "mean_ms": 217.416
+    }
+  ],
+  "summary": {
+    "peak": {
+      "concurrency": 1,
+      "req_per_s": 177.1,
+      "p50_ms": 4.496,
+      "p99_ms": 13.007
+    },
+    "knee": {
+      "concurrency": 1,
+      "req_per_s": 177.1,
+      "p99_ms": 13.007,
+      "next_level_gain": 0.729
+    },
+    "best_with_p99_under_budget": null,
+    "latency_budget_ms": 10.0,
+    "total_errors": 0
+  }
+}

@@ -523,9 +523,64 @@ re-spawning a joblib thread pool inside every single-row `predict_proba` call. T
 (`scoring.py` + [ADR 007](docs/adr/007-sequential-scoring-path.md)) walks the trees sequentially,
 which a test asserts is bit-identical to the native path, and switches to the threaded path for
 large batches. The pre-fix path is still measured by the benchmark (`single_row_native_pool`,
-mean 44.7 ms/flow) so the comparison stays reproducible. These are stored-flow scoring numbers on one
-machine, not a live tap under concurrent load; a proper load test is roadmap. A perf regression
-test fails CI if the per-call pool behavior ever comes back.
+mean 44.7 ms/flow) so the comparison stays reproducible. These are in-process scoring numbers on
+one machine; the HTTP service under concurrent clients is measured separately below. A perf
+regression test fails CI if the per-call pool behavior ever comes back.
+
+### Load test: the HTTP service under concurrent clients
+
+`python scripts/loadtest.py` (or `make loadtest`) starts the service the way the Dockerfile does
+(uvicorn, access log on, httptools parser) and drives `POST /predict` with 1, 2, 4 ... 128
+concurrent keep-alive connections. It is a closed loop: each connection sends its next request as
+soon as the last response is read. Payloads are the real held-out test flows. Each level runs 2 s
+of warmup and 10 s of measurement, and latency is client-side, send to last byte. Every run writes
+`artifacts/loadtest_<label>.json` with the environment it ran on;
+`python scripts/loadtest.py --table "artifacts/loadtest_*.json"` prints every level of every run.
+
+Machine for every number here: Intel Core i7-10750H (6 cores, 12 threads), 16 GB RAM, Windows 11,
+Python 3.13, uvicorn 0.52 with httptools. Client and server share that one laptop, with other work
+running in the background; each file records the machine's CPU load in the second before the run
+(6% to 78%).
+
+| server | 1 client | 4 clients | 32 clients | 128 clients |
+|---|---|---|---|---|
+| 1 worker, before | 175.5 req/s, p99 13.7 ms | 102.4 req/s, p99 97.0 ms | 105.4 req/s, p99 466.9 ms | 92.6 req/s, p99 1,417 ms |
+| 1 worker, scoring lock | 152.7 req/s, p99 18.4 ms | 148.6 req/s, p99 48.1 ms | 147.4 req/s, p99 259.4 ms | 137.4 req/s, p99 935.1 ms |
+| 4 workers, before | 172.7 req/s, p99 14.3 ms | 598.6 req/s, p99 14.8 ms | 424.6 req/s, p99 204.9 ms | 415.7 req/s, p99 572.7 ms |
+| 4 workers, scoring lock | 176.8 req/s, p99 13.3 ms | 463.6 req/s, p99 26.1 ms | 537.8 req/s, p99 95.9 ms | 491.1 req/s, p99 355.8 ms |
+
+Zero failed requests in every run.
+
+**The bottleneck it found.** Before the fix, one worker got slower as clients were added: 175.5
+req/s with 1 client, 92.6 to 105.4 req/s from 4 clients up, while the server used only about 1.2
+cores. py-spy on the running server (20 s at 4 clients, sampling only the thread that held the GIL)
+put 69% of GIL time in `forest_proba`, the per-tree loop from ADR 007. Each tree's Cython step
+releases the GIL for a moment, so with several request threads in flight every release hands the
+GIL to another thread and the scorer waits to get it back, up to 260 times per flow: a GIL convoy. The fix is a
+per-process lock around scoring in `service.py`. Threads waiting on a lock do not compete for the
+GIL, and parallelism comes from processes (`uvicorn --workers`, or replicas) instead. A test pins
+that both endpoints score under the lock.
+
+**What it bought, read carefully.** Single-client throughput on this machine moves a lot between
+runs (139.6 to 177.1 req/s across eight single-client measurements), so the 1-client column is
+noise. Under load, one worker held up in every repeat: 145.5 and 129.1 req/s at 4 clients against
+105.2 and 104.8 before, and 142.0 and 142.9 at 32 clients against 99.0 and 107.8
+(`artifacts/loadtest_repeats/ab_*.json`, alternating the commit before the fix and this one). With
+4 workers the lock keeps throughput from sagging once clients outnumber workers (491 to 550 req/s
+against 415 to 425 from 16 clients up) and cuts p99 there to 47% to 62% of its before value. It
+does not help everywhere: at exactly 4 clients on 4 workers it measured lower in both runs (463.6
+and 404.8 req/s against 598.6 and 462.9). The 404.8 run started with the machine at 78% CPU from
+other work, but I have not isolated the cause, so the 4-client case stays an open question.
+
+**What these numbers are not.** One laptop, with client and server sharing its cores, under
+synthetic closed-loop load. A closed loop understates the tail past saturation, because the
+clients slow down with the server. Not production traffic. The in-cluster k6 run in `DEPLOY.md`
+found per-pod throughput far below the scoring benchmark; this convoy is one measured cause of that
+gap on this machine, but the kind run has not been repeated with the fix, so no in-cluster gain is
+claimed. The cost of one flow (about 4.5 ms p50 over HTTP, 1.3 ms in-process) is still the per-tree
+Python loop; scoring all trees in one vectorized pass is the next step and is not done. One
+4-worker run stalled with no server error logged; the cause is not isolated, and the harness now
+times out a request after 30 s and counts it as failed instead of waiting.
 
 ## API
 
@@ -670,8 +725,9 @@ regression guard) run in CI.
       dataset, and whether a dedicated novelty detector beats a thresholded closed-set model, which
       this does not test.
 - [x] Load test under concurrent HTTP traffic: k6 through the Kubernetes Service on kind in CI,
-      including a rolling restart under load ([DEPLOY.md](DEPLOY.md)). Open: why per-pod HTTP
-      throughput sits far below the scoring benchmark, which has not been profiled
+      including a rolling restart under load ([DEPLOY.md](DEPLOY.md)), and a local stepped-concurrency
+      sweep (`make loadtest`) that found and fixed a GIL convoy in the service (see "Load test"
+      above). Open: re-running the kind load test with the fix, and vectorizing the per-tree loop
 - [ ] Adversarial probe: perturbed flows vs the reject knob (designed in
       [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md))
 - [ ] Cross-day / cross-dataset evaluation for host and campaign generalization. This is the one

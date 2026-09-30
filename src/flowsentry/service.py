@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import threading
 import time
 from datetime import UTC, datetime
 
@@ -44,6 +45,16 @@ app = FastAPI(
 app.add_middleware(DrainMiddleware)
 
 _scorer: FlowScorer | None = None
+
+# One scoring call at a time per process. FastAPI runs these sync endpoints on a
+# threadpool, and a flow walks up to 260 trees in a Python loop whose Cython
+# step drops the GIL once per tree. With several requests in flight, every drop
+# hands the GIL to another request thread and the scorer waits to get it back:
+# a GIL convoy. Measured under load (artifacts/loadtest_*.json, README "Load
+# test"): throughput FELL from 175 req/s at 1 client to ~102 at 4, on ~1.2 cores.
+# Threads blocked on this lock do not compete for the GIL, so the handoffs stop.
+# Parallelism comes from processes (uvicorn --workers / replicas), not threads.
+_SCORE_LOCK = threading.Lock()
 
 
 class _JsonFormatter(logging.Formatter):
@@ -144,9 +155,10 @@ def ready():
 def predict(req: Flow):
     scorer = _require_scorer()
     _require_finite(req.features)
-    t0 = time.perf_counter()
-    verdict = scorer.score_one(req.features, reject_threshold=req.reject_threshold)
-    latency_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+    with _SCORE_LOCK:  # timed inside: latency_ms stays scoring time, not queue wait
+        t0 = time.perf_counter()
+        verdict = scorer.score_one(req.features, reject_threshold=req.reject_threshold)
+        latency_ms = round((time.perf_counter() - t0) * 1000.0, 3)
     logger.info(
         "predict",
         extra={
@@ -168,12 +180,13 @@ def predict_batch(req: FlowBatch):
     scorer = _require_scorer()
     for features in req.flows:
         _require_finite(features)
-    t0 = time.perf_counter()
-    rows = np.vstack([scorer.row_from_features(f) for f in req.flows])
-    labels, conf, escalated, abstained = scorer.score_batch(
-        rows, reject_threshold=req.reject_threshold
-    )
-    latency_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+    with _SCORE_LOCK:  # timed inside: latency_ms is build + score, not queue wait
+        t0 = time.perf_counter()
+        rows = np.vstack([scorer.row_from_features(f) for f in req.flows])
+        labels, conf, escalated, abstained = scorer.score_batch(
+            rows, reject_threshold=req.reject_threshold
+        )
+        latency_ms = round((time.perf_counter() - t0) * 1000.0, 3)
     results = [
         {
             "label": str(labels[i]),

@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business verify-derived demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind
+.PHONY: train test lint type bench loadtest splits hierarchy families calibration gbdt shap zero-day business verify-derived demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind
 
 train:
 	python -m flowsentry.train
@@ -17,6 +17,12 @@ type:
 
 bench:
 	python -m flowsentry.bench
+
+# HTTP load test: starts the service the way the Dockerfile does, steps concurrency
+# 1..128 with a closed-loop client, writes artifacts/loadtest_<label>.json. README "Load test".
+loadtest:
+	python scripts/loadtest.py --label predict_w1_scorelock
+	python scripts/loadtest.py --workers 4 --label predict_w4_scorelock
 
 # grouped vs stratified head to head; sources the split claims in ADR 002
 splits:

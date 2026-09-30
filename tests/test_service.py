@@ -135,3 +135,30 @@ def test_batch_size_is_bounded(monkeypatch):
     too_many = [{"pkt_count": 1.0}] * (service.MAX_BATCH_ROWS + 1)
     resp = client.post("/predict/batch", json={"flows": too_many})
     assert resp.status_code == 422
+
+def test_scoring_runs_under_the_process_lock(monkeypatch):
+    """Both scoring endpoints must hold _SCORE_LOCK while the model runs. Without
+    it, concurrent request threads convoy on the GIL (the per-tree loop drops it
+    once per tree) and throughput falls as clients are added; see the load test
+    in the README. This pins the fix so a refactor cannot silently drop it."""
+    scorer = _tiny_scorer()
+    seen = []
+    real_one, real_batch = scorer.score_one, scorer.score_batch
+
+    def score_one(*a, **k):
+        seen.append(service._SCORE_LOCK.locked())
+        return real_one(*a, **k)
+
+    def score_batch(*a, **k):
+        seen.append(service._SCORE_LOCK.locked())
+        return real_batch(*a, **k)
+
+    monkeypatch.setattr(scorer, "score_one", score_one)
+    monkeypatch.setattr(scorer, "score_batch", score_batch)
+    monkeypatch.setattr(service, "_scorer", scorer)
+    client = TestClient(service.app)
+    flow = {name: 1.0 for name in UDP_FEATURES}
+    assert client.post("/predict", json={"features": flow}).status_code == 200
+    assert client.post("/predict/batch", json={"flows": [flow, flow]}).status_code == 200
+    assert seen == [True, True]
+    assert not service._SCORE_LOCK.locked()  # released after each request
