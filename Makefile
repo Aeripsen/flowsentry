@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business demo-data reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind
+.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind
 
 train:
 	python -m flowsentry.train
@@ -57,6 +57,16 @@ business:
 # rebuild the committed curve, binary PR-AUC and per-family confusion
 demo-data:
 	python scripts/demo_data.py
+
+# check that a fresh export equals the committed one byte for byte
+# (trains first if there is no local model); CI's `demo` job
+demo-verify:
+	python scripts/demo_data.py --verify
+
+# load the demo page in headless Chromium and check what it displays against
+# the committed artifacts; needs playwright + `python -m playwright install chromium`
+site-check:
+	python scripts/check_site.py
 
 # the reproducibility contract: retrain and require artifacts/metrics.json to
 # regenerate byte-identically (exact bytes promised under requirements.lock)

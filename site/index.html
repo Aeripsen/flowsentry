@@ -103,10 +103,12 @@ td.zero { color: var(--warn); }
     <span class="eyebrow">FlowSentry, live demo</span>
     <h1>An intrusion detector that says "I don't know" when it meets an attack it has never seen.</h1>
     <p class="lede">A network-attack classifier with a confidence knob. Below the knob it does not
-    guess; it hands the flow to an analyst as <em>unknown</em>. Everything here is computed from
-    <strong><span data-n>6,570</span> real network flows the model never trained on</strong>, from
-    BCCC-UDP-QUIC-IDS-2025, the public dataset behind my accepted SECRYPT 2026 paper. Nothing is
-    simulated.</p>
+    guess; it hands the flow to an analyst as <em>unknown</em>. The knob below is counted in your
+    browser from <strong><span data-n>6,570</span> real network flows the model never trained
+    on</strong>, from a stratified sample of BCCC-UDP-QUIC-IDS-2025, the public dataset behind my
+    accepted SECRYPT 2026 paper. The headline and the held-out-family panel read the committed
+    aggregate results. Nothing is simulated, and no model runs here: the scores were computed by
+    the model the repo's committed code retrains deterministically.</p>
     <div class="links">
       <a href="https://github.com/Aeripsen/flowsentry">github.com/Aeripsen/flowsentry</a>
       <a href="data/demo_flows.json">every held-out flow on this page</a>
@@ -123,11 +125,13 @@ td.zero { color: var(--warn); }
     <div class="tiles">
       <div class="tile"><span class="num v-signal" id="h-silent">...</span><span class="lbl">Flows from an attack family the model never saw, passed as harmless: forced to answer, then with the knob at 0.99</span><span class="ci" id="h-silent-ci"></span></div>
       <div class="tile"><span class="num v-muted" id="h-unknown">...</span><span class="lbl">Of those never-seen attack flows, sent to an analyst as unknown instead</span><span class="ci" id="h-unknown-ci"></span></div>
-      <div class="tile"><span class="num v-accent" id="h-cov">...</span><span class="lbl">Of normal held-out traffic, answered automatically, and how often those answers are right. The rest goes to an analyst.</span><span class="ci" id="h-cov-ci"></span></div>
+      <div class="tile"><span class="num v-accent" id="h-cov">...</span><span class="lbl">Of held-out flows from families it trained on, answered automatically at 0.99, and how often those answers are right. The rest goes to an analyst.</span><span class="ci" id="h-cov-ci"></span></div>
     </div>
     <p class="caption">First two tiles: leave-one-family-out, the mean over the six rare attack
     families, each retrained with that family removed (<code>artifacts/zero_day_lofo.json</code>).
-    Third tile: the committed curve at threshold 0.99 (<code>artifacts/metrics.json</code>).</p>
+    Third tile: the committed curve at threshold 0.99 (<code>artifacts/metrics.json</code>). The
+    sample caps benign traffic (<span id="benign-share"></span> of the test flows), so coverage and
+    the analyst queue would not hold at real-world benign prevalence.</p>
   </div>
 </section>
 
@@ -156,6 +160,7 @@ td.zero { color: var(--warn); }
       <div class="tile"><span class="num v-signal" id="m-rel"></span><span class="lbl">Of those answers, share that are right (reliability)</span></div>
       <div class="tile"><span class="num v-warn" id="m-silent"></span><span class="lbl">Attack flows passed as benign, out of <span id="n-attack"></span></span></div>
       <div class="tile"><span class="num v-warn" id="m-false"></span><span class="lbl">Benign flows called an attack, out of <span id="n-benign"></span></span></div>
+      <div class="tile"><span class="num v-muted" id="m-benrej"></span><span class="lbl">Benign flows sent to an analyst instead, out of the benign total</span><span class="ci" id="m-benrej-q"></span></div>
     </div>
 
     <div class="grid2" style="margin-top:1.2rem">
@@ -181,11 +186,14 @@ td.zero { color: var(--warn); }
 
 <section>
   <div class="wrap">
-    <h2>Zero-day: an attack family the model never saw</h2>
+    <h2>Held out of training: an attack family the model never saw</h2>
     <p>Each round removes one attack family from training entirely, retrains, and then shows the
     model that family's flows. A closed-set model has to call them something, and mostly it calls
-    them benign. Pick a family and a threshold. These are the committed numbers for the shipped
-    two-stage model, not a live computation.</p>
+    them benign. Pick a family and a threshold. These are the committed aggregate numbers for the
+    two-stage model (<code>zero_day_lofo.json</code>), not a live computation.</p>
+    <p class="caption">The six rare families are UDP flood variants from the same dataset, 193 to
+    356 flows each. This shows how the knob treats a family missing from training. It is not a
+    test against real-world zero-day attacks.</p>
     <div class="knob">
       <label for="fam-pick" class="hint" style="display:block;margin-bottom:.3rem">Held-out family</label>
       <select id="fam-pick"></select>
@@ -213,10 +221,10 @@ td.zero { color: var(--warn); }
   <div class="wrap">
     <h2>How you can check this</h2>
     <ul class="check">
-      <li>The held-out flows come from a connection-grouped split: no UDP connection appears in both training and test. Predictions and confidences were computed once by <code>make train &amp;&amp; make demo-data</code> and are downloadable above. The page applies the knob; it does not run the model in your browser.</li>
-      <li>Before this page deploys, CI runs <code>tests/test_demo_data.py</code>, which rebuilds the committed coverage-reliability curve, the binary PR-AUC of 0.9767 and the per-family confusion counts from these exact rows, and checks the zero-day means shown here against the committed summary.</li>
-      <li>The zero-day panel reads <code>artifacts/zero_day_lofo.json</code> as committed (<code>make zero-day</code>): seven retrains, four model arms, plus a shuffled-label control.</li>
-      <li>The data is a stratified sample of the public dataset: every flow of the seven rare families, with benign and UDP-RAW capped. Rare-family numbers rest on 52 to 100 test flows each.</li>
+      <li>The held-out flows come from a connection-grouped split: no UDP connection appears in both training and test. No model file is committed. The scores come from the model <code>make train</code> retrains deterministically from the committed code and sample, exported by <code>make demo-data</code>, and are downloadable above. The page applies the knob; it does not run the model in your browser.</li>
+      <li>This page deploys only after the repo's whole <code>ci</code> workflow passes on the same commit. That run retrains from a clean checkout and requires the per-flow file back byte for byte (<code>scripts/demo_data.py --verify</code>); rebuilds the committed curve, the binary PR-AUC of 0.9767 and the per-family confusion from these rows (<code>tests/test_demo_data.py</code>); and loads this page in headless Chromium, moves the knob to every committed threshold and clicks every held-out family and threshold, comparing what it shows with the committed files (<code>scripts/check_site.py</code>).</li>
+      <li>The held-out-family panel reads <code>artifacts/zero_day_lofo.json</code> as committed (<code>make zero-day</code>): seven retrains, four model arms, plus a shuffled-label control. It is aggregate data, not per-flow rows.</li>
+      <li>The data is a stratified sample of the public dataset: every flow of the seven rare families, with benign and UDP-RAW capped. PR-AUC depends on that chosen prevalence. Rare-family numbers in the knob section rest on 52 to 100 test flows each.</li>
       <li>It classifies stored flow records. It is not a live network tap, and nothing here ran on real traffic.</li>
       <li>The two-stage design from the paper does not beat a single forest on this sample, and the README says so with the numbers.</li>
     </ul>
@@ -253,6 +261,8 @@ td.zero { color: var(--warn); }
     $("m-cov").textContent = pct((right + wrong) / N);
     $("m-rel").textContent = right + wrong ? pct(right / (right + wrong)) : "nothing answered";
     $("m-silent").textContent = nf(ab, 0); $("m-false").textContent = nf(ba, 0);
+    $("m-benrej").textContent = nf(bu, 0) + " (" + pct(bu / (ba + bb + bu)) + ")";
+    $("m-benrej-q").textContent = unk ? "the analyst queue is " + pct(bu / unk) + " benign" : "nothing sent to an analyst";
     $("c-aa").textContent = nf(aa, 0); $("c-ab").textContent = nf(ab, 0); $("c-au").textContent = nf(au, 0);
     $("c-ba").textContent = nf(ba, 0); $("c-bb").textContent = nf(bb, 0); $("c-bu").textContent = nf(bu, 0);
     var rows = "";
@@ -299,7 +309,10 @@ td.zero { color: var(--warn); }
     $("h-unknown-ci").textContent = "novelty lift " + (h.mean_novelty_lift >= 0 ? "+" : "") + nf(h.mean_novelty_lift, 3) + "; shuffled-label control " + nf(h.mean_novelty_lift_shuffled_control, 3);
     var row = M.coverage_reliability_curve.filter(function (r) { return r.threshold === 0.99; })[0];
     $("h-cov").textContent = pct(row.coverage) + " at " + pct(row.reliability);
-    $("h-cov-ci").textContent = "answering every flow instead: " + pct(M.coverage_reliability_curve[0].reliability) + " right";
+    var nb = 0, nbRej = 0, q = 0;
+    for (var i = 0; i < N; i++) { var rej = CONF[i] < 0.99; if (rej) q++; if (Y[i] === BENIGN) { nb++; if (rej) nbRej++; } }
+    $("h-cov-ci").textContent = "answering every flow instead: " + pct(M.coverage_reliability_curve[0].reliability) + " right. At 0.99, " + nf(nbRej, 0) + " of " + nf(nb, 0) + " benign flows (" + pct(nbRej / nb) + ") go to an analyst; the " + nf(q, 0) + "-flow queue is " + pct(nbRej / q) + " benign.";
+    $("benign-share").textContent = pct(nb / N);
   }
 
   function fail(msg) {

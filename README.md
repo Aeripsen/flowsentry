@@ -8,40 +8,58 @@
 [![the reject knob moving over the held-out flows](docs/img/demo.gif)](https://aeripsen.github.io/flowsentry/)
 
 **What this is, in 30 seconds.** A network-attack detector that is allowed to say "I don't
-know" and hand a flow to an analyst instead of guessing. It implements the architecture from
-my accepted SECRYPT 2026 paper, on that paper's public dataset. Measured, not assumed:
+know" and hand a flow to an analyst instead of guessing, run on BCCC-UDP-QUIC-IDS-2025, the public
+dataset from my accepted SECRYPT 2026 paper. The repo uses a stratified sample of it: every flow of
+the rare UDP DDoS families, with benign and UDP-RAW capped, so benign is 47.0% of the test flows,
+far less than on a real network. Measured, not assumed:
 
-- **Zero-day attacks stop slipping through.** When an attack family was never in training,
-  the share of its flows passed as harmless falls from **70.5% to 7.7%** with the knob at
-  0.99; **91.4%** are sent to an analyst as unknown instead (mean over six families, each
-  held out and retrained; a shuffled-label control shows the effect is real).
-- **Known traffic stays automated:** it answers **64.8%** of held-out traffic at **99.3%**
-  reliability and routes the rest to a person (83.2% if it must answer everything).
+- **Never-seen UDP attack families mostly go to an analyst instead of passing as benign.** Six rare
+  UDP DDoS families, each held out of training and retrained without it (193 to 356 flows each):
+  passed-as-benign falls from **70.5% to 7.7%** with the knob at 0.99, and **91.4%** are sent to
+  an analyst as unknown instead. A shuffled-label control shows the lift is not an artifact of the
+  metric. These are flood variants from the same dataset, not real-world zero-days, and 7.7% still
+  pass silently (15.2% for the worst family).
+- **On the families it trained on,** it answers **64.8%** of held-out flows at **99.3%**
+  reliability (83.2% if it must answer everything). The cost: **1,824 of the 3,088 benign test
+  flows (59.1%)** go to an analyst, and the 2,315-flow analyst queue is 78.8% benign. Because
+  benign is capped in this sample, neither the 64.8% nor that queue would hold at real-world
+  benign prevalence.
 
-Every figure is in `artifacts/zero_day_lofo.json` and `artifacts/metrics.json`; CI rebuilds
-the demo's numbers from the committed per-flow export before the page can deploy.
+Every figure is in `artifacts/zero_day_lofo.json`, `artifacts/metrics.json` and
+`artifacts/demo_flows.json`. No model file is committed; the page's per-flow rows come from the
+model `make train` retrains deterministically from the committed code and sample, and CI retrains
+it and requires the export back byte for byte before the page can deploy (see
+[the live demo](#the-live-demo-and-what-ci-checks)).
 
 Per-flow hierarchical UDP/QUIC intrusion detection with a tunable reject option, served over
-FastAPI. It operationalizes the architecture from my accepted **SECRYPT 2026** paper on hierarchical
-UDP/QUIC intrusion detection, on that paper's own public dataset.
+FastAPI. It builds the two-stage architecture from my accepted **SECRYPT 2026** paper on hierarchical
+UDP/QUIC intrusion detection, on that paper's own public dataset, and then measures it against
+simpler models: on this sample a single forest does as well, and the repo says so (see
+[the ablation](#ablation-what-the-hierarchy-actually-buys)).
 
 **The numbers, all measured and reproducible from this repo:**
 
 - Binary DDoS detection **PR-AUC 0.9767** on a connection-grouped, leakage-safe held-out split of
-  the real BCCC-UDP-QUIC-IDS-2025 dataset. `make reproduce` retrains and fails unless
+  a stratified sample of the real BCCC-UDP-QUIC-IDS-2025 dataset (benign and UDP-RAW capped).
+  PR-AUC depends on prevalence, and here the sampling chose it. Across all eight classes the same
+  file reports macro-F1 **0.391** and macro PR-AUC (one-vs-rest) **0.375**: the rare families are
+  where it is weak. `make reproduce` retrains and fails unless
   `artifacts/metrics.json` regenerates **byte-identically**.
 - The reject knob moves reliability from **83.2%** (answer every flow) to **99.3%** (answer the
   ~65% the model is sure about), with the whole coverage-reliability curve measured, not asserted.
   In operations terms: wrong automatic verdicts fall from **1,683 to 44 per 10,000 flows**, and
-  3,524 per 10,000 go to an analyst instead. See [in operations terms](#in-operations-terms-verdicts-per-10000-flows).
+  3,524 per 10,000 go to an analyst instead, including 59.1% of the benign test flows (that rate
+  is for this sample's capped benign share). See [in operations terms](#in-operations-terms-verdicts-per-10000-flows).
   The per-family artifact says where that reliability comes from, and it is not flattering: the
   answered set is mostly UDP-RAW and benign, and at threshold 0.99 four of the six rare families
   have **recall 0.000**. See [per-family](#results-real-measured).
-- **Zero-day, measured rather than assumed.** On attack families held out of training entirely
-  (leave-one-family-out), **silent misses fall from 70.5% to 7.7%**: forced to name a class, the model
-  calls 70.5% of an unseen family's flows benign, and the reject knob at 0.99 turns that into
-  **91.4% sent to an analyst as unknown** and 7.7% still silent, with a novelty lift of **+0.579**
-  over its own abstention rate on seen traffic and **-0.005** under a shuffled-label control.
+- **Held-out attack families, measured rather than assumed.** On six rare UDP DDoS families each
+  held out of training entirely (leave-one-family-out), **passed-as-benign falls from 70.5% to
+  7.7%**: forced to name a class, the model calls 70.5% of an unseen family's flows benign, and the
+  reject knob at 0.99 turns that into **91.4% sent to an analyst as unknown** and 7.7% still silent,
+  with a novelty lift of **+0.579** over its own abstention rate on seen traffic and **-0.005**
+  under a shuffled-label control. They are flood variants from the same generator, so this shows
+  how the knob treats a family missing from training, not real-world zero-day detection.
   See [zero-day](#zero-day-what-happens-when-the-attack-family-was-never-in-training).
 - Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics. That is the paper's
   design, and this repo **measured what it buys and published the unflattering answer**: on this
@@ -103,6 +121,32 @@ through the Service with k6, and rolls it under load, failing CI on any failed r
 0 failed of 43,980). It also applies [`deploy/terraform/kubernetes`](deploy/terraform/kubernetes)
 to kind, requires an empty re-plan and destroys it. Exact commands, captured output, and what the
 first run broke: [`DEPLOY.md`](DEPLOY.md). No cloud deploy exists.
+
+## The live demo, and what CI checks
+
+[aeripsen.github.io/flowsentry](https://aeripsen.github.io/flowsentry/) is a static page: an
+interactive counter over committed held-out scores. No server, and no model runs anywhere for it.
+It reads three committed files: `artifacts/demo_flows.json` (one row per held-out flow),
+`artifacts/metrics.json`, and `artifacts/zero_day_lofo.json`. The zero-day panel shows that last
+file's aggregate numbers as committed; it has no per-flow rows behind it.
+
+`pages.yml` deploys only after the whole `ci` workflow has passed on the same commit. Inside `ci`:
+
+- **Provenance** (`demo` job): `python scripts/demo_data.py --verify` retrains from the clean
+  checkout, rebuilds the export, and requires `demo_flows.json` back byte for byte. The export
+  sums trees in order (the model's sequential path), because the default threaded sum moved 16 of
+  its 13,140 floats in the last digit between two runs.
+- **Consistency** (`tests/test_demo_data.py`): the exported rows rebuild the committed curve,
+  binary PR-AUC and per-family confusion, and the zero-day means rebuild from the rounds. A missing
+  artifact fails the test; it does not skip.
+- **The page itself** (`site` job): `python scripts/check_site.py` serves the assembled site, loads
+  it in headless Chromium, moves the knob to every committed threshold, clicks every zero-day family
+  and threshold, and compares what the page displays with numbers computed in Python from the
+  committed files. It also fails on a JavaScript error, or on horizontal scroll at a 390 px phone
+  width.
+
+Not checked: prose. The README pin in `tests/test_demo_data.py` only checks that the figures quoted
+at the top of this file match the artifacts.
 
 ## Why a reject option
 
@@ -341,9 +385,10 @@ Never-seen attack families, pooled over the 1,505 flows of the six rare-family r
 | Sent to an analyst as unknown | 0 | 9,169 |
 | Named as a different attack | 3,123 | 86 |
 
-The resume-length version: **on attack families held out of training, the reject option cuts silent
-misses from 70.5% to 7.7% (mean over six families) and sends 91.4% to an analyst, while answering
-66.5% of known traffic at 99.4% reliability.**
+The resume-length version: **on six rare UDP DDoS families held out of training, the reject option
+cuts passed-as-benign from 70.5% to 7.7% (mean over the six) and sends 91.4% to an analyst, while
+answering 66.5% of known traffic at 99.4% reliability in the same runs.** Those are sibling flood
+families from one dataset, not real-world zero-days.
 
 What this does not claim. The held-out split is a stratified sample with benign and UDP-RAW capped, so
 per-10k rates describe that mix, not a real network's; a network with more benign traffic would see a

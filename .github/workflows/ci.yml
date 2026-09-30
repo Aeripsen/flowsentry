@@ -59,8 +59,20 @@ jobs:
   # (logs a run), log the arm comparison, rebuild the drift/performance report,
   # then require the committed summaries to come back unchanged. The tracking
   # store and the HTML report are uploaded so a run can be opened in `mlflow ui`.
+  #
+  # Windows, because that is the platform the committed gbdt_comparison.json and
+  # mlflow_arms.json were produced on. XGBoost is not bit-identical across
+  # operating systems (its softmax calls the platform's exp()): on ubuntu the
+  # xgboost_tuned arm came back with benign PR-AUC, accuracy, macro-F1 and ECE
+  # different in the 4th decimal (run 36770615074), while a local Windows refit
+  # reproduces all five committed values exactly. The forests and LightGBM match
+  # on both, and the `reproduce` job above keeps holding metrics.json to exact
+  # bytes on Linux.
   mlops:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -88,4 +100,50 @@ jobs:
           path: |
             mlflow.db
             reports/evidently_drift_performance.html
+          retention-days: 30
+
+  # The live demo's per-flow rows must come from the committed code: retrain
+  # from this clean checkout (no model file is committed), rebuild the export,
+  # and require artifacts/demo_flows.json back byte for byte.
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install locked environment
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e . --no-deps
+      - name: Retrain and regenerate the demo export byte for byte
+        run: python scripts/demo_data.py --verify
+      - name: The retrain left the committed metrics unchanged
+        run: git diff --exit-code artifacts/metrics.json
+
+  # The page's own JavaScript, run for real: serve the site as pages.yml
+  # assembles it, drive it in headless Chromium, and compare what it displays
+  # with the committed artifacts (scripts/check_site.py).
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Playwright and Chromium
+        run: |
+          python -m pip install --upgrade pip
+          pip install "playwright==1.60.0"
+          python -m playwright install --with-deps chromium
+      - name: Check what the demo page displays
+        run: python scripts/check_site.py --screenshots screenshots
+      - name: Upload the phone and desktop screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-page-screenshots
+          path: screenshots
           retention-days: 30

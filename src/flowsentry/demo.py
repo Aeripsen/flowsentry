@@ -1,31 +1,43 @@
 """
 The per-flow export behind the live demo page
-(https://aeripsen.github.io/flowsentry/), and the check that keeps the page
-from drifting away from the committed artifacts.
+(https://aeripsen.github.io/flowsentry/), and the checks that tie the page to
+the committed code.
 
 What it writes: artifacts/demo_flows.json, every flow of the connection-grouped
-held-out test split with the shipped two-stage model's predicted class, its
-confidence, whether Stage 1 escalated it, P(benign), and the true class. The
-page applies the reject knob to these rows in the browser; it never runs the
-model and never invents a flow. The zero-day panel reads the committed
-artifacts/zero_day_lofo.json directly.
+held-out test split with the two-stage model's predicted class, its
+confidence, whether Stage 1 escalated it, P(benign), and the true class. No
+model file is committed (artifacts/*.joblib is gitignored); the rows come from
+the model that `make train` retrains deterministically from the committed code
+and the committed sample. The page applies the reject knob to these rows in the
+browser; it never runs the model and never invents a flow. The zero-day panel
+reads the committed aggregate artifacts/zero_day_lofo.json, not per-flow rows.
 
-Why it can be trusted: check_export() rebuilds, from the exported rows alone,
-  1. the committed coverage-reliability curve and the binary attack-detection
-     PR-AUC in metrics.json, and
-  2. the full-coverage confusion counts in per_family.json.
-CI runs it offline through tests/test_demo_data.py before pages.yml deploys.
+Two checks, both run in CI (ci.yml):
+  1. Consistency, check_export(): the exported rows alone rebuild the committed
+     coverage-reliability curve and binary PR-AUC in metrics.json and the
+     full-coverage confusion counts in per_family.json
+     (tests/test_demo_data.py).
+  2. Provenance, `python scripts/demo_data.py --verify`: retrain from a clean
+     checkout, rebuild the export, and require the committed file byte for
+     byte. The data sample is committed, so CI can do this; it takes about a
+     minute.
 
+Scores go through the model's sequential path (trees summed in order, the same
+arithmetic as n_jobs=1). The default threaded predict_proba sums trees in
+completion order, which moved 16 of 13,140 exported floats in the last digit
+between two runs on one machine, and that would make check 2 flaky.
 Confidences are exported at full float precision: forest confidences sit on
 multiples of 1/n_trees, right on the committed thresholds (0.9, 0.95, 0.99),
 so rounding them could silently flip a flow across the knob.
 
-Run: python scripts/demo_data.py   (make demo-data; ~1 min, trains if the
-local artifact is missing)
+Run: python scripts/demo_data.py            write (make demo-data)
+     python scripts/demo_data.py --verify   compare only (make demo-verify)
 """
 from __future__ import annotations
 
+import argparse
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -91,7 +103,9 @@ def check_export(
     return errors
 
 
-def main() -> dict[str, Any]:
+def build_export() -> dict[str, Any]:
+    """The export as a dict, from the local model (retrained if missing).
+    Fails unless its rows rebuild the committed metrics and per-family counts."""
     cfg = get_settings()
     art_path = Path(cfg.artifact_dir) / "flowsentry.joblib"
     if not art_path.exists():
@@ -103,9 +117,9 @@ def main() -> dict[str, Any]:
     te = np.asarray(art["test_indices"], dtype=int)
     Xte = art["imputer"].transform(X[te])
     model = art["model"]
-    pred, conf, escalated, _ = model.predict_detail(Xte, reject_threshold=0.0)
+    pred, conf, escalated, _ = model.predict_detail(Xte, reject_threshold=0.0, sequential=True)
     classes = list(model.classes_)
-    p_benign = model.predict_proba(Xte)[:, classes.index("benign")]
+    p_benign = model.predict_proba(Xte, sequential=True)[:, classes.index("benign")]
     index = {c: i for i, c in enumerate(classes)}
     y = np.asarray(y_all)[te]
 
@@ -113,11 +127,14 @@ def main() -> dict[str, Any]:
     demo = {
         "dataset": metrics["dataset"],
         "what": (
-            "Every flow of the connection-grouped held-out test split: the shipped "
-            "two-stage model's predicted class, its confidence (the reject knob's input), "
-            "whether Stage 1 escalated it to Stage 2, P(benign), and the true class. The "
-            "demo page applies the knob to these rows; tests/test_demo_data.py rebuilds "
-            "the committed curve, binary PR-AUC and per-family confusion from them."
+            "Every flow of the connection-grouped held-out test split: the two-stage "
+            "model's predicted class, its confidence (the reject knob's input), whether "
+            "Stage 1 escalated it to Stage 2, P(benign), and the true class. The model is "
+            "the one `make train` retrains deterministically from the committed code; no "
+            "model file is committed. The demo page applies the knob to these rows; "
+            "tests/test_demo_data.py rebuilds the committed curve, binary PR-AUC and "
+            "per-family confusion from them, and `scripts/demo_data.py --verify` "
+            "regenerates this file in CI."
         ),
         "rebuild": "make train && make demo-data",
         "n": int(len(te)),
@@ -134,11 +151,33 @@ def main() -> dict[str, Any]:
     errors = check_export(demo, metrics, per_family)
     if errors:
         raise SystemExit(
-            "FAIL: " + "; ".join(errors) + ". The local artifact is not the committed "
-            "model; run `make train` (or `make reproduce`) and retry."
+            "FAIL: " + "; ".join(errors) + ". The local model does not reproduce the "
+            "committed metrics; run `make train` (or `make reproduce`) and retry."
         )
-    out = Path(cfg.artifact_dir) / "demo_flows.json"
-    out.write_text(json.dumps(demo, separators=(",", ":")), newline="\n")
+    return demo
+
+
+def serialize(demo: dict[str, Any]) -> str:
+    return json.dumps(demo, separators=(",", ":"))
+
+
+def main(argv: list[str] | None = None) -> dict[str, Any]:
+    ap = argparse.ArgumentParser(description="Export or verify artifacts/demo_flows.json.")
+    ap.add_argument("--verify", action="store_true",
+                    help="rebuild the export and require the committed file byte for byte")
+    args = ap.parse_args(argv)
+    out = Path(get_settings().artifact_dir) / "demo_flows.json"
+    demo = build_export()
+    if args.verify:
+        if not out.exists():
+            sys.exit(f"FAIL: {out} is not committed")
+        if out.read_text().replace("\r\n", "\n") != serialize(demo):
+            sys.exit(f"FAIL: a fresh export differs from the committed {out.name}; "
+                     "the page would show rows the committed code does not produce")
+        print(f"PASS: a fresh export from the retrained model equals the committed "
+              f"{out.name} byte for byte")
+        return demo
+    out.write_text(serialize(demo), newline="\n")
     print(f"[save ] {out} ({out.stat().st_size / 1e6:.2f} MB); rebuilds metrics.json "
           f"curve, binary PR-AUC and per_family confusion")
     return demo
