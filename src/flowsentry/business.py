@@ -34,6 +34,11 @@ picture real traffic:
      round per family. They are measurements on this dataset, not a guarantee
      about the next attack family.
 
+Means over families use math.fsum, not sum(): Python 3.12 made sum() of floats
+compensated, so on 3.11 a plain sum lands a few means on the other side of a
+4-decimal rounding boundary. fsum is correctly rounded on every version, which
+keeps the committed file byte-identical across the CI matrix.
+
 Nothing is priced. There is no analyst-minute or breach-cost figure anywhere.
 
 Run:  python scripts/business_case.py            -> artifacts/business_case.json
@@ -43,6 +48,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -162,7 +168,7 @@ def zero_day_table(lofo: dict[str, Any], arm: str = ZERO_DAY_ARM) -> dict[str, A
             {
                 "reject_threshold": t,
                 "mean_over_families": {
-                    k: round(sum(v) / len(v), 4) for k, v in shares.items()
+                    k: round(math.fsum(v) / len(v), 4) for k, v in shares.items()
                 },
                 "pooled_counts": pooled,
                 "pooled_per_10k_unseen_flows": {
@@ -171,8 +177,8 @@ def zero_day_table(lofo: dict[str, Any], arm: str = ZERO_DAY_ARM) -> dict[str, A
                     "labelled_as_a_different_attack": _per(pooled["called_wrong_attack"], n),
                 },
                 "cost_on_known_traffic": {
-                    "mean_seen_coverage": round(sum(seen_cov) / len(seen_cov), 4),
-                    "mean_seen_reliability": round(sum(seen_rel) / len(seen_rel), 4),
+                    "mean_seen_coverage": round(math.fsum(seen_cov) / len(seen_cov), 4),
+                    "mean_seen_reliability": round(math.fsum(seen_rel) / len(seen_rel), 4),
                 },
                 "per_family": per_family,
             }
