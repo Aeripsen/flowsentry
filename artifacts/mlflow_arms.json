@@ -13,11 +13,11 @@
       "family": "lightgbm",
       "shipped": false,
       "params": {
-        "seed": "42",
         "grid_size": "8",
+        "learning_rate": "0.05",
         "n_estimators": "200",
         "num_leaves": "31",
-        "learning_rate": "0.05",
+        "seed": "42",
         "selected_by": "grouped validation carve (seed 43), binary PR-AUC"
       },
       "metrics": {
@@ -36,8 +36,8 @@
       "shipped": false,
       "params": {
         "n_estimators": "200",
-        "stage_estimator": "random_forest",
-        "random_state": "42"
+        "random_state": "42",
+        "stage_estimator": "random_forest"
       },
       "metrics": {
         "binary_attack_pr_auc": 0.9774,
@@ -54,12 +54,12 @@
       "family": "random_forest x2 (stage 1 UDP-only, stage 2 UDP+QUIC)",
       "shipped": true,
       "params": {
-        "stage_estimator": "random_forest",
-        "stage2.n_estimators": "200",
-        "stage2.random_state": "42",
+        "escalate_threshold": "0.9",
         "stage1.n_estimators": "60",
         "stage1.random_state": "42",
-        "escalate_threshold": "0.9"
+        "stage2.n_estimators": "200",
+        "stage2.random_state": "42",
+        "stage_estimator": "random_forest"
       },
       "metrics": {
         "binary_attack_pr_auc": 0.9767,
@@ -77,12 +77,12 @@
       "family": "xgboost",
       "shipped": false,
       "params": {
-        "seed": "42",
         "grid_size": "8",
-        "n_estimators": "200",
         "learning_rate": "0.05",
-        "selected_by": "grouped validation carve (seed 43), binary PR-AUC",
-        "max_depth": "6"
+        "max_depth": "6",
+        "n_estimators": "200",
+        "seed": "42",
+        "selected_by": "grouped validation carve (seed 43), binary PR-AUC"
       },
       "metrics": {
         "binary_attack_pr_auc": 0.9852,

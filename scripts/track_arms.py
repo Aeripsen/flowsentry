@@ -294,7 +294,8 @@ def main() -> int:
         readback[r["tags.arm"]] = {
             "family": r["tags.family"],
             "shipped": r["tags.shipped"] == "True",
-            "params": {c.removeprefix("params.model."): r[c] for c in runs.columns
+            # sorted: search_runs returns param columns in no fixed order
+            "params": {c.removeprefix("params.model."): r[c] for c in sorted(runs.columns)
                        if c.startswith("params.model.") and isinstance(r[c], str)},
             "metrics": {k: round(float(r[f"metrics.{k}"]), 4) for k in HEADLINE
                         + ["escalation_rate"] if f"metrics.{k}" in runs.columns
