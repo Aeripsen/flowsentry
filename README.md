@@ -5,6 +5,8 @@
 
 **[Live demo: move the reject knob over 6,570 real held-out network flows](https://aeripsen.github.io/flowsentry/)**
 
+[![the reject knob moving over the held-out flows](docs/img/demo.gif)](https://aeripsen.github.io/flowsentry/)
+
 **What this is, in 30 seconds.** A network-attack detector that is allowed to say "I don't
 know" and hand a flow to an analyst instead of guessing. It implements the architecture from
 my accepted SECRYPT 2026 paper, on that paper's public dataset. Measured, not assumed:
