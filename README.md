@@ -13,12 +13,15 @@ UDP/QUIC intrusion detection, on that paper's own public dataset.
   `artifacts/metrics.json` regenerates **byte-identically**.
 - The reject knob moves reliability from **83.2%** (answer every flow) to **99.3%** (answer the
   ~65% the model is sure about), with the whole coverage-reliability curve measured, not asserted.
+  In operations terms: wrong automatic verdicts fall from **1,683 to 44 per 10,000 flows**, and
+  3,524 per 10,000 go to an analyst instead. See [in operations terms](#in-operations-terms-verdicts-per-10000-flows).
   The per-family artifact says where that reliability comes from, and it is not flattering: the
   answered set is mostly UDP-RAW and benign, and at threshold 0.99 four of the six rare families
   have **recall 0.000**. See [per-family](#results-real-measured).
-- **Zero-day, measured rather than assumed.** Under leave-one-family-out, a model forced to name a
-  class calls **70.5%** of an unseen attack family's flows **benign**. The reject knob at 0.99 turns
-  that into **91.4% rejected as unknown** and 7.7% still silent, with a novelty lift of **+0.579**
+- **Zero-day, measured rather than assumed.** On attack families held out of training entirely
+  (leave-one-family-out), **silent misses fall from 70.5% to 7.7%**: forced to name a class, the model
+  calls 70.5% of an unseen family's flows benign, and the reject knob at 0.99 turns that into
+  **91.4% sent to an analyst as unknown** and 7.7% still silent, with a novelty lift of **+0.579**
   over its own abstention rate on seen traffic and **-0.005** under a shuffled-label control.
   See [zero-day](#zero-day-what-happens-when-the-attack-family-was-never-in-training).
 - Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics. That is the paper's
@@ -282,6 +285,47 @@ than generalising. That removed 65 of UDP-OVH's 304 flows and 27 of UDP-VSE's 38
 the headline benign-absorption number by 0.3 points, so the leak was not driving the result, but the
 rule is the repo's own and it holds everywhere.
 
+### In operations terms: verdicts per 10,000 flows
+
+The numbers above are model metrics. A SOC lead asks how many flows the system decides alone, how
+many land in the analyst queue, how many of its own verdicts are wrong, and how much of a new flood
+walks through as benign. `make business` (`python scripts/business_case.py`) re-expresses the
+committed artifacts in those units and trains nothing: it reads `metrics.json`, `per_family.json`
+and `zero_day_lofo.json`, recovers exact counts from them, fails unless its zero-day means equal the
+ones `zero_day_lofo.json` publishes, and writes `artifacts/business_case.json`. CI regenerates it
+with `--verify` and fails on any byte difference.
+
+Held-out split, 6,570 flows:
+
+| Reject threshold | Answered automatically / 10k | Sent to an analyst / 10k | Wrong automatic verdicts / 10k |
+|---|---|---|---|
+| 0 (answer everything) | 10,000 | 0 | 1,683 |
+| 0.90 | 7,664 | 2,336 | 108 |
+| 0.99 | 6,476 | 3,524 | 44 |
+
+With no knob, the 1,106 wrong verdicts include **778 false alarms** (25.2% of benign flows raised as
+an attack, mostly as UDP-bypass-v1) and **235 silent misses** (6.7% of attack flows passed as benign);
+the rest are attacks given the wrong family name.
+
+Never-seen attack families, pooled over the 1,505 flows of the six rare-family rounds:
+
+| Per 10,000 flows of an unseen family | Forced to answer | Reject at 0.99 |
+|---|---|---|
+| Passed as benign (silent) | 6,877 | 744 |
+| Sent to an analyst as unknown | 0 | 9,169 |
+| Named as a different attack | 3,123 | 86 |
+
+The resume-length version: **on attack families held out of training, the reject option cuts silent
+misses from 70.5% to 7.7% (mean over six families) and sends 91.4% to an analyst, while answering
+66.5% of known traffic at 99.4% reliability.**
+
+What this does not claim. The held-out split is a stratified sample with benign and UDP-RAW capped, so
+per-10k rates describe that mix, not a real network's; a network with more benign traffic would see a
+different queue. The zero-day means come from one round per family on 193-356 flows each, and the worst
+family, UDP-bypass-v1, still passes 15.2% of its flows as benign at 0.99. The analyst queue is the
+price: at 0.99 about 35% of known traffic goes to a human. Nothing is priced; there is no analyst-time
+or breach-cost figure anywhere in the artifact.
+
 ### Calibration of the confidence number
 
 `python scripts/calibration_report.py` measures the shipped model's confidence against what it is
@@ -431,7 +475,7 @@ make reproduce            # or: python scripts/reproduce.py
 Retrains from the committed sample and fails unless `artifacts/metrics.json` regenerates
 **byte-identically** (seeded end to end: split, imputer, forests). Exact bytes are promised under
 `requirements.lock` (the environment the published numbers came from); on other versions the test
-suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (72 tests, including
+suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (80 tests, including
 the leakage guard, the metrics regression, exact-equality guards on both fast paths, and the perf
 regression guard) run in CI.
 

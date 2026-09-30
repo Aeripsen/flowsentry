@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day reproduce serve
+.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business reproduce serve
 
 train:
 	python -m flowsentry.train
@@ -46,6 +46,12 @@ shap:
 # with a shuffled-label control. The open-set case, measured
 zero-day:
 	python scripts/zero_day_lofo.py
+
+# the reject knob as verdicts per 10,000 flows (answered, to an analyst, wrong)
+# and the zero-day silent-miss rate, derived from the committed artifacts above;
+# trains nothing, prices nothing
+business:
+	python scripts/business_case.py
 
 # the reproducibility contract: retrain and require artifacts/metrics.json to
 # regenerate byte-identically (exact bytes promised under requirements.lock)

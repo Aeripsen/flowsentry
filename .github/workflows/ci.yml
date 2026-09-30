@@ -33,6 +33,9 @@ jobs:
       - name: Test (pytest)
         run: pytest -q
 
+      - name: Business case regenerates from committed artifacts
+        run: python scripts/business_case.py --verify
+
   # Exact-bytes reproducibility under the locked environment the numbers were
   # published from. The unlocked matrix above still enforces the PR-AUC floor
   # via the regression test; this job is the strict byte-identity contract.

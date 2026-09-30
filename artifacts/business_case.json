@@ -1,0 +1,514 @@
+{
+  "what": "the reject knob as verdicts per 10,000 flows: answered, sent to an analyst, wrong; and what happens to flows of a never-seen attack family",
+  "derived_from": [
+    "artifacts/metrics.json (make reproduce)",
+    "artifacts/per_family.json (make families)",
+    "artifacts/zero_day_lofo.json (make zero-day)"
+  ],
+  "no_prices": "counts only; no analyst-time or breach-cost figure is used",
+  "test_mix_caveat": "the held-out split is a stratified sample with benign and UDP-RAW capped; per-10k rates describe that mix, not a real network's",
+  "consistency_check": "zero-day means match zero_day_lofo.json summary on 5 published values",
+  "headline_threshold": 0.99,
+  "seen_traffic": [
+    {
+      "reject_threshold": 0.0,
+      "answered_automatically": 6570,
+      "sent_to_analyst": 0,
+      "wrong_automatic_verdicts": 1106,
+      "per_10k_flows": {
+        "answered_automatically": 10000.0,
+        "sent_to_analyst": 0.0,
+        "wrong_automatic_verdicts": 1683.4
+      },
+      "reliability_of_answered": 0.8317
+    },
+    {
+      "reject_threshold": 0.5,
+      "answered_automatically": 5752,
+      "sent_to_analyst": 818,
+      "wrong_automatic_verdicts": 367,
+      "per_10k_flows": {
+        "answered_automatically": 8754.9,
+        "sent_to_analyst": 1245.1,
+        "wrong_automatic_verdicts": 558.6
+      },
+      "reliability_of_answered": 0.9362
+    },
+    {
+      "reject_threshold": 0.7,
+      "answered_automatically": 5379,
+      "sent_to_analyst": 1191,
+      "wrong_automatic_verdicts": 137,
+      "per_10k_flows": {
+        "answered_automatically": 8187.2,
+        "sent_to_analyst": 1812.8,
+        "wrong_automatic_verdicts": 208.5
+      },
+      "reliability_of_answered": 0.9745
+    },
+    {
+      "reject_threshold": 0.8,
+      "answered_automatically": 5202,
+      "sent_to_analyst": 1368,
+      "wrong_automatic_verdicts": 98,
+      "per_10k_flows": {
+        "answered_automatically": 7917.8,
+        "sent_to_analyst": 2082.2,
+        "wrong_automatic_verdicts": 149.2
+      },
+      "reliability_of_answered": 0.9812
+    },
+    {
+      "reject_threshold": 0.9,
+      "answered_automatically": 5035,
+      "sent_to_analyst": 1535,
+      "wrong_automatic_verdicts": 71,
+      "per_10k_flows": {
+        "answered_automatically": 7663.6,
+        "sent_to_analyst": 2336.4,
+        "wrong_automatic_verdicts": 108.1
+      },
+      "reliability_of_answered": 0.9859
+    },
+    {
+      "reject_threshold": 0.95,
+      "answered_automatically": 4793,
+      "sent_to_analyst": 1777,
+      "wrong_automatic_verdicts": 48,
+      "per_10k_flows": {
+        "answered_automatically": 7295.3,
+        "sent_to_analyst": 2704.7,
+        "wrong_automatic_verdicts": 73.1
+      },
+      "reliability_of_answered": 0.99
+    },
+    {
+      "reject_threshold": 0.99,
+      "answered_automatically": 4255,
+      "sent_to_analyst": 2315,
+      "wrong_automatic_verdicts": 29,
+      "per_10k_flows": {
+        "answered_automatically": 6476.4,
+        "sent_to_analyst": 3523.6,
+        "wrong_automatic_verdicts": 44.1
+      },
+      "reliability_of_answered": 0.9932
+    }
+  ],
+  "full_coverage_error_split": {
+    "n_flows": 6570,
+    "benign_flows": 3088,
+    "false_alarms_benign_called_attack": 778,
+    "false_alarm_share_of_benign": 0.2519,
+    "attack_flows": 3482,
+    "silent_misses_attack_called_benign": 235,
+    "silent_miss_share_of_attacks": 0.0675,
+    "per_10k_flows": {
+      "false_alarms": 1184.2,
+      "silent_misses": 357.7
+    },
+    "note": "full coverage only; the committed artifacts do not split wrong verdicts by kind under the reject knob, so this table does not either"
+  },
+  "zero_day": {
+    "arm": "hierarchy",
+    "rare_families": [
+      "UDP-VSE",
+      "UDP-OVH",
+      "UDP-MULTI",
+      "UDP-HULK",
+      "UDP-bypass-v1",
+      "UDP-GAME"
+    ],
+    "by_threshold": [
+      {
+        "reject_threshold": 0.0,
+        "mean_over_families": {
+          "called_benign": 0.7053,
+          "rejected_unknown": 0.0,
+          "called_wrong_attack": 0.2947
+        },
+        "pooled_counts": {
+          "n": 1505,
+          "called_benign": 1035,
+          "rejected_unknown": 0,
+          "called_wrong_attack": 470
+        },
+        "pooled_per_10k_unseen_flows": {
+          "passed_as_benign": 6877.1,
+          "sent_to_analyst_as_unknown": 0.0,
+          "labelled_as_a_different_attack": 3122.9
+        },
+        "cost_on_known_traffic": {
+          "mean_seen_coverage": 1.0,
+          "mean_seen_reliability": 0.8576
+        },
+        "per_family": {
+          "UDP-VSE": {
+            "n_unseen_flows": 356,
+            "called_benign": 0.5365,
+            "rejected_unknown": 0.0
+          },
+          "UDP-OVH": {
+            "n_unseen_flows": 239,
+            "called_benign": 0.7155,
+            "rejected_unknown": 0.0
+          },
+          "UDP-MULTI": {
+            "n_unseen_flows": 261,
+            "called_benign": 0.7165,
+            "rejected_unknown": 0.0
+          },
+          "UDP-HULK": {
+            "n_unseen_flows": 246,
+            "called_benign": 0.6301,
+            "rejected_unknown": 0.0
+          },
+          "UDP-bypass-v1": {
+            "n_unseen_flows": 210,
+            "called_benign": 0.9286,
+            "rejected_unknown": 0.0
+          },
+          "UDP-GAME": {
+            "n_unseen_flows": 193,
+            "called_benign": 0.7047,
+            "rejected_unknown": 0.0
+          }
+        }
+      },
+      {
+        "reject_threshold": 0.5,
+        "mean_over_families": {
+          "called_benign": 0.534,
+          "rejected_unknown": 0.3608,
+          "called_wrong_attack": 0.1053
+        },
+        "pooled_counts": {
+          "n": 1505,
+          "called_benign": 783,
+          "rejected_unknown": 545,
+          "called_wrong_attack": 177
+        },
+        "pooled_per_10k_unseen_flows": {
+          "passed_as_benign": 5202.7,
+          "sent_to_analyst_as_unknown": 3621.3,
+          "labelled_as_a_different_attack": 1176.1
+        },
+        "cost_on_known_traffic": {
+          "mean_seen_coverage": 0.8834,
+          "mean_seen_reliability": 0.9432
+        },
+        "per_family": {
+          "UDP-VSE": {
+            "n_unseen_flows": 356,
+            "called_benign": 0.368,
+            "rejected_unknown": 0.3904
+          },
+          "UDP-OVH": {
+            "n_unseen_flows": 239,
+            "called_benign": 0.6151,
+            "rejected_unknown": 0.3347
+          },
+          "UDP-MULTI": {
+            "n_unseen_flows": 261,
+            "called_benign": 0.5939,
+            "rejected_unknown": 0.3372
+          },
+          "UDP-HULK": {
+            "n_unseen_flows": 246,
+            "called_benign": 0.4715,
+            "rejected_unknown": 0.374
+          },
+          "UDP-bypass-v1": {
+            "n_unseen_flows": 210,
+            "called_benign": 0.6476,
+            "rejected_unknown": 0.319
+          },
+          "UDP-GAME": {
+            "n_unseen_flows": 193,
+            "called_benign": 0.5078,
+            "rejected_unknown": 0.4093
+          }
+        }
+      },
+      {
+        "reject_threshold": 0.7,
+        "mean_over_families": {
+          "called_benign": 0.3642,
+          "rejected_unknown": 0.6027,
+          "called_wrong_attack": 0.033
+        },
+        "pooled_counts": {
+          "n": 1505,
+          "called_benign": 532,
+          "rejected_unknown": 921,
+          "called_wrong_attack": 52
+        },
+        "pooled_per_10k_unseen_flows": {
+          "passed_as_benign": 3534.9,
+          "sent_to_analyst_as_unknown": 6119.6,
+          "labelled_as_a_different_attack": 345.5
+        },
+        "cost_on_known_traffic": {
+          "mean_seen_coverage": 0.8305,
+          "mean_seen_reliability": 0.976
+        },
+        "per_family": {
+          "UDP-VSE": {
+            "n_unseen_flows": 356,
+            "called_benign": 0.2612,
+            "rejected_unknown": 0.7022
+          },
+          "UDP-OVH": {
+            "n_unseen_flows": 239,
+            "called_benign": 0.4561,
+            "rejected_unknown": 0.5272
+          },
+          "UDP-MULTI": {
+            "n_unseen_flows": 261,
+            "called_benign": 0.3295,
+            "rejected_unknown": 0.6475
+          },
+          "UDP-HULK": {
+            "n_unseen_flows": 246,
+            "called_benign": 0.3049,
+            "rejected_unknown": 0.5935
+          },
+          "UDP-bypass-v1": {
+            "n_unseen_flows": 210,
+            "called_benign": 0.4762,
+            "rejected_unknown": 0.519
+          },
+          "UDP-GAME": {
+            "n_unseen_flows": 193,
+            "called_benign": 0.3575,
+            "rejected_unknown": 0.6269
+          }
+        }
+      },
+      {
+        "reject_threshold": 0.8,
+        "mean_over_families": {
+          "called_benign": 0.2745,
+          "rejected_unknown": 0.6987,
+          "called_wrong_attack": 0.0269
+        },
+        "pooled_counts": {
+          "n": 1505,
+          "called_benign": 400,
+          "rejected_unknown": 1062,
+          "called_wrong_attack": 43
+        },
+        "pooled_per_10k_unseen_flows": {
+          "passed_as_benign": 2657.8,
+          "sent_to_analyst_as_unknown": 7056.5,
+          "labelled_as_a_different_attack": 285.7
+        },
+        "cost_on_known_traffic": {
+          "mean_seen_coverage": 0.807,
+          "mean_seen_reliability": 0.9822
+        },
+        "per_family": {
+          "UDP-VSE": {
+            "n_unseen_flows": 356,
+            "called_benign": 0.1966,
+            "rejected_unknown": 0.7725
+          },
+          "UDP-OVH": {
+            "n_unseen_flows": 239,
+            "called_benign": 0.3431,
+            "rejected_unknown": 0.6527
+          },
+          "UDP-MULTI": {
+            "n_unseen_flows": 261,
+            "called_benign": 0.249,
+            "rejected_unknown": 0.728
+          },
+          "UDP-HULK": {
+            "n_unseen_flows": 246,
+            "called_benign": 0.2033,
+            "rejected_unknown": 0.7033
+          },
+          "UDP-bypass-v1": {
+            "n_unseen_flows": 210,
+            "called_benign": 0.3905,
+            "rejected_unknown": 0.6048
+          },
+          "UDP-GAME": {
+            "n_unseen_flows": 193,
+            "called_benign": 0.2642,
+            "rejected_unknown": 0.7306
+          }
+        }
+      },
+      {
+        "reject_threshold": 0.9,
+        "mean_over_families": {
+          "called_benign": 0.2006,
+          "rejected_unknown": 0.7812,
+          "called_wrong_attack": 0.0181
+        },
+        "pooled_counts": {
+          "n": 1505,
+          "called_benign": 291,
+          "rejected_unknown": 1187,
+          "called_wrong_attack": 27
+        },
+        "pooled_per_10k_unseen_flows": {
+          "passed_as_benign": 1933.6,
+          "sent_to_analyst_as_unknown": 7887.0,
+          "labelled_as_a_different_attack": 179.4
+        },
+        "cost_on_known_traffic": {
+          "mean_seen_coverage": 0.7814,
+          "mean_seen_reliability": 0.9862
+        },
+        "per_family": {
+          "UDP-VSE": {
+            "n_unseen_flows": 356,
+            "called_benign": 0.1517,
+            "rejected_unknown": 0.8427
+          },
+          "UDP-OVH": {
+            "n_unseen_flows": 239,
+            "called_benign": 0.2469,
+            "rejected_unknown": 0.749
+          },
+          "UDP-MULTI": {
+            "n_unseen_flows": 261,
+            "called_benign": 0.1494,
+            "rejected_unknown": 0.8429
+          },
+          "UDP-HULK": {
+            "n_unseen_flows": 246,
+            "called_benign": 0.1382,
+            "rejected_unknown": 0.7805
+          },
+          "UDP-bypass-v1": {
+            "n_unseen_flows": 210,
+            "called_benign": 0.3,
+            "rejected_unknown": 0.6952
+          },
+          "UDP-GAME": {
+            "n_unseen_flows": 193,
+            "called_benign": 0.2176,
+            "rejected_unknown": 0.7772
+          }
+        }
+      },
+      {
+        "reject_threshold": 0.95,
+        "mean_over_families": {
+          "called_benign": 0.1387,
+          "rejected_unknown": 0.8451,
+          "called_wrong_attack": 0.0162
+        },
+        "pooled_counts": {
+          "n": 1505,
+          "called_benign": 204,
+          "rejected_unknown": 1277,
+          "called_wrong_attack": 24
+        },
+        "pooled_per_10k_unseen_flows": {
+          "passed_as_benign": 1355.5,
+          "sent_to_analyst_as_unknown": 8485.0,
+          "labelled_as_a_different_attack": 159.5
+        },
+        "cost_on_known_traffic": {
+          "mean_seen_coverage": 0.747,
+          "mean_seen_reliability": 0.9892
+        },
+        "per_family": {
+          "UDP-VSE": {
+            "n_unseen_flows": 356,
+            "called_benign": 0.1236,
+            "rejected_unknown": 0.8736
+          },
+          "UDP-OVH": {
+            "n_unseen_flows": 239,
+            "called_benign": 0.1213,
+            "rejected_unknown": 0.8745
+          },
+          "UDP-MULTI": {
+            "n_unseen_flows": 261,
+            "called_benign": 0.1341,
+            "rejected_unknown": 0.8621
+          },
+          "UDP-HULK": {
+            "n_unseen_flows": 246,
+            "called_benign": 0.0935,
+            "rejected_unknown": 0.8252
+          },
+          "UDP-bypass-v1": {
+            "n_unseen_flows": 210,
+            "called_benign": 0.2095,
+            "rejected_unknown": 0.7857
+          },
+          "UDP-GAME": {
+            "n_unseen_flows": 193,
+            "called_benign": 0.1503,
+            "rejected_unknown": 0.8497
+          }
+        }
+      },
+      {
+        "reject_threshold": 0.99,
+        "mean_over_families": {
+          "called_benign": 0.0769,
+          "rejected_unknown": 0.9141,
+          "called_wrong_attack": 0.0089
+        },
+        "pooled_counts": {
+          "n": 1505,
+          "called_benign": 112,
+          "rejected_unknown": 1380,
+          "called_wrong_attack": 13
+        },
+        "pooled_per_10k_unseen_flows": {
+          "passed_as_benign": 744.2,
+          "sent_to_analyst_as_unknown": 9169.4,
+          "labelled_as_a_different_attack": 86.4
+        },
+        "cost_on_known_traffic": {
+          "mean_seen_coverage": 0.6645,
+          "mean_seen_reliability": 0.994
+        },
+        "per_family": {
+          "UDP-VSE": {
+            "n_unseen_flows": 356,
+            "called_benign": 0.0646,
+            "rejected_unknown": 0.9354
+          },
+          "UDP-OVH": {
+            "n_unseen_flows": 239,
+            "called_benign": 0.0669,
+            "rejected_unknown": 0.9289
+          },
+          "UDP-MULTI": {
+            "n_unseen_flows": 261,
+            "called_benign": 0.0575,
+            "rejected_unknown": 0.9425
+          },
+          "UDP-HULK": {
+            "n_unseen_flows": 246,
+            "called_benign": 0.0528,
+            "rejected_unknown": 0.9024
+          },
+          "UDP-bypass-v1": {
+            "n_unseen_flows": 210,
+            "called_benign": 0.1524,
+            "rejected_unknown": 0.8429
+          },
+          "UDP-GAME": {
+            "n_unseen_flows": 193,
+            "called_benign": 0.0674,
+            "rejected_unknown": 0.9326
+          }
+        }
+      }
+    ]
+  },
+  "headline_sentences": [
+    "On attack families held out of training entirely (leave-one-family-out, 6 families), the reject option at 0.99 cuts silent misses (attack flows passed as benign) from 70.5% to 7.7% and sends 91.4% to an analyst as unknown, while answering 66.5% of known traffic at 99.4% reliability.",
+    "On the held-out split, wrong automatic verdicts fall from 1,683 to 44 per 10,000 flows (1,106 to 29 of 6,570), with 3,524 per 10,000 sent to an analyst."
+  ]
+}
