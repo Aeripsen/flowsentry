@@ -107,6 +107,7 @@ mlflow-ui:
 # connections (out-of-fold) vs held-out connections -> reports/*.html; needs [mlops]
 drift-report:
 	python scripts/evidently_report.py
+	python scripts/check_evidently_html.py
 
 # Deploy to a throwaway kind cluster, smoke + load test, rolling restart under
 # load (needs docker, kind, kubectl). Same script the k8s CI workflow runs.

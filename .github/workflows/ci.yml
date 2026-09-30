@@ -110,6 +110,16 @@ jobs:
           pip install -r requirements.lock
           pip install -e . --no-deps
           pip install "lightgbm==4.7.0" "xgboost==3.3.0" "mlflow==3.16.1" "evidently==0.7.23"
+      # real MLflow against a throwaway store: a run logged, read back, its model
+      # reloaded, and a disagreement shown to stop the run
+      - name: MLflow round-trip tests
+        run: pytest -q tests/test_mlflow_roundtrip.py tests/test_evidently_html.py
+      # the HTML Pages serves is not byte-reproducible (random widget ids), so its
+      # embedded report data is checked value by value against the summary
+      - name: Served Evidently page matches the committed summary
+        run: python scripts/check_evidently_html.py
+      # exits non-zero if the model reloaded from the store does not reproduce the
+      # class probabilities and labels exactly on all 6,570 held-out flows
       - name: Train (logs a run to the local MLflow store)
         run: python -m flowsentry.train
       # strict: every arm must equal the committed artifact that reports it, and
@@ -118,6 +128,23 @@ jobs:
         run: python scripts/track_arms.py
       - name: Evidently drift + performance report
         run: python scripts/evidently_report.py
+      - name: Regenerated Evidently page matches the regenerated summary
+        run: python scripts/check_evidently_html.py
+      - name: The store holds the training run and the four arms
+        run: |
+          python - <<'EOF'
+          import mlflow
+          from flowsentry import tracking
+          mlflow.set_tracking_uri(tracking.tracking_uri())
+          train = mlflow.search_runs(experiment_names=["flowsentry-train"], output_format="list")
+          arms = mlflow.search_runs(experiment_names=["flowsentry-arms"], output_format="list")
+          assert len(train) == 1, train
+          assert len(arms) == 4, arms
+          for r in [*train, *arms]:
+              assert r.data.tags["roundtrip_predictions_identical"] == "True", r.info.run_name
+              assert r.data.metrics["roundtrip.max_abs_proba_diff"] == 0.0, r.info.run_name
+          print("store: 1 training run + 4 arm runs, every logged model reloaded identically")
+          EOF
       - name: Committed summaries regenerate exactly
         run: git diff --exit-code artifacts/metrics.json artifacts/mlflow_arms.json artifacts/evidently_summary.json
       - name: Upload the tracking store and the report

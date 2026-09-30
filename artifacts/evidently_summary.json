@@ -10,7 +10,8 @@
     "drifted_columns": 3,
     "drifted_share": 0.0227,
     "dataset_drift": false,
-    "rule": "dataset drifts if >= 50% of columns drift (Evidently default)",
+    "dataset_drift_source": "Evidently's own test on DriftedColumnsCount: \"Share of Drifted Columns: Less 0.500\" -> SUCCESS (FAIL means dataset drift)",
+    "drift_share_threshold": 0.5,
     "methods_used": {
       "Jensen-Shannon distance": 21,
       "Wasserstein distance (normed)": 111
@@ -91,6 +92,73 @@
       ],
       "psi_only": [],
       "neither": 129
+    }
+  },
+  "rare_family_training_support": {
+    "why": "each out-of-fold model trains on the other two folds of the training connections; these are the rare-family flow counts it sees, next to what the shipped model trains on",
+    "families": [
+      "UDP-GAME",
+      "UDP-HULK",
+      "UDP-MULTI",
+      "UDP-OVH",
+      "UDP-VSE",
+      "UDP-bypass-v1"
+    ],
+    "per_fold_model": {
+      "UDP-GAME": [
+        112,
+        105,
+        93
+      ],
+      "UDP-HULK": [
+        117,
+        128,
+        121
+      ],
+      "UDP-MULTI": [
+        118,
+        121,
+        127
+      ],
+      "UDP-OVH": [
+        175,
+        194,
+        129
+      ],
+      "UDP-VSE": [
+        196,
+        199,
+        171
+      ],
+      "UDP-bypass-v1": [
+        108,
+        104,
+        100
+      ]
+    },
+    "per_fold_model_range": [
+      93,
+      199
+    ],
+    "shipped_model": {
+      "UDP-GAME": 155,
+      "UDP-HULK": 183,
+      "UDP-MULTI": 183,
+      "UDP-OVH": 249,
+      "UDP-VSE": 283,
+      "UDP-bypass-v1": 156
+    },
+    "shipped_model_range": [
+      155,
+      283
+    ],
+    "held_out_test_support": {
+      "UDP-GAME": 52,
+      "UDP-HULK": 63,
+      "UDP-MULTI": 78,
+      "UDP-OVH": 55,
+      "UDP-VSE": 100,
+      "UDP-bypass-v1": 58
     }
   },
   "performance": {

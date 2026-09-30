@@ -62,7 +62,7 @@ from flowsentry.data import (  # noqa: E402
     load_sample,
 )
 from flowsentry.gbdt import make_lightgbm, make_xgboost, reject_curve, top_label  # noqa: E402
-from flowsentry.model import TwoStageRejectClassifier  # noqa: E402
+from flowsentry.model import TwoStageRejectClassifier, forest_proba  # noqa: E402
 from flowsentry.registry import make_stage_estimator  # noqa: E402
 
 ARTIFACTS = Path(__file__).resolve().parents[1] / "artifacts"
@@ -133,6 +133,21 @@ def check(arm: str, live: dict[str, Any], ref: dict[str, dict[str, float]]) -> d
                    "abs_diff": round(abs(live[k] - want), 4)}
     return {"fields": rows, "all_match": all(r["match"] for r in rows.values()),
             "max_abs_diff": max((r["abs_diff"] for r in rows.values()), default=0.0)}
+
+
+def deterministic_scores(pipe: Pipeline, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Probabilities and labels of an imputer+forest pipeline on the sequential
+    forest path. The default n_jobs=-1 path sums trees in thread-finish order, so
+    two calls on the same in-memory forest differ by up to 2.2e-16; the sequential
+    path is bit-identical to n_jobs=1 and repeatable, so it is what an exact
+    round-trip check has to use."""
+    Xt = pipe[:-1].transform(X)
+    est = pipe[-1]
+    if isinstance(est, TwoStageRejectClassifier):
+        return (np.asarray(est.predict_proba(Xt, sequential=True)),
+                np.asarray(est.predict(Xt, sequential=True)))
+    proba = np.asarray(forest_proba(est, Xt, sequential=True))
+    return proba, np.asarray(est.classes_)[proba.argmax(axis=1)]
 
 
 def main() -> int:
@@ -259,7 +274,13 @@ def main() -> int:
                     pip_requirements=tracking.pip_requirements(),
                     code_paths=[str(tracking.REPO_ROOT / "src" / "flowsentry")],
                     skops_trusted_types=a["trusted"])
-                expected = a["model"].predict(Xte)
+                # round trip through the sklearn flavor: labels AND the class
+                # probability matrix, both bit for bit, on the sequential path
+                loaded = mlflow.sklearn.load_model(info.model_uri)
+                got_p, got_l = deterministic_scores(loaded, Xte)
+                want_p, want_l = deterministic_scores(a["model"], Xte)
+                labels_same = bool(np.array_equal(got_l, want_l))
+                compared = "labels and class probabilities, exact (sequential forest path)"
             else:
                 # skops cannot walk a compiled xgboost/lightgbm booster and the repo's
                 # xgboost wrapper is not a full sklearn estimator, so these log as a
@@ -273,16 +294,24 @@ def main() -> int:
                     input_example=Xte[:5],
                     pip_requirements=tracking.pip_requirements([a["family"]]),
                     code_paths=[str(tracking.REPO_ROOT / "src" / "flowsentry")])
-                expected = est.predict_proba(Xte)
-            # round trip: load the logged model back from the store and require it to
-            # reproduce the in-memory predictions on every held-out row
-            loaded = mlflow.pyfunc.load_model(info.model_uri)
-            got = np.asarray(loaded.predict(Xte))
-            same = (bool(np.array_equal(got, expected)) if got.dtype == object
-                    else bool(np.allclose(got, expected, rtol=0, atol=1e-9)))
+                loaded = mlflow.pyfunc.load_model(info.model_uri)
+                got_p = np.asarray(loaded.predict(Xte), dtype=float)
+                want_p = np.asarray(est.predict_proba(Xte))
+                labels_same = True  # the pyfunc returns probabilities only
+                compared = "class probabilities, exact"
+            # round trip: the model loaded back from the store must reproduce the
+            # in-memory predictions on every held-out row, exactly
+            proba_same = got_p.shape == want_p.shape and bool(np.array_equal(got_p, want_p))
+            max_diff = (float(np.max(np.abs(got_p - want_p)))
+                        if got_p.shape == want_p.shape else float("inf"))
+            same = proba_same and labels_same
             mlflow.set_tag("roundtrip_predictions_identical", str(same))
+            mlflow.set_tag("roundtrip_compared", compared)
+            mlflow.log_metric("roundtrip.max_abs_proba_diff", max_diff)
+            mlflow.log_metric("roundtrip.n_rows", len(got_p))
             if not same:
-                print(f"[check] FAIL: {name} logged model does not reproduce its predictions")
+                print(f"[check] FAIL: {name} logged model does not reproduce its predictions "
+                      f"(max |dp| {max_diff}, labels identical {labels_same})")
                 return 1
             print(f"[mlflow] {name}: run {run.info.run_id}")
 
@@ -302,8 +331,12 @@ def main() -> int:
                         and r[f"metrics.{k}"] == r[f"metrics.{k}"]},
             "matches_committed": r["tags.matches_committed"] == "True",
             "max_abs_diff_vs_committed": checks[r["tags.arm"]]["max_abs_diff"],
+            "fields_checked_against_committed": sorted(checks[r["tags.arm"]]["fields"]),
             "logged_model_reproduces_predictions":
                 r["tags.roundtrip_predictions_identical"] == "True",
+            "roundtrip": {"compared": r["tags.roundtrip_compared"],
+                          "rows": int(r["metrics.roundtrip.n_rows"]),
+                          "max_abs_proba_diff": float(r["metrics.roundtrip.max_abs_proba_diff"])},
         }
     best = max(readback, key=lambda k: readback[k]["metrics"]["binary_attack_pr_auc"])
     report = {

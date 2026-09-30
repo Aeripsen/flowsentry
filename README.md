@@ -95,7 +95,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"          # package + runtime deps + test tooling
 
 python -m flowsentry.train      # trains on the committed BCCC sample, writes artifacts/ (~30 s)
-pytest                          # 106 tests; 2 skip unless the [gbdt] extra is installed
+pytest                          # 2 skip without the [gbdt] extra, the MLflow ones without [mlops]
 uvicorn flowsentry.service:app  # serve on http://localhost:8000
 ```
 
@@ -646,35 +646,58 @@ logs every run to a local SQLite store (`mlflow.db`, artifacts in `mlruns/`, bot
 with all training params, every scalar metric, the per-family PR-AUC and F1, the
 coverage-reliability curve as a stepped metric, `metrics.json`, and the fitted imputer+model.
 It logs after `metrics.json` is written, so it cannot change the bytes `make reproduce` checks.
-`FLOWSENTRY_MLFLOW=0` turns it off; `MLFLOW_TRACKING_URI` points it at a server instead.
+The logged model is then loaded back from the store and run on the raw (un-imputed) held-out
+rows: its class probabilities and its labels must equal the in-memory ones exactly on all 6,570
+flows, or `train.py` raises and exits non-zero. Both sides score on the sequential forest path
+(`model.forest_proba`). The default `n_jobs=-1` path sums trees in whatever order the threads
+finish, so two calls on the same in-memory model differ by up to 2.2e-16, and the first version
+of this check failed on exactly that. `FLOWSENTRY_MLFLOW=0` turns tracking off;
+`MLFLOW_TRACKING_URI` points it at a server instead.
 
 `scripts/track_arms.py` puts the comparison this README already reports into experiment
 `flowsentry-arms`, one run per arm on the same grouped split: the shipped two-stage forest, the
 single joint forest, and the tuned XGBoost and LightGBM arms (grid winners from
 `gbdt_comparison.json`, refit on the full training split). Two checks make the store
-trustworthy rather than decorative: every arm's metrics must equal the committed artifact that
-already reports it (`metrics.json`, `calibration.json`, `hierarchy_benchmark.json`,
-`gbdt_comparison.json`), or the script exits 1; and every logged model is loaded back from the
-store and must reproduce its in-memory predictions on all 6,570 held-out flows. The runs are
-then read back from the store into `artifacts/mlflow_arms.json`. The cross-check caught one
-real thing on its first CI run: XGBoost (`tree_method=hist`) is not bit-identical across
-operating systems. On ubuntu it matched the committed binary PR-AUC but not benign PR-AUC,
-accuracy, macro-F1 or ECE, while the forests and LightGBM matched exactly. The committed
-comparison was measured on Windows, so the `mlops` CI job runs on `windows-latest`, where all
-four arms match exactly and the job fails on any difference. Sklearn models are saved with
-skops (not pickle) against an explicit, reviewed list of trusted types; the two boosters cannot
-be walked by skops and are logged as a pyfunc with cloudpickle, which the script says in a
-comment.
+trustworthy rather than decorative:
 
-**Evidently.** The committed sample has no timestamp (see the roadmap), so there is no honest
-time window. The two windows are the split the repo already uses: reference = the 19,045
-training flows, current = the 6,570 flows from connections the model never saw. Reference
-predictions are 3-fold grouped out-of-fold, so neither window is scored by a model that trained
-on it. From `artifacts/evidently_summary.json` and [`reports/evidently_drift_performance.html`](https://aeripsen.github.io/flowsentry/reports/evidently_drift_performance.html) (open it in the browser):
+- Every arm's metrics must equal the committed artifact that already reports them
+  (`metrics.json`, `calibration.json`, `hierarchy_benchmark.json`, `gbdt_comparison.json`), on
+  every field a committed file reports, or the script exits 1. That is all five headline fields
+  for three arms and three for the joint forest: no other committed file reports its benign
+  PR-AUC or ECE, so those two exist only in the tracked run.
+- Every logged model is loaded back from the store and must reproduce its class probabilities
+  exactly on all 6,570 held-out flows, and for the two forests its labels too. The boosters'
+  pyfunc returns probabilities only.
+
+The runs are then read back from the store into `artifacts/mlflow_arms.json`, which records per
+arm the fields that were cross-checked and the round trip's largest probability difference (0.0
+for all four). The cross-check caught one real thing on its first CI run: XGBoost
+(`tree_method=hist`) is not bit-identical across operating systems. On ubuntu it matched the
+committed binary PR-AUC but not benign PR-AUC, accuracy, macro-F1 or ECE, while the forests and
+LightGBM matched exactly. The committed comparison was measured on Windows, so the `mlops` CI job
+runs on `windows-latest`, where all four arms match exactly.
+
+Serialization: the two forest pipelines are saved with skops, which only builds types someone
+vouched for, against reviewed lists: `TwoStageRejectClassifier`, `numpy.dtype` and
+`sklearn.tree._tree.Tree` for the shipped model, `numpy.dtype` and `Tree` for the joint forest.
+skops cannot walk a compiled booster, so XGBoost and LightGBM are logged as a pyfunc with
+cloudpickle, which runs code when it loads: load those only from a store you wrote.
+
+What is not built: a model registry. Serving loads `artifacts/flowsentry.joblib`, not an MLflow
+model alias, and there is no promotion gate. `registry.py` is the stage-estimator factory, not a
+model registry.
+
+**Evidently.** This is a covariate-shift check between training connections and unseen
+connections, not drift monitoring. The committed sample has no timestamp (see the roadmap), so
+there is no honest time window. The two windows are the split the repo already uses:
+reference = the 19,045 training flows, current = the 6,570 flows from connections the model
+never saw. Reference predictions are 3-fold grouped out-of-fold, so neither window is scored by
+a model that trained on it. It is a batch report over two fixed windows: nothing is scheduled
+and nothing alerts. From `artifacts/evidently_summary.json` and [`reports/evidently_drift_performance.html`](https://aeripsen.github.io/flowsentry/reports/evidently_drift_performance.html) (open it in the browser):
 
 | | Result |
 |---|---|
-| Evidently data drift (normed Wasserstein on 111 numeric columns, Jensen-Shannon on 21 low-cardinality ones, 0.1 threshold) | 3 of 132 features drift; no dataset drift |
+| Evidently data drift (normed Wasserstein on 111 numeric columns, Jensen-Shannon on 21 low-cardinality ones, 0.1 threshold) | 3 of 132 features drift; no dataset drift (Evidently's own test: share of drifted columns below 0.5) |
 | Repo PSI (`drift.py`, training deciles) on the same windows | 0 of 132 at 0.10 or above; max PSI 0.0214 |
 | Accuracy, out-of-fold on training connections vs held-out | 0.8256 vs 0.8317 |
 | Macro-F1, out-of-fold vs held-out | 0.342 vs 0.3911 |
@@ -682,14 +705,33 @@ on it. From `artifacts/evidently_summary.json` and [`reports/evidently_drift_per
 How to read it: unseen connections look like training traffic, and the two tests disagree only
 at the margin (the three Evidently flags score 0.101 to 0.128 against a 0.1 threshold, which PSI
 on deciles does not see). The held-out window scoring higher than out-of-fold is not
-improvement from drift: each fold model trains on two thirds of the training connections, and
-the rare families have 200 to 400 flows each, so the fold models see fewer of them. What this
-cannot tell you is whether future traffic drifts; that needs the sample rebuilt with its
-timestamps.
+improvement from drift. A likely reason, which is a hypothesis and not a measurement: each
+out-of-fold model sees 93 to 199 flows per rare family, against 155 to 283 for the shipped model
+(`rare_family_training_support` in the summary, counted by the script). The held-out rare
+families have 52 to 100 flows each and no interval is computed on 0.342 vs 0.3911, so the gap
+may also be noise. What this cannot tell you is whether future traffic drifts; that needs the
+sample rebuilt with its timestamps.
 
-The `mlops` CI job runs all of this from a clean checkout in the locked environment, fails if
-either committed summary changes, and uploads `mlflow.db` and the HTML report as a build
-artifact.
+What CI checks. The `mlops` job runs from a clean checkout in the locked environment on
+`windows-latest`:
+
+1. The MLflow tests (`tests/test_mlflow_roundtrip.py`) against a throwaway SQLite store: a run is
+   logged, read back and its model reloaded, and a model that differs by 1e-15 is shown to stop
+   the run.
+2. `scripts/check_evidently_html.py` on the served page. The HTML carries random widget ids, so it
+   cannot be byte-diffed. The checker decodes the report data Evidently embeds in the page and
+   compares it with the summary: the column counters, the dataset-drift line, every per-column
+   drift row (count marked drifted, and stattest and score for the top 10), and both windows'
+   Model Quality counters.
+3. `train.py`, `track_arms.py` and `evidently_report.py`, each of which exits non-zero on a failed
+   check, then the HTML checker again on the regenerated page.
+4. A query of the store: one training run and four arm runs, each tagged as reloaded identically
+   with a largest probability difference of 0.0.
+5. `git diff --exit-code` on `metrics.json`, `mlflow_arms.json` and `evidently_summary.json`.
+
+It uploads `mlflow.db` and the HTML report as a build artifact kept 30 days. The store itself is
+not committed; `artifacts/mlflow_arms.json` is the durable read-back of it. The base test job also
+runs the HTML checker test, without Evidently installed.
 
 ## Configuration
 
@@ -699,8 +741,8 @@ was measured with; a test pins them. Overrides: environment variables
 (template: `flowsentry.example.yaml`) beat the defaults. Unknown keys fail the run instead of
 training a silently different model. The feature schema is deliberately not configurable
 ([ADR 006](docs/adr/006-config-vs-schema.md)). Swapping the stage estimator is one config value
-(`stage_estimator: hist_gradient_boosting`); the registry proves the seam with a test that runs the
-full pipeline on every registered family.
+(`stage_estimator: hist_gradient_boosting`); the estimator factory (`registry.py`) proves the
+seam with a test that runs the full pipeline on every registered family.
 
 ## Reproducing the numbers
 
@@ -711,7 +753,7 @@ make reproduce            # or: python scripts/reproduce.py
 Retrains from the committed sample and fails unless `artifacts/metrics.json` regenerates
 **byte-identically** (seeded end to end: split, imputer, forests). Exact bytes are promised under
 `requirements.lock` (the environment the published numbers came from); on other versions the test
-suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (106 tests, including
+suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (the suite, including
 the leakage guard, the metrics regression, exact-equality guards on both fast paths, and the perf
 regression guard) run in CI.
 

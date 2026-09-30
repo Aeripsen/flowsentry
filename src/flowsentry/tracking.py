@@ -154,10 +154,22 @@ def log_training_run(
     model: Any,
     X_example: Any,
     metrics_path: Path,
+    X_test_raw: Any,
+    expected_proba: Any,
+    expected_labels: Any,
 ) -> str:
     """Log one train.py run: every training param, every scalar metric, the
     coverage-reliability curve as a stepped metric, metrics.json, and the fitted
-    imputer+model as an mlflow sklearn model. Returns the run id."""
+    imputer+model as an mlflow sklearn model. Returns the run id.
+
+    The logged model is then loaded back from the store and run on the raw
+    (un-imputed) held-out rows. Its class probabilities and its labels must equal
+    the in-memory ones exactly, or this raises RoundTripError and train.py exits
+    non-zero. The run is tagged with the outcome either way. Both sides score on
+    the sequential forest path (model.forest_proba): the default n_jobs=-1 path
+    sums trees across threads in whatever order they finish, so two calls on the
+    SAME in-memory model differ by up to 2.2e-16, and an exact check on it would
+    measure thread scheduling instead of the store."""
     import mlflow
     import mlflow.sklearn
     from sklearn.pipeline import Pipeline
@@ -188,7 +200,7 @@ def log_training_run(
             if row.get("reliability") is not None:
                 mlflow.log_metric("curve.reliability", float(row["reliability"]), step=step)
         mlflow.log_artifact(str(metrics_path))
-        mlflow.sklearn.log_model(
+        info = mlflow.sklearn.log_model(
             Pipeline([("impute", imputer), ("model", model)]),
             name="model",
             input_example=X_example,
@@ -196,4 +208,45 @@ def log_training_run(
             code_paths=[str(REPO_ROOT / "src" / "flowsentry")],
             skops_trusted_types=SKOPS_TRUSTED_TYPES,
         )
+        check = roundtrip_check(info.model_uri, X_test_raw, expected_proba, expected_labels)
+        mlflow.set_tag("roundtrip_predictions_identical", str(check["identical"]))
+        mlflow.log_metric("roundtrip.max_abs_proba_diff", check["max_abs_proba_diff"])
+        mlflow.log_metric("roundtrip.n_rows", check["n_rows"])
+        if not check["identical"]:
+            raise RoundTripError(
+                f"logged model {info.model_uri} does not reproduce the in-memory "
+                f"predictions: {check}"
+            )
         return str(run.info.run_id)
+
+
+class RoundTripError(RuntimeError):
+    """The model read back from the tracking store scores differently from the
+    model that was logged."""
+
+
+def roundtrip_check(model_uri: str, X_raw: Any, expected_proba: Any,
+                    expected_labels: Any) -> dict[str, Any]:
+    """Load a logged imputer+model pipeline back (sklearn flavor, skops with the
+    reviewed trusted types) and compare it with the in-memory predictions on every
+    row: the probability matrix bit for bit and the labels. The labels are the
+    full-coverage ones train.py scores (reject_threshold=0). Scored on the
+    sequential path, which is deterministic; pass expectations from the same path."""
+    import mlflow.sklearn
+    import numpy as np
+
+    loaded = mlflow.sklearn.load_model(model_uri)
+    Xt = loaded[:-1].transform(X_raw)
+    proba = np.asarray(loaded[-1].predict_proba(Xt, sequential=True))
+    labels = np.asarray(loaded[-1].predict(Xt, reject_threshold=0.0, sequential=True))
+    want_p = np.asarray(expected_proba)
+    same_shape = proba.shape == want_p.shape
+    diff = float(np.max(np.abs(proba - want_p))) if same_shape and proba.size else float("inf")
+    return {
+        "n_rows": int(len(proba)),
+        "proba_identical": bool(same_shape and np.array_equal(proba, want_p)),
+        "labels_identical": bool(np.array_equal(labels, np.asarray(expected_labels))),
+        "max_abs_proba_diff": diff,
+        "identical": bool(same_shape and np.array_equal(proba, want_p)
+                          and np.array_equal(labels, np.asarray(expected_labels))),
+    }

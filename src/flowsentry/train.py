@@ -191,8 +191,14 @@ def main() -> dict:
             model=model,
             X_example=Xte[:5],
             metrics_path=artifact_dir / "metrics.json",
+            # the round trip starts from the raw rows so the logged imputer is
+            # exercised too; a mismatch raises and the process exits non-zero
+            X_test_raw=X[te],
+            expected_proba=model.predict_proba(Xte, sequential=True),
+            expected_labels=model.predict(Xte, reject_threshold=0.0, sequential=True),
         )
-        print(f"[mlflow] logged run {run_id} to {tracking.tracking_uri()}")
+        print(f"[mlflow] logged run {run_id} to {tracking.tracking_uri()} (reloaded from the "
+              f"store: identical probabilities and labels on all {len(te)} held-out flows)")
     return metrics
 
 

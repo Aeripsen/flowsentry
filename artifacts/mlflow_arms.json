@@ -29,7 +29,19 @@
       },
       "matches_committed": true,
       "max_abs_diff_vs_committed": 0.0,
-      "logged_model_reproduces_predictions": true
+      "fields_checked_against_committed": [
+        "accuracy_full_coverage",
+        "benign_pr_auc",
+        "binary_attack_pr_auc",
+        "ece_top_label",
+        "macro_f1_full_coverage"
+      ],
+      "logged_model_reproduces_predictions": true,
+      "roundtrip": {
+        "compared": "class probabilities, exact",
+        "rows": 6570,
+        "max_abs_proba_diff": 0.0
+      }
     },
     "random_forest_joint": {
       "family": "random_forest (single joint model, no hierarchy, no escalation)",
@@ -48,7 +60,17 @@
       },
       "matches_committed": true,
       "max_abs_diff_vs_committed": 0.0,
-      "logged_model_reproduces_predictions": true
+      "fields_checked_against_committed": [
+        "accuracy_full_coverage",
+        "binary_attack_pr_auc",
+        "macro_f1_full_coverage"
+      ],
+      "logged_model_reproduces_predictions": true,
+      "roundtrip": {
+        "compared": "labels and class probabilities, exact (sequential forest path)",
+        "rows": 6570,
+        "max_abs_proba_diff": 0.0
+      }
     },
     "two_stage_hierarchy": {
       "family": "random_forest x2 (stage 1 UDP-only, stage 2 UDP+QUIC)",
@@ -71,7 +93,19 @@
       },
       "matches_committed": true,
       "max_abs_diff_vs_committed": 0.0,
-      "logged_model_reproduces_predictions": true
+      "fields_checked_against_committed": [
+        "accuracy_full_coverage",
+        "benign_pr_auc",
+        "binary_attack_pr_auc",
+        "ece_top_label",
+        "macro_f1_full_coverage"
+      ],
+      "logged_model_reproduces_predictions": true,
+      "roundtrip": {
+        "compared": "labels and class probabilities, exact (sequential forest path)",
+        "rows": 6570,
+        "max_abs_proba_diff": 0.0
+      }
     },
     "xgboost_tuned": {
       "family": "xgboost",
@@ -93,7 +127,19 @@
       },
       "matches_committed": true,
       "max_abs_diff_vs_committed": 0.0,
-      "logged_model_reproduces_predictions": true
+      "fields_checked_against_committed": [
+        "accuracy_full_coverage",
+        "benign_pr_auc",
+        "binary_attack_pr_auc",
+        "ece_top_label",
+        "macro_f1_full_coverage"
+      ],
+      "logged_model_reproduces_predictions": true,
+      "roundtrip": {
+        "compared": "class probabilities, exact",
+        "rows": 6570,
+        "max_abs_proba_diff": 0.0
+      }
     }
   },
   "best_by_binary_attack_pr_auc": "xgboost_tuned",

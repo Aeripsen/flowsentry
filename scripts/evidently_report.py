@@ -82,6 +82,9 @@ HTML = ROOT / "reports" / "evidently_drift_performance.html"
 OUT = ROOT / "artifacts" / "evidently_summary.json"
 N_FOLDS = 3
 FEATURES = list(STAGE2_FEATURES)
+# data.py: the sample keeps every flow of the rare attack families and caps the two
+# dominant classes, so "rare" is every class except these two
+DOMINANT = ("benign", "UDP-RAW")
 
 
 def two_stage(cfg: Any) -> TwoStageRejectClassifier:
@@ -126,6 +129,25 @@ def classification_numbers(metrics: list[dict[str, Any]]) -> dict[str, Any]:
     return out
 
 
+def evidently_dataset_drift(cur_ds: Any, ref_ds: Any, columns: list[str]) -> dict[str, Any]:
+    """Evidently's own dataset-level verdict: the default test DriftedColumnsCount
+    attaches (share of drifted columns must stay below drift_share). Read from the
+    test result, not recomputed here."""
+    from evidently import Report
+    from evidently.metrics import DriftedColumnsCount
+
+    snap = Report([DriftedColumnsCount(columns=columns)], include_tests=True).run(
+        current_data=cur_ds, reference_data=ref_ds)
+    d = snap.dict()
+    (test,) = [t for t in d["tests"]
+               if t["metric_config"]["params"]["type"].endswith(":DriftedColumnsCount")]
+    status = str(getattr(test["status"], "value", test["status"]))
+    return {"dataset_drift": status == "FAIL", "evidently_test": test["name"],
+            "evidently_test_status": status,
+            "drift_share": float(test["metric_config"]["params"]["drift_share"]),
+            "share": float(d["metrics"][0]["value"]["share"])}
+
+
 def main() -> int:
     from evidently import DataDefinition, Dataset, MulticlassClassification, Report
     from evidently.presets import ClassificationPreset, DataDriftPreset
@@ -155,11 +177,15 @@ def main() -> int:
     # reference window: out-of-fold predictions over the training connections
     lab_ref = np.empty(len(tr), dtype=object)
     proba_ref = np.zeros((len(tr), len(classes)))
+    rare = [c for c in classes if c not in DOMINANT]
+    fold_support: dict[str, list[int]] = {c: [] for c in rare}
     for k, (fit_i, val_i) in enumerate(
         GroupKFold(n_splits=N_FOLDS).split(np.zeros(len(tr)), groups=groups[tr])
     ):
         imp_k = SimpleImputer(strategy="median").fit(X[tr][fit_i])
         m_k = two_stage(cfg).fit(imp_k.transform(X[tr][fit_i]), y[tr][fit_i])
+        for c in rare:
+            fold_support[c].append(int(np.sum(y[tr][fit_i] == c)))
         lab_k, _, _, proba_k = m_k._stage_predict(imp_k.transform(X[tr][val_i]))
         lab_ref[val_i] = lab_k
         # a fold can in principle miss a rare class; map its columns by name
@@ -188,6 +214,7 @@ def main() -> int:
     ).run(current_data=cur_ds, reference_data=ref_ds)
     HTML.parent.mkdir(parents=True, exist_ok=True)
     snapshot.save_html(str(HTML))
+    verdict = evidently_dataset_drift(cur_ds, ref_ds, FEATURES)
 
     # the same classification battery on the reference window alone, for the numbers
     ref_only = Report([ClassificationPreset()]).run(current_data=ref_ds)
@@ -216,6 +243,11 @@ def main() -> int:
     for r in per_column.values():
         methods[r["method"]] = methods.get(r["method"], 0) + 1
     top = sorted(per_column.items(), key=lambda kv: -kv[1]["score"])[:10]
+    if drift_share is None or round(float(drift_share), 6) != round(verdict["share"], 6):
+        print("[check] FAIL: the dataset-drift test saw a different share than the report")
+        return 1
+    fold_all = [n for v in fold_support.values() for n in v]
+    full_train = {c: int(np.sum(y[tr] == c)) for c in rare}
 
     summary = {
         "what": ("Evidently data drift + classification quality, reference = training "
@@ -230,8 +262,11 @@ def main() -> int:
         "data_drift": {
             "drifted_columns": int(drifted_count) if drifted_count is not None else None,
             "drifted_share": round(float(drift_share), 4) if drift_share is not None else None,
-            "dataset_drift": bool(drift_share is not None and drift_share >= 0.5),
-            "rule": "dataset drifts if >= 50% of columns drift (Evidently default)",
+            "dataset_drift": verdict["dataset_drift"],
+            "dataset_drift_source": (
+                f"Evidently's own test on DriftedColumnsCount: \"{verdict['evidently_test']}\" "
+                f"-> {verdict['evidently_test_status']} (FAIL means dataset drift)"),
+            "drift_share_threshold": verdict["drift_share"],
             "methods_used": dict(sorted(methods.items())),
             "top_10_by_score": {f: r for f, r in top},
         },
@@ -245,6 +280,17 @@ def main() -> int:
                 "psi_only": sorted(psi_flag - ev_drift),
                 "neither": len(set(FEATURES) - ev_drift - psi_flag),
             },
+        },
+        "rare_family_training_support": {
+            "why": ("each out-of-fold model trains on the other two folds of the training "
+                    "connections; these are the rare-family flow counts it sees, next to "
+                    "what the shipped model trains on"),
+            "families": rare,
+            "per_fold_model": fold_support,
+            "per_fold_model_range": [min(fold_all), max(fold_all)],
+            "shipped_model": full_train,
+            "shipped_model_range": [min(full_train.values()), max(full_train.values())],
+            "held_out_test_support": {c: int(np.sum(y[te] == c)) for c in rare},
         },
         "performance": {
             "reference_out_of_fold": classification_numbers(metric_values(ref_only)),
