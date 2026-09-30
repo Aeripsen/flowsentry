@@ -1,0 +1,892 @@
+{
+  "what": "flowsentry: scripts/k8s_e2e.sh repeated on fresh runners with the connection drain (preStop touches the drain file, responses get `Connection: close`) and without it (DRAIN=off, preStop is a plain sleep 5). One rolling restart of 5 pods under 16-VU closed-loop load per run.",
+  "unit": "one run = one rolling restart; failures are counted per run",
+  "by_drain": {
+    "on": {
+      "valid_runs": 12,
+      "runs_with_any_failed_request": 0,
+      "failed_requests_per_run": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "requests_per_run": [
+        115016,
+        38222,
+        42452,
+        41946,
+        41145,
+        40317,
+        40807,
+        40844,
+        98740,
+        49558,
+        65772,
+        50368
+      ],
+      "failed_requests_total": 0,
+      "requests_total": 665187
+    },
+    "off": {
+      "valid_runs": 12,
+      "runs_with_any_failed_request": 4,
+      "failed_requests_per_run": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      "requests_per_run": [
+        39305,
+        110223,
+        37098,
+        48959,
+        41762,
+        52470,
+        48128,
+        42192,
+        41419,
+        94883,
+        41088,
+        42501
+      ],
+      "failed_requests_total": 4,
+      "requests_total": 640028
+    }
+  },
+  "runs_compared": {
+    "test": "one-sided Fisher exact on runs with any failed request, off vs on",
+    "p_value": 0.0466
+  },
+  "across_runs": {
+    "note": "every valid run, drain on and off alike; min / median / max",
+    "steady_all_pods_running_over_before_scale_out": {
+      "min": 0.98,
+      "median": 1.03,
+      "max": 1.64
+    },
+    "restart_after_over_before": {
+      "min": 0.76,
+      "median": 1.0,
+      "max": 1.04
+    },
+    "pods_serving_steady_phase": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3
+    ],
+    "pods_serving_fresh_client_before_restart": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
+    ],
+    "hpa_desired_max_first_seen_s": [
+      19,
+      19,
+      19,
+      20,
+      20,
+      25,
+      25,
+      25,
+      34,
+      34,
+      35,
+      35,
+      35,
+      35,
+      35,
+      35,
+      35,
+      35,
+      35,
+      35,
+      35,
+      35,
+      40,
+      40
+    ],
+    "hpa_current_max_first_seen_s": [
+      34,
+      35,
+      35,
+      35,
+      35,
+      35,
+      40,
+      40,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      51,
+      51,
+      51
+    ],
+    "pdb_held": 24
+  },
+  "runs": [
+    {
+      "job": "ab-off-1",
+      "report": "pool_flowsentry\\36778001492\\ab-off-1",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 39305,
+      "restart_failed": 1,
+      "restart_failed_connection": 1,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 173.9,
+        "all_pods_running": 178.8
+      },
+      "restart_req_per_s": {
+        "before_restart": 356.6,
+        "during_restart": 277.8,
+        "after_restart": 347.7
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-1",
+      "report": "pool_flowsentry\\36776371396\\ab-off-1",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 110223,
+      "restart_failed": 1,
+      "restart_failed_connection": 1,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 471.1,
+        "all_pods_running": 484.7
+      },
+      "restart_req_per_s": {
+        "before_restart": 968.3,
+        "during_restart": 826.3,
+        "after_restart": 962.3
+      },
+      "pods_serving": {
+        "steady_phase": 2
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-2",
+      "report": "pool_flowsentry\\36778001492\\ab-off-2",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 37098,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 176.2,
+        "all_pods_running": 180.8
+      },
+      "restart_req_per_s": {
+        "before_restart": 368.8,
+        "during_restart": 279.1,
+        "after_restart": 285.5
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-2",
+      "report": "pool_flowsentry\\36776371396\\ab-off-2",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 48959,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 229.3,
+        "all_pods_running": 230.0
+      },
+      "restart_req_per_s": {
+        "before_restart": 465.0,
+        "during_restart": 248.2,
+        "after_restart": 463.2
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 51,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-3",
+      "report": "pool_flowsentry\\36778001492\\ab-off-3",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 41762,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 175.7,
+        "all_pods_running": 178.4
+      },
+      "restart_req_per_s": {
+        "before_restart": 373.0,
+        "during_restart": 305.1,
+        "after_restart": 372.0
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-3",
+      "report": "pool_flowsentry\\36776371396\\ab-off-3",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 52470,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 227.8,
+        "all_pods_running": 234.8
+      },
+      "restart_req_per_s": {
+        "before_restart": 465.6,
+        "during_restart": 383.6,
+        "after_restart": 468.0
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-4",
+      "report": "pool_flowsentry\\36778001492\\ab-off-4",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 48128,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 227.6,
+        "all_pods_running": 228.2
+      },
+      "restart_req_per_s": {
+        "before_restart": 423.0,
+        "during_restart": 328.0,
+        "after_restart": 429.8
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 20,
+      "hpa_current_max_first_seen_s": 35,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-4",
+      "report": "pool_flowsentry\\36776371396\\ab-off-4",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 42192,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 174.3,
+        "all_pods_running": 180.3
+      },
+      "restart_req_per_s": {
+        "before_restart": 374.3,
+        "during_restart": 294.9,
+        "after_restart": 376.0
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 4
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-5",
+      "report": "pool_flowsentry\\36778001492\\ab-off-5",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 41419,
+      "restart_failed": 1,
+      "restart_failed_connection": 1,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 175.9,
+        "all_pods_running": 178.8
+      },
+      "restart_req_per_s": {
+        "before_restart": 363.0,
+        "during_restart": 303.4,
+        "after_restart": 372.4
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 19,
+      "hpa_current_max_first_seen_s": 35,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-5",
+      "report": "pool_flowsentry\\36776371396\\ab-off-5",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 94883,
+      "restart_failed": 1,
+      "restart_failed_connection": 1,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 355.3,
+        "all_pods_running": 360.6
+      },
+      "restart_req_per_s": {
+        "before_restart": 824.4,
+        "during_restart": 681.6,
+        "after_restart": 859.4
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 4
+      },
+      "hpa_desired_max_first_seen_s": 34,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-6",
+      "report": "pool_flowsentry\\36778001492\\ab-off-6",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 41088,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 171.7,
+        "all_pods_running": 173.8
+      },
+      "restart_req_per_s": {
+        "before_restart": 361.5,
+        "during_restart": 303.3,
+        "after_restart": 362.9
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 19,
+      "hpa_current_max_first_seen_s": 35,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-off-6",
+      "report": "pool_flowsentry\\36776371396\\ab-off-6",
+      "drain": "off",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 42501,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 167.3,
+        "all_pods_running": 174.0
+      },
+      "restart_req_per_s": {
+        "before_restart": 372.8,
+        "during_restart": 305.0,
+        "after_restart": 378.7
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 20,
+      "hpa_current_max_first_seen_s": 35,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-1",
+      "report": "pool_flowsentry\\36778001492\\ab-on-1",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 115016,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 517.8,
+        "all_pods_running": 505.9
+      },
+      "restart_req_per_s": {
+        "before_restart": 1024.1,
+        "during_restart": 828.2,
+        "after_restart": 1011.3
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 4
+      },
+      "hpa_desired_max_first_seen_s": 25,
+      "hpa_current_max_first_seen_s": 35,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-1",
+      "report": "pool_flowsentry\\36776371396\\ab-on-1",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 38222,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 180.8,
+        "all_pods_running": 274.3
+      },
+      "restart_req_per_s": {
+        "before_restart": 339.4,
+        "during_restart": 269.1,
+        "after_restart": 343.5
+      },
+      "pods_serving": {
+        "steady_phase": 3,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 40,
+      "hpa_current_max_first_seen_s": 51,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-2",
+      "report": "pool_flowsentry\\36778001492\\ab-on-2",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 42452,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 187.3,
+        "all_pods_running": 303.4
+      },
+      "restart_req_per_s": {
+        "before_restart": 385.9,
+        "during_restart": 305.8,
+        "after_restart": 379.1
+      },
+      "pods_serving": {
+        "steady_phase": 3,
+        "restart_phase_before_restart": 4
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-2",
+      "report": "pool_flowsentry\\36776371396\\ab-on-2",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 41946,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 175.4,
+        "all_pods_running": 176.2
+      },
+      "restart_req_per_s": {
+        "before_restart": 380.4,
+        "during_restart": 296.4,
+        "after_restart": 372.3
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 19,
+      "hpa_current_max_first_seen_s": 34,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-3",
+      "report": "pool_flowsentry\\36778001492\\ab-on-3",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 41145,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 171.9,
+        "all_pods_running": 176.4
+      },
+      "restart_req_per_s": {
+        "before_restart": 375.3,
+        "during_restart": 255.2,
+        "after_restart": 374.6
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 4
+      },
+      "hpa_desired_max_first_seen_s": 25,
+      "hpa_current_max_first_seen_s": 40,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-3",
+      "report": "pool_flowsentry\\36776371396\\ab-on-3",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 40317,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 182.6,
+        "all_pods_running": 178.3
+      },
+      "restart_req_per_s": {
+        "before_restart": 363.5,
+        "during_restart": 278.2,
+        "after_restart": 358.3
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 34,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-4",
+      "report": "pool_flowsentry\\36778001492\\ab-on-4",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 40807,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 173.5,
+        "all_pods_running": 178.2
+      },
+      "restart_req_per_s": {
+        "before_restart": 361.4,
+        "during_restart": 298.4,
+        "after_restart": 360.5
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 4
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-4",
+      "report": "pool_flowsentry\\36776371396\\ab-on-4",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 40844,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 176.0,
+        "all_pods_running": 287.9
+      },
+      "restart_req_per_s": {
+        "before_restart": 357.9,
+        "during_restart": 292.6,
+        "after_restart": 363.7
+      },
+      "pods_serving": {
+        "steady_phase": 3,
+        "restart_phase_before_restart": 4
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-5",
+      "report": "pool_flowsentry\\36778001492\\ab-on-5",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 98740,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 489.6,
+        "all_pods_running": 502.7
+      },
+      "restart_req_per_s": {
+        "before_restart": 971.0,
+        "during_restart": 848.5,
+        "after_restart": 738.9
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 40,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-5",
+      "report": "pool_flowsentry\\36776371396\\ab-on-5",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 49558,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 220.3,
+        "all_pods_running": 228.6
+      },
+      "restart_req_per_s": {
+        "before_restart": 443.3,
+        "during_restart": 318.8,
+        "after_restart": 444.3
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 25,
+      "hpa_current_max_first_seen_s": 40,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-6",
+      "report": "pool_flowsentry\\36778001492\\ab-on-6",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36778001492",
+      "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+      "restart_requests": 65772,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 260.4,
+        "all_pods_running": 264.8
+      },
+      "restart_req_per_s": {
+        "before_restart": 576.5,
+        "during_restart": 487.2,
+        "after_restart": 580.2
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 50,
+      "pdb_held": true
+    },
+    {
+      "job": "ab-on-6",
+      "report": "pool_flowsentry\\36776371396\\ab-on-6",
+      "drain": "on",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36776371396",
+      "git_sha": "b24170db3ffa105448751e48bd76760aca8c0fc1",
+      "restart_requests": 50368,
+      "restart_failed": 0,
+      "restart_failed_connection": 0,
+      "steady_failed": 0,
+      "valid": true,
+      "invalid_because": [],
+      "steady_req_per_s": {
+        "before_scale_out": 234.1,
+        "all_pods_running": 241.7
+      },
+      "restart_req_per_s": {
+        "before_restart": 447.6,
+        "during_restart": 361.9,
+        "after_restart": 448.2
+      },
+      "pods_serving": {
+        "steady_phase": 2,
+        "restart_phase_before_restart": 5
+      },
+      "hpa_desired_max_first_seen_s": 35,
+      "hpa_current_max_first_seen_s": 51,
+      "pdb_held": true
+    }
+  ]
+}

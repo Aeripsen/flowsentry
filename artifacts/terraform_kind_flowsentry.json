@@ -4,12 +4,12 @@
     "terraform_version": "1.16.4",
     "provider_version": "3.2.1",
     "kubernetes_version": "v1.37.0",
-    "git_sha": "849874a04f2a4d30ee6a2d5d7afb6d001c50c3b4",
-    "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36771699879"
+    "git_sha": "425ff889b1088211be4bdad95221f326db980464",
+    "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36777986130"
   },
   "apply_exit_code": 0,
   "resources_created": 6,
-  "apply_seconds": 8,
+  "apply_seconds": 16,
   "second_plan_exit_code": 0,
   "second_plan_is_empty": true,
   "ready": {

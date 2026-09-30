@@ -120,10 +120,15 @@ docker compose up --build       # API on 8000 + dashboard on 8501
 
 Kubernetes and Terraform are run, not just written: [`.github/workflows/k8s.yml`](.github/workflows/k8s.yml)
 deploys [`deploy/k8s`](deploy/k8s) (probes, ConfigMap, HPA, PDB) to a kind cluster, load-tests it
-through the Service with k6, and rolls it under load, failing CI on any failed request (latest:
-0 failed of 43,980). It also applies [`deploy/terraform/kubernetes`](deploy/terraform/kubernetes)
-to kind, requires an empty re-plan and destroys it. Exact commands, captured output, and what the
-first run broke: [`DEPLOY.md`](DEPLOY.md). No cloud deploy exists.
+through the Service with k6, checks the PodDisruptionBudget through the Eviction API, and rolls
+it under load, failing CI on any failed request (latest: 0 failed of 39,199). The first run failed
+1 request on a keep-alive connection reset; the fix is a preStop drain
+([`src/flowsentry/drain.py`](src/flowsentry/drain.py)), and in a 24-run A/B on fresh runners 4 of
+12 rolling restarts without it failed a request against 0 of 12 with it. The same workflow applies
+[`deploy/terraform/kubernetes`](deploy/terraform/kubernetes) to kind, requires an empty re-plan and
+destroys it, schema-checks the manifests with kubeconform, and smoke-tests `docker compose`. All of
+it is one 4-vCPU CI runner under one fixed request, not a capacity figure. Exact commands, captured
+output, and what the runs broke: [`DEPLOY.md`](DEPLOY.md). No cloud deploy exists.
 
 ## The live demo, and what CI checks
 
@@ -727,7 +732,8 @@ regression guard) run in CI.
 - [x] Load test under concurrent HTTP traffic: k6 through the Kubernetes Service on kind in CI,
       including a rolling restart under load ([DEPLOY.md](DEPLOY.md)), and a local stepped-concurrency
       sweep (`make loadtest`) that found and fixed a GIL convoy in the service (see "Load test"
-      above). Open: re-running the kind load test with the fix, and vectorizing the per-tree loop
+      above). The kind runs include the fix from commit `10a38c8` on. Open: vectorizing the
+      per-tree loop
 - [ ] Adversarial probe: perturbed flows vs the reject knob (designed in
       [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md))
 - [ ] Cross-day / cross-dataset evaluation for host and campaign generalization. This is the one
