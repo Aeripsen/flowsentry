@@ -1,0 +1,166 @@
+# FlowSentry on Kubernetes: the FastAPI serving image behind a Service, with
+# its serving knobs in a ConfigMap, CPU autoscaling, and a disruption budget.
+#
+# Liveness  -> GET /health : always 200 while the process is up; never touches
+#              the model, so a slow or missing artifact never triggers restarts.
+# Readiness -> GET /ready  : 503 until a trained model is loaded, so the Service
+#              only routes flows to a pod that can classify them.
+# (src/flowsentry/service.py)
+#
+# The image trains its model at build time from the committed BCCC sample, so
+# what this serves is the same model a clean `docker build` produces.
+#
+# This file is the base. deploy/k8s/overlays/kind swaps in a locally built image
+# and is what CI applies to a real kind cluster (.github/workflows/k8s.yml).
+# deploy/terraform/kubernetes creates the same objects through Terraform, and CI
+# diffs the two (scripts/k8s_parity.py) so they cannot drift apart.
+#
+# Apply:    kubectl apply -k deploy/k8s/base
+# Full steps and the captured CI output: DEPLOY.md.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flowsentry-config
+  labels:
+    app: flowsentry
+data:
+  # Read by src/flowsentry/config.py (FLOWSENTRY_ prefix, __ for nesting).
+  # These are the code defaults. The kind overlay overrides MAX_BATCH_ROWS on
+  # purpose so CI can prove this ConfigMap actually reaches the process.
+  FLOWSENTRY_SERVING__MAX_BATCH_ROWS: "4096"
+  FLOWSENTRY_SERVING__SEQUENTIAL_CUTOFF: "2048"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flowsentry
+  labels:
+    app: flowsentry
+spec:
+  # Starting size. Once the HPA below exists it owns the replica count.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flowsentry
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # Bring a new pod up and wait for /ready before taking an old one away,
+      # so a rollout never drops serving capacity below the current count.
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: flowsentry
+    spec:
+      securityContext:
+        runAsNonRoot: true          # the image's uid-10001 user (Dockerfile)
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      # Kubernetes injects FLOWSENTRY_SERVICE_HOST, FLOWSENTRY_PORT=tcp://... and
+      # friends for a Service named flowsentry, which share the settings prefix.
+      # The loader ignores them today (checked against pydantic-settings 2.14.2),
+      # but a future top-level setting named `port` would be silently overridden
+      # by a URL, so they are switched off. Service discovery here is DNS.
+      enableServiceLinks: false
+      # SIGTERM -> uvicorn stops accepting, finishes in-flight requests, exits.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: api
+          # Build + push this first (DEPLOY.md); swap in your registry path.
+          image: ghcr.io/aeripsen/flowsentry:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: flowsentry-config
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          lifecycle:
+            # A terminating pod leaves the Service's endpoints asynchronously;
+            # kube-proxy catches up a moment later. Sleeping before SIGTERM
+            # keeps the pod answering during that window. CI counts failed
+            # requests through a rolling restart to check this holds.
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          resources:
+            requests:
+              cpu: 250m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flowsentry
+  labels:
+    app: flowsentry
+spec:
+  type: ClusterIP
+  selector:
+    app: flowsentry             # must match the Deployment's pod labels above
+  ports:
+    - name: http
+      port: 80
+      targetPort: http          # -> the container's named 8000 port
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: flowsentry
+  labels:
+    app: flowsentry
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: flowsentry
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    # Scoring is CPU-bound (random-forest traversal, no I/O), so CPU against
+    # the 250m request is the signal. Needs metrics-server in the cluster.
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: flowsentry
+  labels:
+    app: flowsentry
+spec:
+  # A node drain may evict pods, but never the last ready one.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: flowsentry
