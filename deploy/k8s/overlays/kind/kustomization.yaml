@@ -1,0 +1,23 @@
+# What CI applies to a throwaway kind cluster (.github/workflows/k8s.yml):
+# the base, in its own namespace, running the image CI just built and loaded
+# into the kind node with `kind load docker-image flowsentry:ci`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: flowsentry
+resources:
+  - namespace.yaml
+  - ../../base
+images:
+  - name: ghcr.io/aeripsen/flowsentry
+    newName: flowsentry
+    newTag: ci
+patches:
+  # A value that differs from the code default (4096), so the smoke test can
+  # check /openapi.json and prove the ConfigMap really reaches the process.
+  - target:
+      kind: ConfigMap
+      name: flowsentry-config
+    patch: |-
+      - op: replace
+        path: /data/FLOWSENTRY_SERVING__MAX_BATCH_ROWS
+        value: "2000"

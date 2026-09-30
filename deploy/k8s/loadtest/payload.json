@@ -1,0 +1,1 @@
+{"features": {"pkt_count": 1240.0, "byte_count": 1785600.0, "pps": 41300.0, "bps": 476000000.0, "avg_pkt_size": 1440.0, "mean_iat": 2.4e-05, "iat_std": 8e-06, "directional_asymmetry": 1.0, "idle_ratio": 0.0, "has_quic_subflow": 0}, "reject_threshold": 0.9}
