@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowSentry live demo</title>
+<meta name="description" content="Move an intrusion detector's reject knob over 6,570 real held-out network flows, and see what it does with attack families it never saw in training. Every number comes from the repo's committed artifacts.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23080d14'/%3E%3Crect x='2' y='3' width='6' height='10' fill='%2363d3ff'/%3E%3Crect x='9' y='3' width='5' height='10' fill='%2333445a'/%3E%3C/svg%3E">
+<style>
+/* Shared with the LedgerSentry demo. Same semantic palette as aeripsen.github.io: cyan = the model answered and
+   was right, rose = it answered and was wrong, grey = it abstained (review),
+   amber = the control you are holding. */
+:root {
+  color-scheme: dark light;
+  --ink: #080d14; --surface: #0f1620; --raised: #141d2a; --line: #1e2a38;
+  --text: #dfe7f0; --muted: #8b9bb0; --faint: #5d6c80;
+  --signal: #63d3ff; --warn: #ff6b81; --accent: #f0a848; --abstain: #4a5d77;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --ink: #eceff3; --surface: #ffffff; --raised: #f6f8fa; --line: #d3dae2;
+    --text: #10171f; --muted: #59677a; --faint: #7d8b9c;
+    --signal: #0f7fb0; --warn: #c02a44; --accent: #a4610a; --abstain: #9aa8b8;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--ink); color: var(--text); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 70rem; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 720px) { .wrap { padding: 0 32px; } }
+h1, h2, h3 { font-family: var(--mono); letter-spacing: -0.02em; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(1.7rem, 4.6vw, 2.8rem); }
+h2 { font-size: clamp(1.2rem, 2.6vw, 1.55rem); margin-bottom: .6rem; }
+h3 { font-size: .95rem; }
+p { margin: 0 0 1em; max-width: 68ch; }
+a { color: var(--accent); text-underline-offset: 3px; }
+code { font-family: var(--mono); font-size: .88em; background: var(--raised); border: 1px solid var(--line); padding: 0 .3em; border-radius: 3px; }
+.eyebrow { font-family: var(--mono); font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+header { padding: 2.2rem 0 1.4rem; border-bottom: 1px solid var(--line); }
+header .lede { font-size: 1.08rem; color: var(--text); margin-top: .9rem; }
+.links { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; font-family: var(--mono); font-size: .85rem; }
+section { padding: 1.8rem 0; border-bottom: 1px solid var(--line); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: .9rem 1rem; }
+.tile .num { font-family: var(--mono); font-size: 1.55rem; font-weight: 700; line-height: 1.2; display: block; }
+.tile .lbl { color: var(--muted); font-size: .9rem; display: block; margin-top: .25rem; }
+.tile .ci { font-family: var(--mono); font-size: .76rem; color: var(--faint); display: block; margin-top: .3rem; }
+.v-signal { color: var(--signal); } .v-warn { color: var(--warn); } .v-accent { color: var(--accent); } .v-muted { color: var(--muted); }
+.caption { font-size: .85rem; color: var(--muted); margin-top: .8rem; }
+.knob { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1rem; margin-bottom: 14px; }
+.knob-row { display: grid; grid-template-columns: 1fr; gap: .4rem; margin-bottom: .6rem; }
+.knob-row label { font-family: var(--mono); font-size: .88rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.knob-row output { color: var(--accent); font-weight: 700; }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
+.toggle { font-size: .9rem; color: var(--muted); display: flex; gap: .5rem; align-items: center; cursor: pointer; }
+.hint { font-size: .82rem; color: var(--faint); }
+.lanes { display: flex; height: 30px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); margin: .5rem 0 .3rem; }
+.lanes div { min-width: 2px; transition: flex-grow .08s linear; }
+.lane-clear { background: color-mix(in srgb, var(--signal) 30%, var(--surface)); }
+.lane-review { background: var(--abstain); }
+.lane-flag { background: var(--warn); }
+.legend { display: flex; flex-wrap: wrap; gap: .3rem 1.1rem; font-size: .84rem; color: var(--muted); }
+.sw { display: inline-block; width: .8em; height: .8em; border-radius: 2px; margin-right: .35em; vertical-align: -1px; }
+.frauds { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; padding: .6rem 0; }
+.frauds span { border-radius: 50%; display: inline-block; cursor: default; }
+.f-caught { background: var(--signal); } .f-review { background: var(--abstain); } .f-missed { background: var(--warn); }
+.grid2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 860px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: .85rem; }
+th, td { border: 1px solid var(--line); padding: .45rem .5rem; text-align: right; }
+th { color: var(--muted); font-weight: 600; background: var(--raised); }
+th:first-child, td:first-child { text-align: left; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .axis { stroke: var(--line); } .chart .tick { fill: var(--faint); font: 10px var(--mono); }
+.pick { display: flex; flex-wrap: wrap; gap: .5rem; margin: .4rem 0 .6rem; }
+button { font: .85rem var(--mono); color: var(--text); background: var(--raised); border: 1px solid var(--line); border-radius: 4px; padding: .45rem .7rem; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+.txn { font-family: var(--mono); font-size: .88rem; background: var(--raised); border: 1px solid var(--line); border-radius: 4px; padding: .6rem .8rem; min-height: 2.6rem; }
+.assume { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .9rem; }
+.assume input { width: 4.5rem; font: .9rem var(--mono); background: var(--raised); color: var(--text); border: 1px solid var(--line); border-radius: 3px; padding: .2rem .35rem; }
+ul.check { padding-left: 1.1rem; margin: 0; max-width: 72ch; } ul.check li { margin-bottom: .45rem; }
+footer { padding: 1.4rem 0 2.4rem; color: var(--faint); font-size: .85rem; }
+.err { color: var(--warn); font-family: var(--mono); }
+</style>
+<style>
+.seg { display: flex; flex-wrap: wrap; gap: 6px; margin: .3rem 0 .8rem; }
+.seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+select { font: .9rem var(--mono); background: var(--raised); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: .35rem .5rem; max-width: 100%; }
+.bar { display: flex; height: 34px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); margin: .5rem 0 .3rem; }
+.bar div { min-width: 0; transition: flex-grow .12s linear; }
+.b-unknown { background: var(--abstain); } .b-benign { background: var(--warn); } .b-wrong { background: var(--accent); }
+.b-right { background: var(--signal); }
+.scroll { overflow-x: auto; }
+td.zero { color: var(--warn); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="eyebrow">FlowSentry, live demo</span>
+    <h1>An intrusion detector that says "I don't know" when it meets an attack it has never seen.</h1>
+    <p class="lede">A network-attack classifier with a confidence knob. Below the knob it does not
+    guess; it hands the flow to an analyst as <em>unknown</em>. Everything here is computed from
+    <strong><span data-n>6,570</span> real network flows the model never trained on</strong>, from
+    BCCC-UDP-QUIC-IDS-2025, the public dataset behind my accepted SECRYPT 2026 paper. Nothing is
+    simulated.</p>
+    <div class="links">
+      <a href="https://github.com/Aeripsen/flowsentry">github.com/Aeripsen/flowsentry</a>
+      <a href="data/demo_flows.json">every held-out flow on this page</a>
+      <a href="data/zero_day_lofo.json">zero-day artifact</a>
+      <a href="#check">how you can check it</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section>
+  <div class="wrap">
+    <h2>Measured outcome</h2>
+    <div class="tiles">
+      <div class="tile"><span class="num v-signal" id="h-silent">...</span><span class="lbl">Flows from an attack family the model never saw, passed as harmless: forced to answer, then with the knob at 0.99</span><span class="ci" id="h-silent-ci"></span></div>
+      <div class="tile"><span class="num v-muted" id="h-unknown">...</span><span class="lbl">Of those never-seen attack flows, sent to an analyst as unknown instead</span><span class="ci" id="h-unknown-ci"></span></div>
+      <div class="tile"><span class="num v-accent" id="h-cov">...</span><span class="lbl">Of normal held-out traffic, answered automatically, and how often those answers are right. The rest goes to an analyst.</span><span class="ci" id="h-cov-ci"></span></div>
+    </div>
+    <p class="caption">First two tiles: leave-one-family-out, the mean over the six rare attack
+    families, each retrained with that family removed (<code>artifacts/zero_day_lofo.json</code>).
+    Third tile: the committed curve at threshold 0.99 (<code>artifacts/metrics.json</code>).</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>The knob, on <span data-n>6,570</span> held-out flows</h2>
+    <div class="knob">
+      <div class="knob-row">
+        <label for="t">Answer automatically only when at least this confident <output id="t-out">0.990</output></label>
+        <input id="t" type="range" min="0" max="0.999" step="0.001" value="0.99" list="committed">
+        <datalist id="committed"></datalist>
+        <span class="hint">0 = answer every flow. Tick marks are the committed curve's thresholds, where this page matches it exactly. These flows are from families the model trained on; the zero-day case is the next section.</span>
+      </div>
+    </div>
+    <div class="bar" aria-label="held-out flows by outcome">
+      <div class="b-right" id="l-right"></div><div class="b-wrong" id="l-wrong"></div><div class="b-unknown" id="l-unknown"></div>
+    </div>
+    <div class="legend">
+      <span><i class="sw b-right"></i>answered, right <b id="n-right"></b></span>
+      <span><i class="sw b-wrong"></i>answered, wrong <b id="n-wrong"></b></span>
+      <span><i class="sw b-unknown"></i>sent to an analyst <b id="n-unknown"></b></span>
+    </div>
+
+    <div class="tiles" style="margin-top:1.2rem">
+      <div class="tile"><span class="num v-accent" id="m-cov"></span><span class="lbl">Answered automatically (coverage)</span></div>
+      <div class="tile"><span class="num v-signal" id="m-rel"></span><span class="lbl">Of those answers, share that are right (reliability)</span></div>
+      <div class="tile"><span class="num v-warn" id="m-silent"></span><span class="lbl">Attack flows passed as benign, out of <span id="n-attack"></span></span></div>
+      <div class="tile"><span class="num v-warn" id="m-false"></span><span class="lbl">Benign flows called an attack, out of <span id="n-benign"></span></span></div>
+    </div>
+
+    <div class="grid2" style="margin-top:1.2rem">
+      <div>
+        <h3 style="margin-bottom:.5rem">Attack or not</h3>
+        <table>
+          <thead><tr><th></th><th>called attack</th><th>called benign</th><th>unknown</th></tr></thead>
+          <tbody>
+            <tr><td>really attack</td><td class="v-signal" id="c-aa"></td><td class="v-warn" id="c-ab"></td><td id="c-au"></td></tr>
+            <tr><td>really benign</td><td class="v-warn" id="c-ba"></td><td class="v-signal" id="c-bb"></td><td id="c-bu"></td></tr>
+          </tbody>
+        </table>
+        <p class="caption">"Called attack" counts any attack family, right or wrong. Binary attack-detection PR-AUC on this split: <b id="m-prauc"></b>, from <code>metrics.json</code>.</p>
+      </div>
+      <div class="scroll">
+        <h3 style="margin-bottom:.5rem">Per family, including the uncomfortable part</h3>
+        <table id="fam"><thead><tr><th>true family</th><th>flows</th><th>right</th><th>other attack</th><th>benign</th><th>unknown</th></tr></thead><tbody></tbody></table>
+        <p class="caption">UDP-RAW and benign dominate the sample, so they dominate the answered set. Several rare families are almost never answered correctly at a high threshold. That is measured and published, not hidden.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Zero-day: an attack family the model never saw</h2>
+    <p>Each round removes one attack family from training entirely, retrains, and then shows the
+    model that family's flows. A closed-set model has to call them something, and mostly it calls
+    them benign. Pick a family and a threshold. These are the committed numbers for the shipped
+    two-stage model, not a live computation.</p>
+    <div class="knob">
+      <label for="fam-pick" class="hint" style="display:block;margin-bottom:.3rem">Held-out family</label>
+      <select id="fam-pick"></select>
+      <div class="hint" style="margin-top:.8rem">Reject threshold</div>
+      <div class="seg" id="zt"></div>
+    </div>
+    <div class="bar" aria-label="what happened to the unseen family's flows">
+      <div class="b-unknown" id="z-unknown"></div><div class="b-benign" id="z-benign"></div><div class="b-wrong" id="z-wrong"></div>
+    </div>
+    <div class="legend">
+      <span><i class="sw b-unknown"></i>sent to an analyst as unknown <b id="zn-unknown"></b></span>
+      <span><i class="sw b-benign"></i>passed as benign, the silent miss <b id="zn-benign"></b></span>
+      <span><i class="sw b-wrong"></i>called some other attack <b id="zn-wrong"></b></span>
+    </div>
+    <div class="tiles" style="margin-top:1.1rem">
+      <div class="tile"><span class="num v-accent" id="z-seen"></span><span class="lbl">Known traffic in the same round: answered, and share right</span></div>
+      <div class="tile"><span class="num v-signal" id="z-lift"></span><span class="lbl">Novelty lift: how much more often the unseen family is rejected than known traffic</span></div>
+      <div class="tile"><span class="num v-muted" id="z-ctrl"></span><span class="lbl">The same lift with training labels shuffled. Near zero means the lift is real novelty detection, not a high bar rejecting everything.</span></div>
+    </div>
+    <p class="caption" id="z-note"></p>
+  </div>
+</section>
+
+<section id="check">
+  <div class="wrap">
+    <h2>How you can check this</h2>
+    <ul class="check">
+      <li>The held-out flows come from a connection-grouped split: no UDP connection appears in both training and test. Predictions and confidences were computed once by <code>make train &amp;&amp; make demo-data</code> and are downloadable above. The page applies the knob; it does not run the model in your browser.</li>
+      <li>Before this page deploys, CI runs <code>tests/test_demo_data.py</code>, which rebuilds the committed coverage-reliability curve, the binary PR-AUC of 0.9767 and the per-family confusion counts from these exact rows, and checks the zero-day means shown here against the committed summary.</li>
+      <li>The zero-day panel reads <code>artifacts/zero_day_lofo.json</code> as committed (<code>make zero-day</code>): seven retrains, four model arms, plus a shuffled-label control.</li>
+      <li>The data is a stratified sample of the public dataset: every flow of the seven rare families, with benign and UDP-RAW capped. Rare-family numbers rest on 52 to 100 test flows each.</li>
+      <li>It classifies stored flow records. It is not a live network tap, and nothing here ran on real traffic.</li>
+      <li>The two-stage design from the paper does not beat a single forest on this sample, and the README says so with the numbers.</li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">Sepehr Jafari. Model, tests and data pipeline: <a href="https://github.com/Aeripsen/flowsentry">github.com/Aeripsen/flowsentry</a>. Sibling project: <a href="https://aeripsen.github.io/ledgersentry/">LedgerSentry live demo</a>.</div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var nf = function (x, d) { return x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); };
+  var pct = function (x, d) { return nf(100 * x, d === undefined ? 1 : d) + "%"; };
+  var D, Z, M, CL, Y, PR, CONF, BENIGN, N;
+
+  function renderKnob() {
+    var t = parseFloat($("t").value);
+    $("t-out").textContent = nf(t, 3);
+    var right = 0, wrong = 0, unk = 0, aa = 0, ab = 0, au = 0, ba = 0, bb = 0, bu = 0, fam = {};
+    CL.forEach(function (c, k) { fam[k] = [0, 0, 0, 0, 0]; });
+    for (var i = 0; i < N; i++) {
+      var yk = Y[i], pk = PR[i], cov = CONF[i] >= t, isB = yk === BENIGN, f = fam[yk];
+      f[0]++;
+      if (!cov) { unk++; f[4]++; if (isB) bu++; else au++; continue; }
+      if (pk === yk) { right++; f[1]++; } else { wrong++; if (pk === BENIGN) f[3]++; else f[2]++; }
+      if (isB) { if (pk === BENIGN) bb++; else ba++; } else { if (pk === BENIGN) ab++; else aa++; }
+    }
+    $("l-right").style.flexGrow = right; $("l-wrong").style.flexGrow = wrong; $("l-unknown").style.flexGrow = unk;
+    $("n-right").textContent = nf(right, 0); $("n-wrong").textContent = nf(wrong, 0); $("n-unknown").textContent = nf(unk, 0);
+    $("m-cov").textContent = pct((right + wrong) / N);
+    $("m-rel").textContent = right + wrong ? pct(right / (right + wrong)) : "nothing answered";
+    $("m-silent").textContent = nf(ab, 0); $("m-false").textContent = nf(ba, 0);
+    $("c-aa").textContent = nf(aa, 0); $("c-ab").textContent = nf(ab, 0); $("c-au").textContent = nf(au, 0);
+    $("c-ba").textContent = nf(ba, 0); $("c-bb").textContent = nf(bb, 0); $("c-bu").textContent = nf(bu, 0);
+    var rows = "";
+    CL.forEach(function (c, k) {
+      var f = fam[k];
+      rows += "<tr><td>" + c + "</td><td>" + f[0] + "</td><td" + (f[1] === 0 ? ' class="zero"' : "") + ">" + f[1] + "</td><td>" + f[2] + "</td><td>" + f[3] + "</td><td>" + f[4] + "</td></tr>";
+    });
+    $("fam").tBodies[0].innerHTML = rows;
+  }
+
+  // ---- zero-day ----
+  var RARE, zt = 0.99;
+  function roundOf(fam, src) { return (src || Z.rounds).filter(function (r) { return r.held_out_family === fam; })[0]; }
+  function atT(r, t) { return r.arms.hierarchy.by_threshold.filter(function (b) { return b.threshold === t; })[0]; }
+  function meanOver(fams, t, get, src) {
+    var s = 0; fams.forEach(function (f) { s += get(atT(roundOf(f, src), t)); }); return s / fams.length;
+  }
+  // Round to 4 decimals first, the way zero_day_lofo.json stores its summary,
+  // with integer steps so 0.6645 shows as 66.5% like the artifact, not 66.4%.
+  function zpct(x) { return (Math.round(Math.round(x * 1e4) / 10) / 10).toFixed(1) + "%"; }
+  function renderZero() {
+    var pick = $("fam-pick").value, fams = pick === "__mean" ? RARE : [pick];
+    var u = function (k) { return function (b) { return b.unseen_family[k]; }; };
+    var rej = meanOver(fams, zt, u("rejected_unknown")), ben = meanOver(fams, zt, u("called_benign")), wr = meanOver(fams, zt, u("called_wrong_attack"));
+    $("z-unknown").style.flexGrow = rej; $("z-benign").style.flexGrow = ben; $("z-wrong").style.flexGrow = wr;
+    $("zn-unknown").textContent = zpct(rej); $("zn-benign").textContent = zpct(ben); $("zn-wrong").textContent = zpct(wr);
+    var cov = meanOver(fams, zt, function (b) { return b.seen_families.coverage; });
+    var rel = meanOver(fams, zt, function (b) { return b.seen_families.reliability; });
+    $("z-seen").textContent = zpct(cov) + " at " + zpct(rel);
+    var lift = meanOver(fams, zt, function (b) { return b.novelty_lift; });
+    var ctrl = meanOver(fams, zt, function (b) { return b.novelty_lift; }, Z.shuffled_label_control);
+    var sign = function (x) { return (x >= 0 ? "+" : "−") + nf(Math.abs(x), 3); };
+    $("z-lift").textContent = sign(lift); $("z-ctrl").textContent = sign(ctrl);
+    var n = 0; fams.forEach(function (f) { n += atT(roundOf(f), zt).unseen_family.n; });
+    $("z-note").textContent = (pick === "__mean" ? "Plain mean of the six rare families' rates, the same way the committed summary is computed (" + nf(n, 0) + " unseen flows in total)." : n + " unseen flows of " + pick + ".") + " Shipped two-stage arm; the artifact also holds three other arms, and a plain 200-tree forest does slightly better.";
+    Array.prototype.forEach.call($("zt").children, function (b) { b.setAttribute("aria-pressed", String(parseFloat(b.dataset.t) === zt)); });
+  }
+
+  function setHeadline() {
+    var s = Z.summary, f0 = s.forced_to_answer_threshold_0.per_arm.hierarchy, h = s["at_threshold_0.99"].per_arm.hierarchy;
+    $("h-silent").textContent = pct(f0.mean_called_benign) + " → " + pct(h.mean_called_benign);
+    $("h-silent-ci").textContent = "worst family, " + f0.worst_family.family + ": " + pct(f0.worst_family.called_benign) + " passed as benign when forced to answer";
+    $("h-unknown").textContent = pct(h.mean_rejected_unknown);
+    $("h-unknown-ci").textContent = "novelty lift " + (h.mean_novelty_lift >= 0 ? "+" : "") + nf(h.mean_novelty_lift, 3) + "; shuffled-label control " + nf(h.mean_novelty_lift_shuffled_control, 3);
+    var row = M.coverage_reliability_curve.filter(function (r) { return r.threshold === 0.99; })[0];
+    $("h-cov").textContent = pct(row.coverage) + " at " + pct(row.reliability);
+    $("h-cov-ci").textContent = "answering every flow instead: " + pct(M.coverage_reliability_curve[0].reliability) + " right";
+  }
+
+  function fail(msg) {
+    document.querySelector("main").insertAdjacentHTML("afterbegin", '<div class="wrap"><p class="err">Could not load the committed data: ' + msg + "</p></div>");
+  }
+  var get = function (u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); }); };
+  Promise.all([get("data/demo_flows.json"), get("data/zero_day_lofo.json"), get("data/metrics.json")]).then(function (res) {
+    D = res[0]; Z = res[1]; M = res[2];
+    CL = D.classes; Y = Int8Array.from(D.true); PR = Int8Array.from(D.pred); CONF = Float64Array.from(D.confidence); N = D.n;
+    BENIGN = CL.indexOf("benign");
+    document.querySelectorAll("[data-n]").forEach(function (e) { e.textContent = nf(N, 0); });
+    var nb = 0; for (var i = 0; i < N; i++) if (Y[i] === BENIGN) nb++;
+    $("n-attack").textContent = nf(N - nb, 0); $("n-benign").textContent = nf(nb, 0);
+    $("m-prauc").textContent = M.binary_attack_detection_pr_auc;
+    D.committed_thresholds.forEach(function (t) { var o = document.createElement("option"); o.value = t; $("committed").appendChild(o); });
+    RARE = Z.summary.rare_families;
+    var sel = $("fam-pick");
+    sel.insertAdjacentHTML("beforeend", '<option value="__mean">mean of the six rare families (the headline)</option>');
+    RARE.forEach(function (f) { sel.insertAdjacentHTML("beforeend", '<option value="' + f + '">' + f + "</option>"); });
+    Z.rounds.forEach(function (r) { if (RARE.indexOf(r.held_out_family) < 0) sel.insertAdjacentHTML("beforeend", '<option value="' + r.held_out_family + '">' + r.held_out_family + " (the dominant family, not in the mean)</option>"); });
+    Z.config.reject_thresholds.forEach(function (t) {
+      var b = document.createElement("button"); b.type = "button"; b.dataset.t = t; b.textContent = t === 0 ? "0 (forced to answer)" : String(t);
+      b.addEventListener("click", function () { zt = t; renderZero(); }); $("zt").appendChild(b);
+    });
+    setHeadline();
+    $("t").addEventListener("input", renderKnob); sel.addEventListener("change", renderZero);
+    renderKnob(); renderZero();
+  }).catch(function (e) { fail(e.message); });
+})();
+</script>
+</body>
+</html>

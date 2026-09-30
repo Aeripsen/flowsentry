@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business reproduce serve
+.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business demo-data reproduce serve
 
 train:
 	python -m flowsentry.train
@@ -52,6 +52,11 @@ zero-day:
 # trains nothing, prices nothing
 business:
 	python scripts/business_case.py
+
+# per-flow export the live demo page runs on; refuses to write unless the rows
+# rebuild the committed curve, binary PR-AUC and per-family confusion
+demo-data:
+	python scripts/demo_data.py
 
 # the reproducibility contract: retrain and require artifacts/metrics.json to
 # regenerate byte-identically (exact bytes promised under requirements.lock)

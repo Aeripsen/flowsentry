@@ -1,0 +1,60 @@
+name: pages
+
+# Publishes the static demo in site/ to https://aeripsen.github.io/flowsentry/.
+# The page reads three committed artifacts, and it only deploys after
+# tests/test_demo_data.py proves the exported flows rebuild the committed
+# curve, binary PR-AUC and per-family confusion, and the zero-day means match
+# the committed summary. A drifted number blocks the deploy.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: The page's data must regenerate the committed numbers
+        run: pytest -q tests/test_demo_data.py
+
+      - name: Assemble the site from committed artifacts
+        run: |
+          mkdir -p _site/data
+          cp site/index.html _site/
+          cp artifacts/demo_flows.json artifacts/zero_day_lofo.json artifacts/metrics.json _site/data/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,6 +1,23 @@
 # FlowSentry
 
 [![ci](https://github.com/Aeripsen/flowsentry/actions/workflows/ci.yml/badge.svg)](https://github.com/Aeripsen/flowsentry/actions/workflows/ci.yml)
+[![live demo](https://img.shields.io/badge/live_demo-aeripsen.github.io%2Fflowsentry-f0a848)](https://aeripsen.github.io/flowsentry/)
+
+**[Live demo: move the reject knob over 6,570 real held-out network flows](https://aeripsen.github.io/flowsentry/)**
+
+**What this is, in 30 seconds.** A network-attack detector that is allowed to say "I don't
+know" and hand a flow to an analyst instead of guessing. It implements the architecture from
+my accepted SECRYPT 2026 paper, on that paper's public dataset. Measured, not assumed:
+
+- **Zero-day attacks stop slipping through.** When an attack family was never in training,
+  the share of its flows passed as harmless falls from **70.5% to 7.7%** with the knob at
+  0.99; **91.4%** are sent to an analyst as unknown instead (mean over six families, each
+  held out and retrained; a shuffled-label control shows the effect is real).
+- **Known traffic stays automated:** it answers **64.8%** of held-out traffic at **99.3%**
+  reliability and routes the rest to a person (83.2% if it must answer everything).
+
+Every figure is in `artifacts/zero_day_lofo.json` and `artifacts/metrics.json`; CI rebuilds
+the demo's numbers from the committed per-flow export before the page can deploy.
 
 Per-flow hierarchical UDP/QUIC intrusion detection with a tunable reject option, served over
 FastAPI. It operationalizes the architecture from my accepted **SECRYPT 2026** paper on hierarchical
@@ -55,7 +72,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"          # package + runtime deps + test tooling
 
 python -m flowsentry.train      # trains on the committed BCCC sample, writes artifacts/ (~30 s)
-pytest                          # 80 tests; 2 skip unless the [gbdt] extra is installed
+pytest                          # 85 tests; 2 skip unless the [gbdt] extra is installed
 uvicorn flowsentry.service:app  # serve on http://localhost:8000
 ```
 
@@ -475,7 +492,7 @@ make reproduce            # or: python scripts/reproduce.py
 Retrains from the committed sample and fails unless `artifacts/metrics.json` regenerates
 **byte-identically** (seeded end to end: split, imputer, forests). Exact bytes are promised under
 `requirements.lock` (the environment the published numbers came from); on other versions the test
-suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (80 tests, including
+suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (85 tests, including
 the leakage guard, the metrics regression, exact-equality guards on both fast paths, and the perf
 regression guard) run in CI.
 
