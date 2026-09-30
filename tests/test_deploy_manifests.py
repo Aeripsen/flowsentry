@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 
 from flowsentry.config import Settings
+from flowsentry.drain import DRAIN_FILE
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -54,7 +55,11 @@ def test_rollout_never_drops_capacity_and_shutdown_is_graceful() -> None:
     assert rolling["maxUnavailable"] == 0
     assert rolling["maxSurge"] >= 1
     pod = dep["spec"]["template"]["spec"]
-    sleep_s = int(_container()["lifecycle"]["preStop"]["exec"]["command"][1])
+    shell, flag, script = _container()["lifecycle"]["preStop"]["exec"]["command"]
+    assert (shell, flag) == ("sh", "-c")
+    # preStop must create the file DrainMiddleware watches, then outwait kube-proxy
+    assert f"touch {DRAIN_FILE.as_posix()}" in script
+    sleep_s = int(re.search(r"sleep (\d+)", script).group(1))
     assert sleep_s < pod["terminationGracePeriodSeconds"]
     # exec-form CMD: uvicorn is PID 1 and receives SIGTERM directly
     assert 'CMD ["uvicorn"' in (REPO / "Dockerfile").read_text()

@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 
 from . import __version__
 from .config import get_settings
+from .drain import DrainMiddleware
 from .scoring import ARTIFACT, ARTIFACT_DIR, FlowScorer
 
 MAX_BATCH_ROWS = get_settings().serving.max_batch_rows
@@ -39,6 +40,8 @@ app = FastAPI(
     version=__version__,
     description="Per-flow hierarchical UDP/QUIC intrusion detection with a tunable reject option.",
 )
+# Connection draining for rolling restarts (drain.py, deploy/k8s preStop).
+app.add_middleware(DrainMiddleware)
 
 _scorer: FlowScorer | None = None
 
