@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench loadtest splits hierarchy families calibration gbdt shap zero-day business verify-derived demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind
+.PHONY: train test lint type bench loadtest splits hierarchy families calibration gbdt shap zero-day business verify-derived demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind k8s-schema compose-smoke
 
 train:
 	python -m flowsentry.train
@@ -109,3 +109,11 @@ k8s-e2e:
 # terraform apply deploy/terraform/kubernetes to kind, re-plan, parity, destroy.
 tf-kind:
 	bash scripts/tf_kind_e2e.sh
+
+# kubeconform -strict on the rendered base, kind overlay and k6 Job (needs kubectl).
+k8s-schema:
+	bash scripts/k8s_schema.sh
+
+# docker compose up, smoke-test API and dashboard, down (needs docker).
+compose-smoke:
+	bash scripts/compose_smoke.sh

@@ -1,0 +1,474 @@
+{
+  "source": "Run 36770459936 attempt 2, job kind-e2e. The 'report' block is the JSON that scripts/k8s_report.py printed to the job log (timestamps stripped), copied verbatim. The raw log is artifacts/ci_logs/k8s_kind_flowsentry_postfix_attempt2.log. The 'full_artifact' block is the uploaded k8s-kind-run artifact of this attempt (the artifact of attempt 1 was replaced when attempt 2 uploaded under the same name).",
+  "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36770459936/attempts/2",
+  "report": {
+    "deploy": {
+      "initial_rollout_seconds": 7,
+      "ready": {
+        "status": "ready",
+        "model": "loaded",
+        "version": "0.2.0"
+      },
+      "predict_example": {
+        "label": "unknown",
+        "confidence": 0.5251,
+        "escalated_to_stage2": true,
+        "abstained": true
+      },
+      "pid1": "/usr/local/bin/python3.12 /usr/local/bin/uvicorn flowsentry.service:app --host 0.0.0.0 --port 8000",
+      "runs_as": "uid=10001(app) gid=999(app) groups=999(app)",
+      "configmap_max_batch": 2000,
+      "max_batch_seen_in_openapi": 2000,
+      "configmap_reaches_process": true
+    },
+    "load_steady": {
+      "phase": "steady",
+      "vus": 16,
+      "duration": "90s",
+      "requests": 15289,
+      "req_per_s": 169.5,
+      "latency_ms": {
+        "avg": 94.0,
+        "p50": 9.06,
+        "p95": 419.19,
+        "p99": 527.25,
+        "max": 729.78
+      },
+      "ok_2xx": 15289,
+      "failed_5xx": 0,
+      "failed_other_status": 0,
+      "failed_connection": 0,
+      "failed_total": 0
+    },
+    "load_during_rolling_restart": {
+      "phase": "restart",
+      "vus": 16,
+      "duration": "120s",
+      "requests": 37164,
+      "req_per_s": 309.5,
+      "latency_ms": {
+        "avg": 50.48,
+        "p50": 40.77,
+        "p95": 120.11,
+        "p99": 162.65,
+        "max": 318.42
+      },
+      "ok_2xx": 37164,
+      "failed_5xx": 0,
+      "failed_other_status": 0,
+      "failed_connection": 0,
+      "failed_total": 0,
+      "rolling_restart": {
+        "started_seconds_into_load": 15,
+        "rollout_seconds": 34,
+        "finished_before_load_ended": true,
+        "pods_before": [
+          "flowsentry-6fbfb79455-2cf58",
+          "flowsentry-6fbfb79455-4d7s9",
+          "flowsentry-6fbfb79455-5hp7n",
+          "flowsentry-6fbfb79455-d887t",
+          "flowsentry-6fbfb79455-sz8bs"
+        ],
+        "pods_after": [
+          "flowsentry-5c8758bf45-5mxmm",
+          "flowsentry-5c8758bf45-kqns8",
+          "flowsentry-5c8758bf45-qt2bx",
+          "flowsentry-5c8758bf45-rpfgv",
+          "flowsentry-5c8758bf45-v6gcl"
+        ],
+        "every_pod_replaced": true
+      }
+    }
+  },
+  "full_artifact": {
+    "what": "flowsentry deployed to a kind cluster from deploy/k8s/overlays/kind, smoke-tested, load-tested through its Service, and rolled while under load.",
+    "environment": {
+      "runner_vcpu": 4,
+      "runner_memory_mb": 15989,
+      "kind": "v0.33.0",
+      "kubernetes": "v1.37.0",
+      "git_sha": "73c82b9118e4d3efe7fa99563c0998b11bb5603d",
+      "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36770459936"
+    },
+    "deploy": {
+      "initial_rollout_seconds": 7,
+      "ready": {
+        "status": "ready",
+        "model": "loaded",
+        "version": "0.2.0"
+      },
+      "predict_example": {
+        "label": "unknown",
+        "confidence": 0.5251,
+        "escalated_to_stage2": true,
+        "abstained": true
+      },
+      "pid1": "/usr/local/bin/python3.12 /usr/local/bin/uvicorn flowsentry.service:app --host 0.0.0.0 --port 8000",
+      "runs_as": "uid=10001(app) gid=999(app) groups=999(app)",
+      "configmap_max_batch": 2000,
+      "max_batch_seen_in_openapi": 2000,
+      "configmap_reaches_process": true
+    },
+    "load_steady": {
+      "phase": "steady",
+      "vus": 16,
+      "duration": "90s",
+      "requests": 15289,
+      "req_per_s": 169.5,
+      "latency_ms": {
+        "avg": 94.0,
+        "p50": 9.06,
+        "p95": 419.19,
+        "p99": 527.25,
+        "max": 729.78
+      },
+      "ok_2xx": 15289,
+      "failed_5xx": 0,
+      "failed_other_status": 0,
+      "failed_connection": 0,
+      "failed_total": 0
+    },
+    "load_during_rolling_restart": {
+      "phase": "restart",
+      "vus": 16,
+      "duration": "120s",
+      "requests": 37164,
+      "req_per_s": 309.5,
+      "latency_ms": {
+        "avg": 50.48,
+        "p50": 40.77,
+        "p95": 120.11,
+        "p99": 162.65,
+        "max": 318.42
+      },
+      "ok_2xx": 37164,
+      "failed_5xx": 0,
+      "failed_other_status": 0,
+      "failed_connection": 0,
+      "failed_total": 0,
+      "rolling_restart": {
+        "started_seconds_into_load": 15,
+        "rollout_seconds": 34,
+        "finished_before_load_ended": true,
+        "pods_before": [
+          "flowsentry-6fbfb79455-2cf58",
+          "flowsentry-6fbfb79455-4d7s9",
+          "flowsentry-6fbfb79455-5hp7n",
+          "flowsentry-6fbfb79455-d887t",
+          "flowsentry-6fbfb79455-sz8bs"
+        ],
+        "pods_after": [
+          "flowsentry-5c8758bf45-5mxmm",
+          "flowsentry-5c8758bf45-kqns8",
+          "flowsentry-5c8758bf45-qt2bx",
+          "flowsentry-5c8758bf45-rpfgv",
+          "flowsentry-5c8758bf45-v6gcl"
+        ],
+        "every_pod_replaced": true
+      }
+    },
+    "hpa": {
+      "columns": [
+        "seconds_since_steady_load_start",
+        "current_replicas",
+        "desired_replicas",
+        "cpu_percent_of_request"
+      ],
+      "replicas_min_seen": 2,
+      "replicas_max_seen": 5,
+      "cpu_percent_max_seen": 333,
+      "timeline": [
+        [
+          -1,
+          2,
+          0,
+          null
+        ],
+        [
+          5,
+          2,
+          2,
+          0
+        ],
+        [
+          10,
+          2,
+          2,
+          0
+        ],
+        [
+          15,
+          2,
+          2,
+          0
+        ],
+        [
+          20,
+          2,
+          5,
+          182
+        ],
+        [
+          25,
+          2,
+          5,
+          182
+        ],
+        [
+          30,
+          2,
+          5,
+          182
+        ],
+        [
+          35,
+          5,
+          5,
+          333
+        ],
+        [
+          40,
+          5,
+          5,
+          333
+        ],
+        [
+          45,
+          5,
+          5,
+          333
+        ],
+        [
+          50,
+          5,
+          5,
+          225
+        ],
+        [
+          55,
+          5,
+          5,
+          225
+        ],
+        [
+          60,
+          5,
+          5,
+          225
+        ],
+        [
+          66,
+          5,
+          5,
+          154
+        ],
+        [
+          71,
+          5,
+          5,
+          154
+        ],
+        [
+          76,
+          5,
+          5,
+          154
+        ],
+        [
+          81,
+          5,
+          5,
+          156
+        ],
+        [
+          86,
+          5,
+          5,
+          156
+        ],
+        [
+          91,
+          5,
+          5,
+          156
+        ],
+        [
+          96,
+          5,
+          5,
+          156
+        ],
+        [
+          101,
+          5,
+          5,
+          156
+        ],
+        [
+          106,
+          5,
+          5,
+          156
+        ],
+        [
+          111,
+          5,
+          5,
+          148
+        ],
+        [
+          116,
+          5,
+          5,
+          148
+        ],
+        [
+          122,
+          5,
+          5,
+          148
+        ],
+        [
+          127,
+          5,
+          5,
+          226
+        ],
+        [
+          132,
+          5,
+          5,
+          226
+        ],
+        [
+          137,
+          5,
+          5,
+          192
+        ],
+        [
+          142,
+          5,
+          5,
+          192
+        ],
+        [
+          147,
+          5,
+          5,
+          192
+        ],
+        [
+          152,
+          5,
+          5,
+          123
+        ],
+        [
+          158,
+          5,
+          5,
+          123
+        ],
+        [
+          163,
+          5,
+          5,
+          123
+        ],
+        [
+          168,
+          5,
+          5,
+          325
+        ],
+        [
+          173,
+          5,
+          5,
+          325
+        ],
+        [
+          178,
+          5,
+          5,
+          325
+        ],
+        [
+          183,
+          5,
+          5,
+          255
+        ],
+        [
+          188,
+          5,
+          5,
+          255
+        ],
+        [
+          193,
+          5,
+          5,
+          255
+        ],
+        [
+          199,
+          5,
+          5,
+          279
+        ],
+        [
+          204,
+          5,
+          5,
+          279
+        ],
+        [
+          209,
+          5,
+          5,
+          279
+        ],
+        [
+          214,
+          5,
+          5,
+          278
+        ]
+      ]
+    },
+    "pods_after_steady_load": [
+      {
+        "pod": "flowsentry-6fbfb79455-2cf58",
+        "cpu_millicores": 944,
+        "memory_mi": 266.0
+      },
+      {
+        "pod": "flowsentry-6fbfb79455-4d7s9",
+        "cpu_millicores": 2,
+        "memory_mi": 267.0
+      },
+      {
+        "pod": "flowsentry-6fbfb79455-5hp7n",
+        "cpu_millicores": 2,
+        "memory_mi": 265.0
+      },
+      {
+        "pod": "flowsentry-6fbfb79455-d887t",
+        "cpu_millicores": 1001,
+        "memory_mi": 268.0
+      },
+      {
+        "pod": "flowsentry-6fbfb79455-sz8bs",
+        "cpu_millicores": 2,
+        "memory_mi": 267.0
+      }
+    ],
+    "caveats": [
+      "Single-node kind cluster on one GitHub Actions runner. The k6 load generator runs in the same cluster and competes for the same CPUs as the pods.",
+      "Synthetic load: one fixed request body sent in a closed loop. Not production traffic, not users.",
+      "Throughput and latency vary between runners; the gate is on failed requests, not on a throughput number."
+    ]
+  }
+}

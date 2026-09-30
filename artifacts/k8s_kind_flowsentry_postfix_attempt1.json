@@ -1,0 +1,83 @@
+{
+  "source": "Run 36770459936 attempt 1, job kind-e2e. The 'report' block is the JSON that scripts/k8s_report.py printed to the job log (timestamps stripped), copied verbatim. The raw log is artifacts/ci_logs/k8s_kind_flowsentry_postfix_attempt1.log.",
+  "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36770459936/attempts/1",
+  "report": {
+    "deploy": {
+      "initial_rollout_seconds": 6,
+      "ready": {
+        "status": "ready",
+        "model": "loaded",
+        "version": "0.2.0"
+      },
+      "predict_example": {
+        "label": "unknown",
+        "confidence": 0.5251,
+        "escalated_to_stage2": true,
+        "abstained": true
+      },
+      "pid1": "/usr/local/bin/python3.12 /usr/local/bin/uvicorn flowsentry.service:app --host 0.0.0.0 --port 8000",
+      "runs_as": "uid=10001(app) gid=999(app) groups=999(app)",
+      "configmap_max_batch": 2000,
+      "max_batch_seen_in_openapi": 2000,
+      "configmap_reaches_process": true
+    },
+    "load_steady": {
+      "phase": "steady",
+      "vus": 16,
+      "duration": "90s",
+      "requests": 9710,
+      "req_per_s": 107.8,
+      "latency_ms": {
+        "avg": 147.75,
+        "p50": 134.2,
+        "p95": 280.12,
+        "p99": 338.81,
+        "max": 490.41
+      },
+      "ok_2xx": 9710,
+      "failed_5xx": 0,
+      "failed_other_status": 0,
+      "failed_connection": 0,
+      "failed_total": 0
+    },
+    "load_during_rolling_restart": {
+      "phase": "restart",
+      "vus": 16,
+      "duration": "120s",
+      "requests": 40139,
+      "req_per_s": 334.3,
+      "latency_ms": {
+        "avg": 46.67,
+        "p50": 36.26,
+        "p95": 119.13,
+        "p99": 170.9,
+        "max": 310.18
+      },
+      "ok_2xx": 40139,
+      "failed_5xx": 0,
+      "failed_other_status": 0,
+      "failed_connection": 0,
+      "failed_total": 0,
+      "rolling_restart": {
+        "started_seconds_into_load": 15,
+        "rollout_seconds": 36,
+        "finished_before_load_ended": true,
+        "pods_before": [
+          "flowsentry-6fbfb79455-6kkgx",
+          "flowsentry-6fbfb79455-dtvhh",
+          "flowsentry-6fbfb79455-m8nb6",
+          "flowsentry-6fbfb79455-plxhb",
+          "flowsentry-6fbfb79455-tpn4w"
+        ],
+        "pods_after": [
+          "flowsentry-858b857b5f-2dzd7",
+          "flowsentry-858b857b5f-5hbg6",
+          "flowsentry-858b857b5f-6dfr6",
+          "flowsentry-858b857b5f-qq9km",
+          "flowsentry-858b857b5f-tjkr7"
+        ],
+        "every_pod_replaced": true
+      }
+    }
+  }
+}

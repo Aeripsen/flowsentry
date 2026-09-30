@@ -1,0 +1,434 @@
+﻿2026-09-30T20:15:15.0304948Z Current runner version: '2.337.0'
+2026-09-30T20:15:15.0345024Z ##[group]Runner Image Provisioner
+2026-09-30T20:15:15.0346481Z Hosted Compute Agent
+2026-09-30T20:15:15.0347861Z Version: 20260901.588
+2026-09-30T20:15:15.0348968Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-09-30T20:15:15.0350318Z Build Date: 2026-09-01T19:56:44Z
+2026-09-30T20:15:15.0351467Z Worker ID: {b242927a-2fca-4412-a841-34f24278a12a}
+2026-09-30T20:15:15.0352677Z Azure Region: eastus
+2026-09-30T20:15:15.0353856Z ##[endgroup]
+2026-09-30T20:15:15.0356378Z ##[group]Operating System
+2026-09-30T20:15:15.0357745Z Ubuntu
+2026-09-30T20:15:15.0358702Z 24.04.5
+2026-09-30T20:15:15.0359572Z LTS
+2026-09-30T20:15:15.0361067Z ##[endgroup]
+2026-09-30T20:15:15.0362046Z ##[group]Runner Image
+2026-09-30T20:15:15.0363158Z Image: ubuntu-24.04
+2026-09-30T20:15:15.0364207Z Version: 20260927.320.1
+2026-09-30T20:15:15.0366500Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-30T20:15:15.0369499Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-09-30T20:15:15.0371278Z ##[endgroup]
+2026-09-30T20:15:15.0373148Z ##[group]GITHUB_TOKEN Permissions
+2026-09-30T20:15:15.0377319Z Contents: read
+2026-09-30T20:15:15.0378687Z Metadata: read
+2026-09-30T20:15:15.0379697Z ##[endgroup]
+2026-09-30T20:15:15.0382966Z Secret source: Actions
+2026-09-30T20:15:15.0384627Z Cache mode: write
+2026-09-30T20:15:15.0386262Z Prepare workflow directory
+2026-09-30T20:15:15.0992995Z Prepare all required actions
+2026-09-30T20:15:15.1070358Z Getting action download info
+2026-09-30T20:15:15.3240742Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-09-30T20:15:15.4782906Z Download action repository 'helm/kind-action@v1.15.0' (SHA:06c1ae10762d3b9c1644e7fe69596ae519e015a2)
+2026-09-30T20:15:15.5834315Z Download action repository 'actions/upload-artifact@v7' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-30T20:15:15.8109006Z Complete job name: kind-e2e
+2026-09-30T20:15:15.8935774Z ##[group]Run actions/checkout@v7
+2026-09-30T20:15:15.8936685Z with:
+2026-09-30T20:15:15.8937146Z   repository: Aeripsen/flowsentry
+2026-09-30T20:15:15.8941434Z   token: ***
+2026-09-30T20:15:15.8941878Z   ssh-strict: true
+2026-09-30T20:15:15.8942323Z   ssh-user: git
+2026-09-30T20:15:15.8942768Z   persist-credentials: true
+2026-09-30T20:15:15.8943251Z   clean: true
+2026-09-30T20:15:15.8943692Z   sparse-checkout-cone-mode: true
+2026-09-30T20:15:15.8944207Z   fetch-depth: 1
+2026-09-30T20:15:15.8944638Z   fetch-tags: false
+2026-09-30T20:15:15.8945081Z   show-progress: true
+2026-09-30T20:15:15.8945523Z   lfs: false
+2026-09-30T20:15:15.8945940Z   submodules: false
+2026-09-30T20:15:15.8946389Z   set-safe-directory: true
+2026-09-30T20:15:15.8946902Z   allow-unsafe-pr-checkout: false
+2026-09-30T20:15:15.8947856Z env:
+2026-09-30T20:15:15.8948282Z   TERRAFORM_VERSION: 1.16.4
+2026-09-30T20:15:15.8948777Z   KIND_VERSION: v0.33.0
+2026-09-30T20:15:15.8949261Z ##[endgroup]
+2026-09-30T20:15:16.0071202Z Syncing repository: Aeripsen/flowsentry
+2026-09-30T20:15:16.0073984Z ##[group]Getting Git version info
+2026-09-30T20:15:16.0075196Z Working directory is '/home/runner/work/flowsentry/flowsentry'
+2026-09-30T20:15:16.0076887Z [command]/usr/bin/git version
+2026-09-30T20:15:16.1242327Z git version 2.55.0
+2026-09-30T20:15:16.1265715Z ##[endgroup]
+2026-09-30T20:15:16.1278806Z Temporarily overriding HOME='/home/runner/work/_temp/792709c9-cee7-4796-8904-3118a69508c1' before making global git config changes
+2026-09-30T20:15:16.1280415Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-30T20:15:16.1285748Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/flowsentry/flowsentry
+2026-09-30T20:15:16.1573391Z Deleting the contents of '/home/runner/work/flowsentry/flowsentry'
+2026-09-30T20:15:16.1577279Z ##[group]Determining repository object format
+2026-09-30T20:15:16.1579242Z ##[endgroup]
+2026-09-30T20:15:16.1581068Z ##[group]Initializing the repository
+2026-09-30T20:15:16.1584213Z [command]/usr/bin/git init /home/runner/work/flowsentry/flowsentry
+2026-09-30T20:15:16.2075190Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-30T20:15:16.2078201Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-30T20:15:16.2080773Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-30T20:15:16.2082813Z hint: call:
+2026-09-30T20:15:16.2084219Z hint:
+2026-09-30T20:15:16.2085517Z hint: 	git config --global init.defaultBranch <name>
+2026-09-30T20:15:16.2086867Z hint:
+2026-09-30T20:15:16.2088394Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-30T20:15:16.2090457Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-30T20:15:16.2092338Z hint:
+2026-09-30T20:15:16.2093463Z hint: 	git branch -m <name>
+2026-09-30T20:15:16.2094683Z hint:
+2026-09-30T20:15:16.2096057Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-30T20:15:16.2098543Z Initialized empty Git repository in /home/runner/work/flowsentry/flowsentry/.git/
+2026-09-30T20:15:16.2102127Z [command]/usr/bin/git remote add origin https://github.com/Aeripsen/flowsentry
+2026-09-30T20:15:16.2414866Z ##[endgroup]
+2026-09-30T20:15:16.2416255Z ##[group]Disabling automatic garbage collection
+2026-09-30T20:15:16.2417788Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-30T20:15:16.2420482Z ##[endgroup]
+2026-09-30T20:15:16.2422114Z ##[group]Setting up auth
+2026-09-30T20:15:16.2423251Z Removing SSH command configuration
+2026-09-30T20:15:16.2425367Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-30T20:15:16.2478205Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-30T20:15:16.4330233Z Removing HTTP extra header
+2026-09-30T20:15:16.4336815Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-30T20:15:16.4380103Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-30T20:15:16.4626922Z Removing includeIf entries pointing to credentials config files
+2026-09-30T20:15:16.4631809Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-30T20:15:16.4679429Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-30T20:15:16.4930441Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-30T20:15:16.4978924Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/flowsentry/flowsentry/.git.path /home/runner/work/_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config
+2026-09-30T20:15:16.5021888Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/flowsentry/flowsentry/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config
+2026-09-30T20:15:16.5070032Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config
+2026-09-30T20:15:16.5114014Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config
+2026-09-30T20:15:16.5151156Z ##[endgroup]
+2026-09-30T20:15:16.5153054Z ##[group]Fetching the repository
+2026-09-30T20:15:16.5162282Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +73c82b9118e4d3efe7fa99563c0998b11bb5603d:refs/remotes/origin/ci/k8s-e2e
+2026-09-30T20:15:17.2342788Z From https://github.com/Aeripsen/flowsentry
+2026-09-30T20:15:17.2344470Z  * [new ref]         73c82b9118e4d3efe7fa99563c0998b11bb5603d -> origin/ci/k8s-e2e
+2026-09-30T20:15:17.2352679Z [command]/usr/bin/git branch --list --remote origin/ci/k8s-e2e
+2026-09-30T20:15:17.2386156Z   origin/ci/k8s-e2e
+2026-09-30T20:15:17.2397750Z [command]/usr/bin/git rev-parse refs/remotes/origin/ci/k8s-e2e
+2026-09-30T20:15:17.2428533Z 73c82b9118e4d3efe7fa99563c0998b11bb5603d
+2026-09-30T20:15:17.2432905Z ##[endgroup]
+2026-09-30T20:15:17.2433539Z ##[group]Determining the checkout info
+2026-09-30T20:15:17.2434939Z ##[endgroup]
+2026-09-30T20:15:17.2441250Z [command]/usr/bin/git sparse-checkout disable
+2026-09-30T20:15:17.2646775Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-30T20:15:17.2688831Z ##[group]Checking out the ref
+2026-09-30T20:15:17.2694645Z [command]/usr/bin/git checkout --progress --force -B ci/k8s-e2e refs/remotes/origin/ci/k8s-e2e
+2026-09-30T20:15:17.2928803Z Switched to a new branch 'ci/k8s-e2e'
+2026-09-30T20:15:17.2932960Z branch 'ci/k8s-e2e' set up to track 'origin/ci/k8s-e2e'.
+2026-09-30T20:15:17.2943784Z ##[endgroup]
+2026-09-30T20:15:17.2999670Z [command]/usr/bin/git log -1 --format=%H
+2026-09-30T20:15:17.3034101Z 73c82b9118e4d3efe7fa99563c0998b11bb5603d
+2026-09-30T20:15:17.3318673Z ##[group]Run helm/kind-action@v1.15.0
+2026-09-30T20:15:17.3319161Z with:
+2026-09-30T20:15:17.3319454Z   version: v0.33.0
+2026-09-30T20:15:17.3319759Z   install_only: true
+2026-09-30T20:15:17.3320082Z   cluster_name: chart-testing
+2026-09-30T20:15:17.3320413Z   wait: 60s
+2026-09-30T20:15:17.3320685Z   verbosity: 0
+2026-09-30T20:15:17.3320986Z   kubectl_version: v1.37.0
+2026-09-30T20:15:17.3321316Z   registry: false
+2026-09-30T20:15:17.3321627Z   registry_image: registry:2
+2026-09-30T20:15:17.3321972Z   registry_name: kind-registry
+2026-09-30T20:15:17.3322308Z   registry_port: 5000
+2026-09-30T20:15:17.3322674Z   registry_enable_delete: false
+2026-09-30T20:15:17.3323028Z   ignore_failed_clean: false
+2026-09-30T20:15:17.3323360Z   cloud_provider: false
+2026-09-30T20:15:17.3398169Z env:
+2026-09-30T20:15:17.3398763Z   TERRAFORM_VERSION: 1.16.4
+2026-09-30T20:15:17.3399120Z   KIND_VERSION: v0.33.0
+2026-09-30T20:15:17.3399484Z ##[endgroup]
+2026-09-30T20:15:17.3794378Z Installing kind...
+2026-09-30T20:15:17.3809567Z /opt/hostedtoolcache/kind/v0.33.0/amd64/kind/bin ~/work/flowsentry/flowsentry
+2026-09-30T20:15:17.6166814Z kind-linux-amd64: OK
+2026-09-30T20:15:17.6211361Z ~/work/flowsentry/flowsentry
+2026-09-30T20:15:17.6212318Z Adding kind directory to PATH...
+2026-09-30T20:15:17.6213060Z Installing kubectl...
+2026-09-30T20:15:17.6228142Z /opt/hostedtoolcache/kind/v0.33.0/amd64/kubectl/bin ~/work/flowsentry/flowsentry
+2026-09-30T20:15:18.2731372Z kubectl: OK
+2026-09-30T20:15:18.2748659Z ~/work/flowsentry/flowsentry
+2026-09-30T20:15:18.2749106Z Adding kubectl directory to PATH...
+2026-09-30T20:15:18.2774848Z kind v0.33.0 go1.26.7 linux/amd64
+2026-09-30T20:15:18.3155810Z Client Version: v1.37.0
+2026-09-30T20:15:18.3158383Z Kustomize Version: v5.8.1
+2026-09-30T20:15:18.3266116Z ##[group]Run bash scripts/k8s_e2e.sh
+2026-09-30T20:15:18.3266584Z [36;1mbash scripts/k8s_e2e.sh[0m
+2026-09-30T20:15:18.3537065Z shell: /usr/bin/bash -e {0}
+2026-09-30T20:15:18.3537659Z env:
+2026-09-30T20:15:18.3537940Z   TERRAFORM_VERSION: 1.16.4
+2026-09-30T20:15:18.3538241Z   KIND_VERSION: v0.33.0
+2026-09-30T20:15:18.3538514Z ##[endgroup]
+2026-09-30T20:15:18.3884385Z [20:15:18] build image flowsentry:ci
+2026-09-30T20:16:07.2046120Z sha256:0ddcd0775b74a7cf098ecd8d66c6da95a5ef7438e31b9b636d476ff2af2ee7b5
+2026-09-30T20:16:08.0149151Z docker.io/grafana/k6:2.3.0
+2026-09-30T20:16:08.0518077Z [20:16:08] create kind cluster flowsentry
+2026-09-30T20:16:10.2250080Z Creating cluster "flowsentry" ...
+2026-09-30T20:16:10.2251076Z  • Ensuring node image (kindest/node:v1.37.0) 🖼️  ...
+2026-09-30T20:16:18.2899352Z  ✓ Ensuring node image (kindest/node:v1.37.0) 🖼️
+2026-09-30T20:16:18.2900949Z  • Preparing nodes 📦   ...
+2026-09-30T20:16:20.9071897Z  ✓ Preparing nodes 📦 
+2026-09-30T20:16:20.9346405Z  • Writing configuration 📜  ...
+2026-09-30T20:16:21.1301152Z  ✓ Writing configuration 📜
+2026-09-30T20:16:21.1301859Z  • Starting control-plane 🕹️  ...
+2026-09-30T20:16:28.7171429Z  ✓ Starting control-plane 🕹️
+2026-09-30T20:16:28.7174355Z  • Installing CNI 🔌  ...
+2026-09-30T20:16:29.0427749Z  ✓ Installing CNI 🔌
+2026-09-30T20:16:29.0428450Z  • Installing StorageClass 💾  ...
+2026-09-30T20:16:29.3966840Z  ✓ Installing StorageClass 💾
+2026-09-30T20:16:29.4279103Z  • Waiting ≤ 2m0s for control-plane = Ready ⏳  ...
+2026-09-30T20:16:45.4710893Z  ✓ Waiting ≤ 2m0s for control-plane = Ready ⏳
+2026-09-30T20:16:45.4711937Z  • Ready after 16s 💚
+2026-09-30T20:16:45.6330712Z Set kubectl context to "kind-flowsentry"
+2026-09-30T20:16:45.6331314Z You can now use your cluster with:
+2026-09-30T20:16:45.6331577Z 
+2026-09-30T20:16:45.6331774Z kubectl cluster-info --context kind-flowsentry
+2026-09-30T20:16:45.6332158Z 
+2026-09-30T20:16:45.6333007Z Have a question, bug, or feature request? Let us know! https://kind.sigs.k8s.io/#community 🙂
+2026-09-30T20:16:45.6745306Z Switched to context "kind-flowsentry".
+2026-09-30T20:16:45.9110435Z Image: "flowsentry:ci" with ID "sha256:0ddcd0775b74a7cf098ecd8d66c6da95a5ef7438e31b9b636d476ff2af2ee7b5" not yet present on node "flowsentry-control-plane", loading...
+2026-09-30T20:16:46.0889594Z Image: "grafana/k6:2.3.0" with ID "sha256:bfa9adb4f73593aaa9647cd339ecd5e6103827bce63267618a4ec51d5db56f72" not yet present on node "flowsentry-control-plane", loading...
+2026-09-30T20:17:11.1568819Z [20:17:11] install metrics-server v0.9.0
+2026-09-30T20:17:11.4557892Z serviceaccount/metrics-server created
+2026-09-30T20:17:11.4608276Z clusterrole.rbac.authorization.k8s.io/system:aggregated-metrics-reader created
+2026-09-30T20:17:11.4682050Z clusterrole.rbac.authorization.k8s.io/system:metrics-server created
+2026-09-30T20:17:11.4776258Z rolebinding.rbac.authorization.k8s.io/metrics-server-auth-reader created
+2026-09-30T20:17:11.4843253Z clusterrolebinding.rbac.authorization.k8s.io/metrics-server:system:auth-delegator created
+2026-09-30T20:17:11.4897016Z clusterrolebinding.rbac.authorization.k8s.io/system:metrics-server created
+2026-09-30T20:17:11.4980492Z service/metrics-server created
+2026-09-30T20:17:11.5184876Z deployment.apps/metrics-server created
+2026-09-30T20:17:11.5279362Z apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
+2026-09-30T20:17:11.6090199Z deployment.apps/metrics-server patched
+2026-09-30T20:17:11.6890437Z Waiting for deployment "metrics-server" rollout to finish: 1 old replicas are pending termination...
+2026-09-30T20:17:34.9155055Z Waiting for deployment "metrics-server" rollout to finish: 1 old replicas are pending termination...
+2026-09-30T20:17:34.9422263Z Waiting for deployment "metrics-server" rollout to finish: 1 old replicas are pending termination...
+2026-09-30T20:17:34.9650878Z deployment "metrics-server" successfully rolled out
+2026-09-30T20:17:34.9712974Z [20:17:34] apply deploy/k8s/overlays/kind
+2026-09-30T20:17:35.2119202Z namespace/flowsentry created
+2026-09-30T20:17:35.2184902Z configmap/flowsentry-config created
+2026-09-30T20:17:35.2268387Z service/flowsentry created
+2026-09-30T20:17:35.2369967Z deployment.apps/flowsentry created
+2026-09-30T20:17:35.2468615Z poddisruptionbudget.policy/flowsentry created
+2026-09-30T20:17:35.2628533Z horizontalpodautoscaler.autoscaling/flowsentry created
+2026-09-30T20:17:35.3496629Z Waiting for deployment "flowsentry" rollout to finish: 0 of 2 updated replicas are available...
+2026-09-30T20:17:41.1141377Z Waiting for deployment "flowsentry" rollout to finish: 1 of 2 updated replicas are available...
+2026-09-30T20:17:41.1354353Z deployment "flowsentry" successfully rolled out
+2026-09-30T20:17:41.2162501Z Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+2026-09-30T20:17:41.2241125Z NAME                         READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES          SELECTOR
+2026-09-30T20:17:41.2242600Z deployment.apps/flowsentry   2/2     2            2           6s    api          flowsentry:ci   app=flowsentry
+2026-09-30T20:17:41.2243274Z 
+2026-09-30T20:17:41.2243668Z NAME                                    DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES          SELECTOR
+2026-09-30T20:17:41.2244879Z replicaset.apps/flowsentry-6fbfb79455   2         2         2       6s    api          flowsentry:ci   app=flowsentry,pod-template-hash=6fbfb79455
+2026-09-30T20:17:41.2250591Z 
+2026-09-30T20:17:41.2251774Z NAME                              READY   STATUS    RESTARTS   AGE   IP           NODE                       NOMINATED NODE   READINESS GATES
+2026-09-30T20:17:41.2253963Z pod/flowsentry-6fbfb79455-2cf58   1/1     Running   0          6s    10.244.0.7   flowsentry-control-plane   <none>           <none>
+2026-09-30T20:17:41.2256326Z pod/flowsentry-6fbfb79455-d887t   1/1     Running   0          6s    10.244.0.8   flowsentry-control-plane   <none>           <none>
+2026-09-30T20:17:41.2257077Z 
+2026-09-30T20:17:41.2257635Z NAME                 TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+2026-09-30T20:17:41.2258515Z service/flowsentry   ClusterIP   10.96.1.206   <none>        80/TCP    6s    app=flowsentry
+2026-09-30T20:17:41.2259114Z 
+2026-09-30T20:17:41.2259323Z NAME                   ENDPOINTS                         AGE
+2026-09-30T20:17:41.2259923Z endpoints/flowsentry   10.244.0.7:8000,10.244.0.8:8000   6s
+2026-09-30T20:17:41.2260347Z 
+2026-09-30T20:17:41.2260501Z NAME                          DATA   AGE
+2026-09-30T20:17:41.2260968Z configmap/flowsentry-config   2      6s
+2026-09-30T20:17:41.2261444Z configmap/kube-root-ca.crt    1      6s
+2026-09-30T20:17:41.2261751Z 
+2026-09-30T20:17:41.2262185Z NAME                                             REFERENCE               TARGETS              MINPODS   MAXPODS   REPLICAS   AGE
+2026-09-30T20:17:41.2263466Z horizontalpodautoscaler.autoscaling/flowsentry   Deployment/flowsentry   cpu: <unknown>/70%   2         5         2          6s
+2026-09-30T20:17:41.2264331Z 
+2026-09-30T20:17:41.2264690Z NAME                                    MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+2026-09-30T20:17:41.2265642Z poddisruptionbudget.policy/flowsentry   1               N/A               1                     6s
+2026-09-30T20:17:41.2294851Z [20:17:41] smoke test through the Service
+2026-09-30T20:17:42.2824064Z {"status":"ok","version":"0.2.0"}
+2026-09-30T20:17:42.2934994Z {"status":"ready","model":"loaded","version":"0.2.0"}
+2026-09-30T20:17:42.3103040Z {"label":"unknown","confidence":0.5251,"escalated_to_stage2":true,"abstained":true}
+2026-09-30T20:17:42.6508618Z [20:17:42] PID 1: /usr/local/bin/python3.12 /usr/local/bin/uvicorn flowsentry.service:app --host 0.0.0.0 --port 8000    uid=10001(app) gid=999(app) groups=999(app)
+2026-09-30T20:17:42.6522036Z [20:17:42] wait for metrics-server to report pod CPU
+2026-09-30T20:18:02.9885208Z NAME                          CPU(cores)   MEMORY(bytes)   
+2026-09-30T20:18:02.9886380Z flowsentry-6fbfb79455-2cf58   2m           266Mi           
+2026-09-30T20:18:02.9888052Z flowsentry-6fbfb79455-d887t   2m           266Mi           
+2026-09-30T20:18:03.1129001Z configmap/k6-script created
+2026-09-30T20:18:03.1161365Z [20:18:03] phase 1: steady load, 16 VUs for 90s
+2026-09-30T20:18:03.1905705Z job.batch/k6-steady created
+2026-09-30T20:18:03.7162477Z pod/k6-steady-db4nr condition met
+2026-09-30T20:19:36.2768499Z job.batch/k6-steady condition met
+2026-09-30T20:19:36.3452250Z K6_SUMMARY {"phase":"steady","vus":16,"duration":"90s","requests":15289,"req_per_s":169.51414539402631,"latency_ms":{"avg":93.99607460500965,"p50":9.056126,"p95":419.1940939999999,"p99":527.2503943599999,"max":729.783519},"ok_2xx":15289,"failed_5xx":0,"failed_other_status":0,"failed_connection":0}
+2026-09-30T20:19:36.3955737Z NAME                          CPU(cores)   MEMORY(bytes)   
+2026-09-30T20:19:36.3956319Z flowsentry-6fbfb79455-2cf58   944m         266Mi           
+2026-09-30T20:19:36.3959153Z flowsentry-6fbfb79455-4d7s9   2m           267Mi           
+2026-09-30T20:19:36.3959944Z flowsentry-6fbfb79455-5hp7n   2m           265Mi           
+2026-09-30T20:19:36.3960523Z flowsentry-6fbfb79455-d887t   1001m        268Mi           
+2026-09-30T20:19:36.3960951Z flowsentry-6fbfb79455-sz8bs   2m           267Mi           
+2026-09-30T20:19:36.3991500Z [20:19:36] phase 2: rolling restart 15 s into 120s of load
+2026-09-30T20:19:36.5223391Z job.batch/k6-restart created
+2026-09-30T20:19:37.0623675Z pod/k6-restart-752rq condition met
+2026-09-30T20:19:52.1854777Z deployment.apps/flowsentry restarted
+2026-09-30T20:19:52.3449062Z Waiting for deployment spec update to be observed...
+2026-09-30T20:19:52.3819316Z Waiting for deployment "flowsentry" rollout to finish: 0 out of 5 new replicas have been updated...
+2026-09-30T20:19:52.4035958Z Waiting for deployment "flowsentry" rollout to finish: 1 out of 5 new replicas have been updated...
+2026-09-30T20:19:58.6824644Z Waiting for deployment "flowsentry" rollout to finish: 1 out of 5 new replicas have been updated...
+2026-09-30T20:19:58.7524754Z Waiting for deployment "flowsentry" rollout to finish: 1 out of 5 new replicas have been updated...
+2026-09-30T20:19:58.8115412Z Waiting for deployment "flowsentry" rollout to finish: 2 out of 5 new replicas have been updated...
+2026-09-30T20:20:04.6634890Z Waiting for deployment "flowsentry" rollout to finish: 2 out of 5 new replicas have been updated...
+2026-09-30T20:20:05.7891252Z Waiting for deployment "flowsentry" rollout to finish: 2 out of 5 new replicas have been updated...
+2026-09-30T20:20:05.9080876Z Waiting for deployment "flowsentry" rollout to finish: 2 out of 5 new replicas have been updated...
+2026-09-30T20:20:05.9305184Z Waiting for deployment "flowsentry" rollout to finish: 3 out of 5 new replicas have been updated...
+2026-09-30T20:20:11.7078850Z Waiting for deployment "flowsentry" rollout to finish: 3 out of 5 new replicas have been updated...
+2026-09-30T20:20:12.7086035Z Waiting for deployment "flowsentry" rollout to finish: 3 out of 5 new replicas have been updated...
+2026-09-30T20:20:12.8176875Z Waiting for deployment "flowsentry" rollout to finish: 4 out of 5 new replicas have been updated...
+2026-09-30T20:20:18.7904645Z Waiting for deployment "flowsentry" rollout to finish: 4 out of 5 new replicas have been updated...
+2026-09-30T20:20:19.9627901Z Waiting for deployment "flowsentry" rollout to finish: 4 out of 5 new replicas have been updated...
+2026-09-30T20:20:20.0539236Z Waiting for deployment "flowsentry" rollout to finish: 4 out of 5 new replicas have been updated...
+2026-09-30T20:20:20.1102817Z Waiting for deployment "flowsentry" rollout to finish: 1 old replicas are pending termination...
+2026-09-30T20:20:25.9613297Z Waiting for deployment "flowsentry" rollout to finish: 1 old replicas are pending termination...
+2026-09-30T20:20:26.8135782Z Waiting for deployment "flowsentry" rollout to finish: 1 old replicas are pending termination...
+2026-09-30T20:20:26.8869733Z deployment "flowsentry" successfully rolled out
+2026-09-30T20:21:39.7147168Z job.batch/k6-restart condition met
+2026-09-30T20:21:39.7857764Z K6_SUMMARY {"phase":"restart","vus":16,"duration":"120s","requests":37164,"req_per_s":309.532282146075,"latency_ms":{"avg":50.47849106638173,"p50":40.773928999999995,"p95":120.11164455,"p99":162.65386246000006,"max":318.420418},"ok_2xx":37164,"failed_5xx":0,"failed_other_status":0,"failed_connection":0}
+2026-09-30T20:21:40.1062946Z [20:21:40] write report
+2026-09-30T20:21:40.1453782Z {
+2026-09-30T20:21:40.1454232Z   "deploy": {
+2026-09-30T20:21:40.1454530Z     "initial_rollout_seconds": 7,
+2026-09-30T20:21:40.1454940Z     "ready": {
+2026-09-30T20:21:40.1455302Z       "status": "ready",
+2026-09-30T20:21:40.1455689Z       "model": "loaded",
+2026-09-30T20:21:40.1456085Z       "version": "0.2.0"
+2026-09-30T20:21:40.1456646Z     },
+2026-09-30T20:21:40.1457055Z     "predict_example": {
+2026-09-30T20:21:40.1457860Z       "label": "unknown",
+2026-09-30T20:21:40.1458390Z       "confidence": 0.5251,
+2026-09-30T20:21:40.1459222Z       "escalated_to_stage2": true,
+2026-09-30T20:21:40.1459682Z       "abstained": true
+2026-09-30T20:21:40.1460073Z     },
+2026-09-30T20:21:40.1460915Z     "pid1": "/usr/local/bin/python3.12 /usr/local/bin/uvicorn flowsentry.service:app --host 0.0.0.0 --port 8000",
+2026-09-30T20:21:40.1462079Z     "runs_as": "uid=10001(app) gid=999(app) groups=999(app)",
+2026-09-30T20:21:40.1462734Z     "configmap_max_batch": 2000,
+2026-09-30T20:21:40.1463201Z     "max_batch_seen_in_openapi": 2000,
+2026-09-30T20:21:40.1463554Z     "configmap_reaches_process": true
+2026-09-30T20:21:40.1463874Z   },
+2026-09-30T20:21:40.1464125Z   "load_steady": {
+2026-09-30T20:21:40.1464385Z     "phase": "steady",
+2026-09-30T20:21:40.1464650Z     "vus": 16,
+2026-09-30T20:21:40.1464895Z     "duration": "90s",
+2026-09-30T20:21:40.1465162Z     "requests": 15289,
+2026-09-30T20:21:40.1465425Z     "req_per_s": 169.5,
+2026-09-30T20:21:40.1465694Z     "latency_ms": {
+2026-09-30T20:21:40.1465942Z       "avg": 94.0,
+2026-09-30T20:21:40.1466195Z       "p50": 9.06,
+2026-09-30T20:21:40.1466436Z       "p95": 419.19,
+2026-09-30T20:21:40.1466650Z       "p99": 527.25,
+2026-09-30T20:21:40.1466860Z       "max": 729.78
+2026-09-30T20:21:40.1467043Z     },
+2026-09-30T20:21:40.1467213Z     "ok_2xx": 15289,
+2026-09-30T20:21:40.1467726Z     "failed_5xx": 0,
+2026-09-30T20:21:40.1467972Z     "failed_other_status": 0,
+2026-09-30T20:21:40.1468212Z     "failed_connection": 0,
+2026-09-30T20:21:40.1468432Z     "failed_total": 0
+2026-09-30T20:21:40.1468621Z   },
+2026-09-30T20:21:40.1468809Z   "load_during_rolling_restart": {
+2026-09-30T20:21:40.1469054Z     "phase": "restart",
+2026-09-30T20:21:40.1469253Z     "vus": 16,
+2026-09-30T20:21:40.1469439Z     "duration": "120s",
+2026-09-30T20:21:40.1469648Z     "requests": 37164,
+2026-09-30T20:21:40.1469846Z     "req_per_s": 309.5,
+2026-09-30T20:21:40.1470040Z     "latency_ms": {
+2026-09-30T20:21:40.1470226Z       "avg": 50.48,
+2026-09-30T20:21:40.1470407Z       "p50": 40.77,
+2026-09-30T20:21:40.1470592Z       "p95": 120.11,
+2026-09-30T20:21:40.1470786Z       "p99": 162.65,
+2026-09-30T20:21:40.1470970Z       "max": 318.42
+2026-09-30T20:21:40.1471153Z     },
+2026-09-30T20:21:40.1471326Z     "ok_2xx": 37164,
+2026-09-30T20:21:40.1471523Z     "failed_5xx": 0,
+2026-09-30T20:21:40.1471731Z     "failed_other_status": 0,
+2026-09-30T20:21:40.1471967Z     "failed_connection": 0,
+2026-09-30T20:21:40.1472186Z     "failed_total": 0,
+2026-09-30T20:21:40.1472388Z     "rolling_restart": {
+2026-09-30T20:21:40.1472612Z       "started_seconds_into_load": 15,
+2026-09-30T20:21:40.1472870Z       "rollout_seconds": 34,
+2026-09-30T20:21:40.1473112Z       "finished_before_load_ended": true,
+2026-09-30T20:21:40.1473369Z       "pods_before": [
+2026-09-30T20:21:40.1473589Z         "flowsentry-6fbfb79455-2cf58",
+2026-09-30T20:21:40.1473879Z         "flowsentry-6fbfb79455-4d7s9",
+2026-09-30T20:21:40.1474230Z         "flowsentry-6fbfb79455-5hp7n",
+2026-09-30T20:21:40.1474484Z         "flowsentry-6fbfb79455-d887t",
+2026-09-30T20:21:40.1474747Z         "flowsentry-6fbfb79455-sz8bs"
+2026-09-30T20:21:40.1474991Z       ],
+2026-09-30T20:21:40.1475164Z       "pods_after": [
+2026-09-30T20:21:40.1475689Z         "flowsentry-5c8758bf45-5mxmm",
+2026-09-30T20:21:40.1475964Z         "flowsentry-5c8758bf45-kqns8",
+2026-09-30T20:21:40.1476219Z         "flowsentry-5c8758bf45-qt2bx",
+2026-09-30T20:21:40.1476471Z         "flowsentry-5c8758bf45-rpfgv",
+2026-09-30T20:21:40.1476725Z         "flowsentry-5c8758bf45-v6gcl"
+2026-09-30T20:21:40.1476964Z       ],
+2026-09-30T20:21:40.1477148Z       "every_pod_replaced": true
+2026-09-30T20:21:40.1477372Z     }
+2026-09-30T20:21:40.1477784Z   }
+2026-09-30T20:21:40.1478058Z }
+2026-09-30T20:21:42.8323830Z ##[group]Run actions/upload-artifact@v7
+2026-09-30T20:21:42.8324126Z with:
+2026-09-30T20:21:42.8324316Z   name: k8s-kind-run
+2026-09-30T20:21:42.8324579Z   path: k8s-run/
+artifacts/k8s_kind_flowsentry.json
+
+2026-09-30T20:21:42.8324894Z   if-no-files-found: warn
+2026-09-30T20:21:42.8325120Z   compression-level: 6
+2026-09-30T20:21:42.8325552Z   overwrite: false
+2026-09-30T20:21:42.8325768Z   include-hidden-files: false
+2026-09-30T20:21:42.8325997Z   archive: true
+2026-09-30T20:21:42.8326181Z env:
+2026-09-30T20:21:42.8326362Z   TERRAFORM_VERSION: 1.16.4
+2026-09-30T20:21:42.8326588Z   KIND_VERSION: v0.33.0
+2026-09-30T20:21:42.8326791Z ##[endgroup]
+2026-09-30T20:21:43.0149375Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-30T20:21:43.0153495Z The least common ancestor is /home/runner/work/flowsentry/flowsentry. This will be the root directory of the artifact
+2026-09-30T20:21:43.0154981Z With the provided path, there will be 17 files uploaded
+2026-09-30T20:21:43.0169054Z Artifact name is valid!
+2026-09-30T20:21:43.0170822Z Root directory input is valid!
+2026-09-30T20:21:43.2431424Z Uploading artifact: k8s-kind-run.zip
+2026-09-30T20:21:43.2484657Z Beginning upload of artifact content to blob storage
+2026-09-30T20:21:43.3506040Z Uploaded bytes 7357
+2026-09-30T20:21:43.3666208Z Finished uploading artifact content to blob storage!
+2026-09-30T20:21:43.3668057Z SHA256 digest of uploaded artifact is 46b4b5f31b51ec6b1167542edc41f06abddbe39d46ebae079542a85723b4803f
+2026-09-30T20:21:43.3669488Z Finalizing artifact upload
+2026-09-30T20:21:43.6069952Z Artifact k8s-kind-run successfully finalized. Artifact ID 11124540878
+2026-09-30T20:21:43.6071470Z Artifact k8s-kind-run has been successfully uploaded! Final size is 7357 bytes. Artifact ID is 11124540878
+2026-09-30T20:21:43.6075821Z Artifact download URL: https://github.com/Aeripsen/flowsentry/actions/runs/36770459936/artifacts/11124540878
+2026-09-30T20:21:43.6256834Z Post job cleanup.
+2026-09-30T20:21:43.6686330Z Error response from daemon: No such container: kind-registry
+2026-09-30T20:21:43.6844995Z Deleting cluster "chart-testing" ...
+2026-09-30T20:21:43.7113879Z Post job cleanup.
+2026-09-30T20:21:43.8100031Z [command]/usr/bin/git version
+2026-09-30T20:21:43.8149566Z git version 2.55.0
+2026-09-30T20:21:43.8200906Z Temporarily overriding HOME='/home/runner/work/_temp/094f6b41-4a0e-475b-ab1c-efd0b6240229' before making global git config changes
+2026-09-30T20:21:43.8202305Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-30T20:21:43.8206389Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/flowsentry/flowsentry
+2026-09-30T20:21:43.8248627Z Removing SSH command configuration
+2026-09-30T20:21:43.8256337Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-30T20:21:43.8302371Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-30T20:21:43.8573174Z Removing HTTP extra header
+2026-09-30T20:21:43.8580636Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-30T20:21:43.8621452Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-30T20:21:43.8934286Z Removing includeIf entries pointing to credentials config files
+2026-09-30T20:21:43.8937884Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-30T20:21:43.8988756Z includeif.gitdir:/home/runner/work/flowsentry/flowsentry/.git.path
+2026-09-30T20:21:43.8989691Z includeif.gitdir:/home/runner/work/flowsentry/flowsentry/.git/worktrees/*.path
+2026-09-30T20:21:43.8990717Z includeif.gitdir:/github/workspace/.git.path
+2026-09-30T20:21:43.8991530Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-30T20:21:43.9002780Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/flowsentry/flowsentry/.git.path
+2026-09-30T20:21:43.9034159Z /home/runner/work/_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config
+2026-09-30T20:21:43.9047028Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/flowsentry/flowsentry/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-3c5d37bf\-3464\-41df\-854d\-a1bcd010ccdf\.config
+2026-09-30T20:21:43.9101429Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/flowsentry/flowsentry/.git/worktrees/*.path
+2026-09-30T20:21:43.9136593Z /home/runner/work/_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config
+2026-09-30T20:21:43.9149431Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/flowsentry/flowsentry/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-3c5d37bf\-3464\-41df\-854d\-a1bcd010ccdf\.config
+2026-09-30T20:21:43.9207218Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-30T20:21:43.9229431Z /github/runner_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config
+2026-09-30T20:21:43.9246079Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-3c5d37bf\-3464\-41df\-854d\-a1bcd010ccdf\.config
+2026-09-30T20:21:43.9319066Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-30T20:21:43.9350627Z /github/runner_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config
+2026-09-30T20:21:43.9360628Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-3c5d37bf\-3464\-41df\-854d\-a1bcd010ccdf\.config
+2026-09-30T20:21:43.9411436Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-30T20:21:43.9686099Z Removing credentials config '/home/runner/work/_temp/git-credentials-3c5d37bf-3464-41df-854d-a1bcd010ccdf.config'
+2026-09-30T20:21:43.9890390Z Cleaning up orphan processes
+2026-09-30T20:21:44.0723682Z Terminate orphan process: pid (12121) (kubectl)
