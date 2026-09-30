@@ -109,7 +109,9 @@ from flowsentry.openset import (  # noqa: E402
     closed_set_cost,
     destination_counts,
     novelty_lift,
+    novelty_lift_vs,
     open_set_outcomes,
+    seen_family_outcomes,
 )
 from flowsentry.registry import make_stage_estimator  # noqa: E402
 
@@ -192,6 +194,8 @@ def _round(
     unseen_scored, escalated_unseen = _score_arms(model, small, X_unseen)
     seen_scored, escalated_seen = _score_arms(model, small, X_seen)
     y_seen = y[seen_idx]
+    # the rarity control: the other rare families, which WERE trained on this round
+    seen_rare = np.isin(y_seen, RARE_FAMILIES)
 
     arms = {}
     for arm in unseen_scored:
@@ -201,12 +205,17 @@ def _round(
         for t in cfg.reject_thresholds:
             unseen = open_set_outcomes(u_labels, u_conf, t)
             cost = closed_set_cost(y_seen, s_labels, s_conf, t)
+            rare_seen = seen_family_outcomes(
+                y_seen[seen_rare], s_labels[seen_rare], s_conf[seen_rare], t
+            )
             by_threshold.append(
                 {
                     "threshold": round(float(t), 4),
                     "unseen_family": unseen,
                     "seen_families": cost,
                     "novelty_lift": novelty_lift(unseen, cost),
+                    "seen_rare_families": rare_seen,
+                    "novelty_lift_vs_seen_rare": novelty_lift_vs(unseen, rare_seen),
                 }
             )
         arms[arm] = {
@@ -307,6 +316,51 @@ def _summarize(rounds: list[dict], control: list[dict], arms: list[str]) -> dict
         for arm in arms
     }
 
+    def rarity(arm: str, t: float) -> dict:
+        rows = [_at(r, arm, t) for r in rare]
+        ctrl = [
+            _at(rare_control[r["held_out_family"]], arm, t)
+            for r in rare
+            if r["held_out_family"] in rare_control
+        ]
+        return {
+            "mean_unseen_rejected_unknown": _mean(
+                [x["unseen_family"]["rejected_unknown"] for x in rows]
+            ),
+            "mean_unseen_called_benign": _mean([x["unseen_family"]["called_benign"] for x in rows]),
+            "mean_seen_rare_rejected_unknown": _mean(
+                [x["seen_rare_families"]["rejected_unknown"] for x in rows]
+            ),
+            "mean_seen_rare_called_benign": _mean(
+                [x["seen_rare_families"]["called_benign"] for x in rows]
+            ),
+            "mean_seen_rare_called_right": _mean(
+                [x["seen_rare_families"]["called_right"] for x in rows]
+            ),
+            "mean_novelty_lift_vs_seen_rare": _mean([x["novelty_lift_vs_seen_rare"] for x in rows]),
+            "mean_novelty_lift_vs_seen_rare_shuffled_control": _mean(
+                [x["novelty_lift_vs_seen_rare"] for x in ctrl]
+            ),
+        }
+
+    rarity_control = {
+        "what": (
+            "the control novelty_lift lacks. Its baseline is all seen traffic, mostly "
+            "UDP-RAW and benign. Here the baseline is the other five rare families in "
+            "the same round, which WERE trained on (seen_rare_families in each round). "
+            "If the knob rejected unseen floods because they are novel, those would be "
+            "answered; if it rejects them because rare floods are hard, they are "
+            "rejected too, and the lift over them is near zero"
+        ),
+        "per_arm": {
+            arm: {
+                "threshold_0": rarity(arm, 0.0),
+                f"threshold_{HEADLINE_THRESHOLD}": rarity(arm, HEADLINE_THRESHOLD),
+            }
+            for arm in arms
+        },
+    }
+
     best = max(arms, key=lambda a: headline[a]["mean_novelty_lift"])
     dominant_round = next(r for r in rounds if r["held_out_family"] == DOMINANT)
     return {
@@ -340,6 +394,7 @@ def _summarize(rounds: list[dict], control: list[dict], arms: list[str]) -> dict
             ),
             "per_arm": headline,
         },
+        "rarity_control": rarity_control,
         "best_arm_by_novelty_lift": best,
         "dominant_family_case": {
             "family": DOMINANT,
@@ -353,6 +408,88 @@ def _summarize(rounds: list[dict], control: list[dict], arms: list[str]) -> dict
             },
         },
     }
+
+
+ARM_NAMES = {
+    "hierarchy": "the shipped two-stage hierarchy",
+    "single_joint_200": "the plain 200-tree joint forest",
+    "stage1_only": "the Stage-1-only forest",
+    "single_joint_small_60": "the 60-tree joint forest",
+}
+TENS = ["none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "all"]
+# a rarity-controlled lift below this is read as "no evidence of novelty detection"
+NOVELTY_EVIDENCE_LIFT = 0.1
+
+
+def verdict(summary: dict) -> str:
+    """The artifact's one-paragraph reading, with every number taken from the
+    summary it sits next to, and the novelty conclusion decided by the rarity
+    control rather than written in advance."""
+
+    def p(x: float) -> str:
+        return f"{100 * x:.1f}%"
+
+    arm = "hierarchy"
+    forced = summary["forced_to_answer_threshold_0"]["per_arm"][arm]
+    head = summary[f"at_threshold_{HEADLINE_THRESHOLD}"]["per_arm"]
+    h = head[arm]
+    rc = summary["rarity_control"]["per_arm"][arm]
+    r0, rh = rc["threshold_0"], rc[f"threshold_{HEADLINE_THRESHOLD}"]
+    esc = summary["stage1_escalation_on_unseen"]
+    lifts = {a: head[a]["mean_novelty_lift"] for a in head}
+    best = summary["best_arm_by_novelty_lift"]
+    spread = max(lifts.values()) - min(lifts.values())
+    worst = forced["worst_family"]
+
+    if rh["mean_novelty_lift_vs_seen_rare"] < NOVELTY_EVIDENCE_LIFT:
+        novelty = (
+            f"That rejection is not evidence of novelty detection. Against all seen "
+            f"traffic it leaves a lift of {h['mean_novelty_lift']:.3f}, and the "
+            f"shuffled-label control collapses that to "
+            f"{h['mean_novelty_lift_shuffled_control']:.3f}, but all seen traffic is mostly "
+            f"UDP-RAW and benign. Against the right control, the rare families that were in "
+            f"training in the same rounds, the knob at {HEADLINE_THRESHOLD} rejects "
+            f"{p(rh['mean_seen_rare_rejected_unknown'])} of their flows too, a lift of only "
+            f"{rh['mean_novelty_lift_vs_seen_rare']:.3f}; forced to answer, it already calls "
+            f"{p(r0['mean_seen_rare_called_benign'])} of those trained-on rare flows benign. "
+            f"The knob rejects rare floods whether or not it has seen them, so the protection "
+            f"it gives against a new flood comes from rarity, not from recognising novelty."
+        )
+    else:
+        novelty = (
+            f"Part of that rejection is novelty and not rarity: against the rare families "
+            f"that were in training in the same rounds, which it rejects "
+            f"{p(rh['mean_seen_rare_rejected_unknown'])} of the time, the lift is "
+            f"{rh['mean_novelty_lift_vs_seen_rare']:.3f} (shuffled-label control "
+            f"{rh['mean_novelty_lift_vs_seen_rare_shuffled_control']:.3f})."
+        )
+    hierarchy = (
+        f"None of it belongs to the two-stage design. All four arms sit within "
+        f"{spread:.3f} lift of each other and {ARM_NAMES[best]} is the best of them "
+        f"({lifts[best]:.3f})"
+        + (
+            ", so the open-set case does not rescue the hierarchy any more than the "
+            "compute case did."
+            if best != arm
+            else "."
+        )
+    )
+    return (
+        f"The reject option is the part of this system that carries the open-set case, "
+        f"and the hierarchy is not. Forced to name a class, the model calls "
+        f"{p(forced['mean_called_benign'])} of an unseen attack family's flows benign, and "
+        f"{p(worst['called_benign'])} of {worst['family']}'s, so a closed-set deployment "
+        f"absorbs roughly {TENS[round(10 * forced['mean_called_benign'])]} of every ten flows of a "
+        f"new flood into silence. Turning the knob to {HEADLINE_THRESHOLD} rejects "
+        f"{p(h['mean_rejected_unknown'])} of that traffic as unknown and cuts the silent "
+        f"misses to {p(h['mean_called_benign'])}, while these rounds answer "
+        f"{p(h['mean_seen_coverage'])} of known test traffic at "
+        f"{p(h['mean_seen_reliability'])} reliability. {novelty} {hierarchy} It makes the "
+        f"design look worse: Stage 1's escalation rate rises from {p(esc['mean_seen'])} on "
+        f"seen traffic to {p(esc['mean_unseen'])} on an unseen family, so the cheap path "
+        f"stops being cheap exactly when a zero-day arrives, which is the one moment the "
+        f"architecture was supposed to be built for."
+    )
 
 
 def main() -> dict:
@@ -418,26 +555,7 @@ def main() -> dict:
             "reject_thresholds": cfg.reject_thresholds,
         },
         "summary": summary,
-        "verdict": (
-            "The reject option is the part of this system that carries the open-set "
-            "case, and the hierarchy is not. Forced to name a class, the model calls "
-            "70.5% of an unseen attack family's flows benign, and 92.9% of "
-            "UDP-bypass-v1's, so a closed-set deployment absorbs roughly seven of every "
-            "ten flows of a new flood into silence. Turning the knob to 0.99 rejects "
-            "91.4% of that traffic as unknown and cuts the silent misses to 7.7%, at a "
-            "cost of answering 66.5% of known traffic at 99.4% reliability. That "
-            "rejection is novelty detection and not a strict threshold: measured "
-            "against the abstention rate on seen families in the same run it leaves a "
-            "lift of 0.579, and the shuffled-label control, which destroys the family "
-            "structure and holds everything else, collapses that lift to -0.005. None "
-            "of it belongs to the two-stage design. All four arms sit within 0.03 lift "
-            "of each other and the plain 200-tree joint forest is the best of them "
-            "(0.605), so the open-set case does not rescue the hierarchy any more than "
-            "the compute case did. It makes the design look worse: Stage 1's escalation "
-            "rate rises from 22.7% on seen traffic to 79.7% on an unseen family, so the "
-            "cheap path stops being cheap exactly when a zero-day arrives, which is the "
-            "one moment the architecture was supposed to be built for."
-        ),
+        "verdict": verdict(summary),
         "rounds": rounds,
         "shuffled_label_control": control,
     }

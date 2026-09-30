@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind
+.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business verify-derived demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind
 
 train:
 	python -m flowsentry.train
@@ -72,6 +72,11 @@ site-check:
 # regenerate byte-identically (exact bytes promised under requirements.lock)
 reproduce:
 	python scripts/reproduce.py
+
+# per_family.json and zero_day_lofo.json regenerate unchanged (retrains; the
+# environment stamp is the only key allowed to differ). CI runs this.
+verify-derived:
+	python scripts/verify_derived.py
 
 serve:
 	uvicorn flowsentry.service:app

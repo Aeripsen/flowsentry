@@ -31,6 +31,16 @@ until you notice it also abstains on 90% of the flows it was trained on: then th
 abstention is the threshold being strict, not the model noticing anything. The
 lift subtracts the baseline abstention rate measured on seen families at the same
 threshold, on the same run. Only the difference is evidence of novelty detection.
+
+The seen baseline in `novelty_lift` is ALL seen traffic, which on this sample is
+mostly UDP-RAW and benign, the two classes the model finds easiest. That is not
+the control a novelty claim needs. A rare flood can be rejected because it is
+novel or simply because rare floods are hard, and those two readings predict
+different things for a rare family that WAS in training: the first says it is
+answered, the second says it is rejected too. `seen_family_outcomes` measures
+exactly that group (the other rare families, trained on, in the same round) and
+`novelty_lift_vs` subtracts it. Only a lift that survives that subtraction is
+evidence the knob notices novelty rather than rarity.
 """
 from __future__ import annotations
 
@@ -96,6 +106,47 @@ def closed_set_cost(
         else None,
         "n_covered": n_cov,
     }
+
+
+def seen_family_outcomes(
+    y_true: np.ndarray,
+    labels: np.ndarray,
+    conf: np.ndarray,
+    threshold: float,
+    benign_label: str = BENIGN,
+) -> dict:
+    """The same three-way split as open_set_outcomes, for attack flows whose family
+    WAS trained on, with the answered attack calls split into right and wrong.
+    Shares sum to 1: rejected + called_benign + called_right + called_wrong_attack."""
+    y_true = np.asarray(y_true)
+    labels = np.asarray(labels)
+    conf = np.asarray(conf, dtype=float)
+    n = int(labels.size)
+    if n == 0:
+        raise ValueError("seen_family_outcomes needs at least one flow")
+    rejected = conf < threshold
+    answered = ~rejected
+    called_benign = answered & (labels == benign_label)
+    called_right = answered & (labels == y_true)
+    called_wrong = answered & ~called_benign & ~called_right
+    return {
+        "n": n,
+        "rejected_unknown": round(float(rejected.mean()), 4),
+        "called_benign": round(float(called_benign.mean()), 4),
+        "called_right": round(float(called_right.mean()), 4),
+        "called_wrong_attack": round(float(called_wrong.mean()), 4),
+        "n_rejected": int(rejected.sum()),
+        "n_called_benign": int(called_benign.sum()),
+        "n_called_right": int(called_right.sum()),
+        "n_called_wrong_attack": int(called_wrong.sum()),
+    }
+
+
+def novelty_lift_vs(unseen: dict, seen_outcomes: dict) -> float:
+    """Unseen rejection rate minus the rejection rate on a named seen group
+    (seen_family_outcomes output). With the other rare families as that group,
+    this is the rarity-controlled lift."""
+    return round(float(unseen["rejected_unknown"]) - float(seen_outcomes["rejected_unknown"]), 4)
 
 
 def novelty_lift(unseen: dict, seen_cost: dict) -> float:

@@ -210,8 +210,8 @@ td.zero { color: var(--warn); }
     </div>
     <div class="tiles" style="margin-top:1.1rem">
       <div class="tile"><span class="num v-accent" id="z-seen"></span><span class="lbl">Known traffic in the same round: answered, and share right</span></div>
-      <div class="tile"><span class="num v-signal" id="z-lift"></span><span class="lbl">Novelty lift: how much more often the unseen family is rejected than known traffic</span></div>
-      <div class="tile"><span class="num v-muted" id="z-ctrl"></span><span class="lbl">The same lift with training labels shuffled. Near zero means the lift is real novelty detection, not a high bar rejecting everything.</span></div>
+      <div class="tile"><span class="num v-signal" id="z-lift"></span><span class="lbl">Lift over rare families the model DID train on: how much more often the unseen family is sent to an analyst than they are. Near zero means the knob is rejecting rare floods, not spotting new ones.</span></div>
+      <div class="tile"><span class="num v-muted" id="z-ctrl"></span><span class="lbl">The same lift with training labels shuffled, the negative control.</span></div>
     </div>
     <p class="caption" id="z-note"></p>
   </div>
@@ -292,8 +292,8 @@ td.zero { color: var(--warn); }
     var cov = meanOver(fams, zt, function (b) { return b.seen_families.coverage; });
     var rel = meanOver(fams, zt, function (b) { return b.seen_families.reliability; });
     $("z-seen").textContent = zpct(cov) + " at " + zpct(rel);
-    var lift = meanOver(fams, zt, function (b) { return b.novelty_lift; });
-    var ctrl = meanOver(fams, zt, function (b) { return b.novelty_lift; }, Z.shuffled_label_control);
+    var lift = meanOver(fams, zt, function (b) { return b.novelty_lift_vs_seen_rare; });
+    var ctrl = meanOver(fams, zt, function (b) { return b.novelty_lift_vs_seen_rare; }, Z.shuffled_label_control);
     var sign = function (x) { return (x >= 0 ? "+" : "−") + nf(Math.abs(x), 3); };
     $("z-lift").textContent = sign(lift); $("z-ctrl").textContent = sign(ctrl);
     var n = 0; fams.forEach(function (f) { n += atT(roundOf(f), zt).unseen_family.n; });
@@ -306,7 +306,8 @@ td.zero { color: var(--warn); }
     $("h-silent").textContent = pct(f0.mean_called_benign) + " → " + pct(h.mean_called_benign);
     $("h-silent-ci").textContent = "worst family, " + f0.worst_family.family + ": " + pct(f0.worst_family.called_benign) + " passed as benign when forced to answer";
     $("h-unknown").textContent = pct(h.mean_rejected_unknown);
-    $("h-unknown-ci").textContent = "novelty lift " + (h.mean_novelty_lift >= 0 ? "+" : "") + nf(h.mean_novelty_lift, 3) + "; shuffled-label control " + nf(h.mean_novelty_lift_shuffled_control, 3);
+    var rc = s.rarity_control.per_arm.hierarchy["threshold_0.99"];
+    $("h-unknown-ci").textContent = "rare families it did train on: " + pct(rc.mean_seen_rare_rejected_unknown) + " sent to an analyst too, so this is rarity, not novelty detection";
     var row = M.coverage_reliability_curve.filter(function (r) { return r.threshold === 0.99; })[0];
     $("h-cov").textContent = pct(row.coverage) + " at " + pct(row.reliability);
     var nb = 0, nbRej = 0, q = 0;

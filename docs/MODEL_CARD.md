@@ -340,10 +340,12 @@ harder picture.
    Measured by leave-one-family-out (`artifacts/zero_day_lofo.json`): forced to name a class, the
    model calls **70.5%** of an unseen family's flows benign, and 92.9% of UDP-bypass-v1's. At
    threshold 0.99 it rejects 91.4% as unknown and 7.7% are still called benign, so the reject option
-   contains this failure but does not close it. The rejection is genuine novelty detection (novelty
-   lift +0.579 over the abstention rate on seen families, against -0.005 under a shuffled-label
-   control), and it is not the hierarchy's doing: a single joint forest scores a higher lift. Deploy
-   this model with the knob on, and treat an unknown as "look at this", not as "nothing happened".
+   contains this failure but does not close it. The rejection is not novelty detection. Against all
+   seen traffic (mostly UDP-RAW and benign) the lift is +0.579, but rare families the model DID
+   train on are rejected 84.9% of the time at the same threshold, a lift of only 0.065
+   (`summary.rarity_control`): the knob rejects rare floods whether or not it has seen them. It is
+   not the hierarchy's doing either: a single joint forest scores a higher lift. Deploy this model
+   with the knob on, and treat an unknown as "look at this", not as "nothing happened".
 5. **No adversarial evaluation yet.** Whether the reject option catches deliberately perturbed
    flows is a hypothesis until the adversarial probe measures it. See `docs/THREAT_MODEL.md`.
 6. **Uncalibrated confidence, by measured choice.** The shipped model's confidence overstates

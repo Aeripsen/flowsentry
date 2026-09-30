@@ -189,8 +189,10 @@ def check_zero_day(page, ck: Checker, z) -> None:
             cov = mean(fams, t, lambda b: b["seen_families"]["coverage"])
             rel = mean(fams, t, lambda b: b["seen_families"]["reliability"])
             ck.eq(f"{where} known traffic", tx("z-seen"), f"{zpct(cov)} at {zpct(rel)}")
-            lift = mean(fams, t, lambda b: b["novelty_lift"])
-            ctrl = mean(fams, t, lambda b: b["novelty_lift"], z["shuffled_label_control"])
+            lift = mean(fams, t, lambda b: b["novelty_lift_vs_seen_rare"])
+            ctrl = mean(
+                fams, t, lambda b: b["novelty_lift_vs_seen_rare"], z["shuffled_label_control"]
+            )
             ck.near(f"{where} novelty lift", num(tx("z-lift")), lift, 0.0005)
             ck.near(f"{where} shuffled control", num(tx("z-ctrl")), ctrl, 0.0005)
             n = sum(at(z["rounds"], f, t)["unseen_family"]["n"] for f in fams)
@@ -207,6 +209,9 @@ def check_headline(page, ck: Checker, demo, metrics, z) -> None:
     ck.near("headline 0.99 called-benign", got[1], 100 * h["mean_called_benign"], 0.05)
     ck.near("headline rejected unknown", num(page.text_content("#h-unknown") or ""),
             100 * h["mean_rejected_unknown"], 0.05)
+    rc = s["rarity_control"]["per_arm"]["hierarchy"]["threshold_0.99"]
+    ck.near("headline seen-rare rejected", num(page.text_content("#h-unknown-ci") or ""),
+            100 * rc["mean_seen_rare_rejected_unknown"], 0.05)
     row = next(r for r in metrics["coverage_reliability_curve"] if r["threshold"] == 0.99)
     got = nums(page.text_content("#h-cov") or "")
     ck.near("headline coverage", got[0], 100 * row["coverage"], 0.05)

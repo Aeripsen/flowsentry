@@ -16,9 +16,10 @@ far less than on a real network. Measured, not assumed:
 - **Never-seen UDP attack families mostly go to an analyst instead of passing as benign.** Six rare
   UDP DDoS families, each held out of training and retrained without it (193 to 356 flows each):
   passed-as-benign falls from **70.5% to 7.7%** with the knob at 0.99, and **91.4%** are sent to
-  an analyst as unknown instead. A shuffled-label control shows the lift is not an artifact of the
-  metric. These are flood variants from the same dataset, not real-world zero-days, and 7.7% still
-  pass silently (15.2% for the worst family).
+  an analyst as unknown instead. That is not novelty detection: rare families the model *did* train
+  on are sent to an analyst **84.9%** of the time at the same threshold, so the knob catches a new
+  flood because it rejects rare floods in general. These are flood variants from the same dataset,
+  not real-world zero-days, and 7.7% still pass silently (15.2% for the worst family).
 - **On the families it trained on,** it answers **64.8%** of held-out flows at **99.3%**
   reliability (83.2% if it must answer everything). The cost: **1,824 of the 3,088 benign test
   flows (59.1%)** go to an analyst, and the 2,315-flow analyst queue is 78.8% benign. Because
@@ -56,10 +57,12 @@ simpler models: on this sample a single forest does as well, and the repo says s
 - **Held-out attack families, measured rather than assumed.** On six rare UDP DDoS families each
   held out of training entirely (leave-one-family-out), **passed-as-benign falls from 70.5% to
   7.7%**: forced to name a class, the model calls 70.5% of an unseen family's flows benign, and the
-  reject knob at 0.99 turns that into **91.4% sent to an analyst as unknown** and 7.7% still silent,
-  with a novelty lift of **+0.579** over its own abstention rate on seen traffic and **-0.005**
-  under a shuffled-label control. They are flood variants from the same generator, so this shows
-  how the knob treats a family missing from training, not real-world zero-day detection.
+  reject knob at 0.99 turns that into **91.4% sent to an analyst as unknown** and 7.7% still silent.
+  The rarity control says what that is: the rare families that *were* in training, in the same
+  rounds, are sent to an analyst **84.9%** of the time and passed as benign 7.0%, a lift of only
+  **0.065**. The knob rejects rare floods, seen or not; it does not detect novelty. (Against all
+  seen traffic, mostly UDP-RAW and benign, the lift looks like +0.579, which is why that baseline
+  was the wrong one.) They are flood variants from the same generator, not real-world zero-days.
   See [zero-day](#zero-day-what-happens-when-the-attack-family-was-never-in-training).
 - Stage 1 answers **75.7%** of flows from cheap always-present UDP statistics. That is the paper's
   design, and this repo **measured what it buys and published the unflattering answer**: on this
@@ -92,7 +95,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"          # package + runtime deps + test tooling
 
 python -m flowsentry.train      # trains on the committed BCCC sample, writes artifacts/ (~30 s)
-pytest                          # 85 tests; 2 skip unless the [gbdt] extra is installed
+pytest                          # 106 tests; 2 skip unless the [gbdt] extra is installed
 uvicorn flowsentry.service:app  # serve on http://localhost:8000
 ```
 
@@ -329,15 +332,30 @@ called a different attack (an alert still fires, triage is wrong), or **called b
 **Forced to name a class, the model calls 70.5% of an unseen family's flows benign** (mean over the
 six rare families). That is the number the whole open-set decomposition exists to bound, and it is
 the case for shipping a reject option rather than a nicer confusion matrix. At threshold 0.99 the knob
-rejects **91.4%** of unseen traffic as unknown and cuts the silent misses to **7.7%**, paying 66.5%
-coverage at 99.4% reliability on the families it does know.
+rejects **91.4%** of unseen traffic as unknown and cuts the silent misses to **7.7%**. In these
+rounds it answers 66.5% of each round's known test traffic at 99.4% reliability (a mean over the six
+retrains; the single held-out split elsewhere in this README reports 64.8% at 99.3%, a different
+experiment).
 
-That rejection is real novelty detection, not a strict threshold. Two controls say so. The
-**novelty lift** subtracts the abstention rate on *seen* families measured in the same run at the
-same threshold, and it is **+0.579**. The **shuffled-label control** runs the identical protocol with
-the training labels permuted, which destroys the family structure and holds the rows, the marginals
-and the threshold fixed; its lift collapses to **-0.005**. A model that abstains on everything would
-score a perfect unknown-detection rate and both controls would catch it.
+**That rejection is not novelty detection, and the first version of this README said it was.** The
+repo's `novelty_lift` subtracts the abstention rate on *all* seen traffic, which is **+0.579** and
+collapses to **-0.005** under the shuffled-label control. But all seen traffic is mostly UDP-RAW and
+benign, the two classes the model finds easiest, so a rare flood can beat that baseline just by being
+rare. The fair control is a rare family that *was* in training. Each round already has one: the other
+five rare families sit in its test split, trained on. `zero_day_lofo.json` now records them
+(`seen_rare_families` per round, `rarity_control` in the summary):
+
+| Hierarchy arm, mean over the six rounds | Never-seen family | Rare families seen in training |
+|---|---|---|
+| Called benign, forced to answer | 70.5% | 59.2% |
+| Sent to an analyst at 0.99 | 91.4% | 84.9% |
+| Still called benign at 0.99 | 7.7% | 7.0% |
+
+The lift over that control is **0.065** (shuffled-label version -0.002). The knob treats a rare flood
+the same whether or not it was trained on: the 0.99 threshold protects against a new family because
+it rejects rare floods in general, and it would have done so without any novelty signal. That is
+still a real operational property (a new flood mostly reaches an analyst), but it is rarity handling,
+not zero-day detection.
 
 None of this belongs to the hierarchy. All four arms land within 0.03 lift of each other and the
 plain 200-tree joint forest is the best of them (0.605 against the hierarchy's 0.579), so the open-set
@@ -360,10 +378,13 @@ rule is the repo's own and it holds everywhere.
 The numbers above are model metrics. A SOC lead asks how many flows the system decides alone, how
 many land in the analyst queue, how many of its own verdicts are wrong, and how much of a new flood
 walks through as benign. `make business` (`python scripts/business_case.py`) re-expresses the
-committed artifacts in those units and trains nothing: it reads `metrics.json`, `per_family.json`
-and `zero_day_lofo.json`, recovers exact counts from them, fails unless its zero-day means equal the
-ones `zero_day_lofo.json` publishes, and writes `artifacts/business_case.json`. CI regenerates it
-with `--verify` and fails on any byte difference.
+committed artifacts in those units: it reads `metrics.json`, `per_family.json` and
+`zero_day_lofo.json`, recovers exact counts from them (each count must round back to the stored
+4-decimal share), fails unless its zero-day and rarity-control means equal the ones
+`zero_day_lofo.json` publishes, and writes `artifacts/business_case.json`. The script itself trains
+nothing, so on its own `--verify` would only prove the arithmetic. What makes the inputs trustworthy
+is CI's reproduce job, which retrains `metrics.json`, `per_family.json` and `zero_day_lofo.json`
+from the committed sample and fails unless they come back unchanged (`scripts/verify_derived.py`).
 
 Held-out split, 6,570 flows:
 
@@ -372,6 +393,24 @@ Held-out split, 6,570 flows:
 | 0 (answer everything) | 10,000 | 0 | 1,683 |
 | 0.90 | 7,664 | 2,336 | 108 |
 | 0.99 | 6,476 | 3,524 | 44 |
+
+Who goes to the analyst at 0.99, per class, on the same split:
+
+| Class | Test flows | Sent to an analyst at 0.99 | Share |
+|---|---|---|---|
+| benign | 3,088 | 1,824 | 59.1% |
+| UDP-RAW | 3,076 | 144 | 4.7% |
+| UDP-VSE | 100 | 67 | 67.0% |
+| UDP-MULTI | 78 | 73 | 93.6% |
+| UDP-HULK | 63 | 57 | 90.5% |
+| UDP-bypass-v1 | 58 | 52 | 89.7% |
+| UDP-OVH | 55 | 51 | 92.7% |
+| UDP-GAME | 52 | 47 | 90.4% |
+| all test flows | 6,570 | 2,315 | 35.2% |
+
+The mix above caps benign at 47.0% of test flows, and the knob sends benign flows to an analyst more
+often (59.1%) than the mix as a whole (35.2%), so a network with more benign traffic gets a larger
+queue, not a smaller one. The per-class rows are there so any other mix can be re-weighted.
 
 With no knob, the 1,106 wrong verdicts include **778 false alarms** (25.2% of benign flows raised as
 an attack, mostly as UDP-bypass-v1) and **235 silent misses** (6.7% of attack flows passed as benign);
@@ -385,16 +424,22 @@ Never-seen attack families, pooled over the 1,505 flows of the six rare-family r
 | Sent to an analyst as unknown | 0 | 9,169 |
 | Named as a different attack | 3,123 | 86 |
 
-The resume-length version: **on six rare UDP DDoS families held out of training, the reject option
-cuts passed-as-benign from 70.5% to 7.7% (mean over the six) and sends 91.4% to an analyst, while
-answering 66.5% of known traffic at 99.4% reliability in the same runs.** Those are sibling flood
-families from one dataset, not real-world zero-days.
+Per family, the 95% Wilson interval on "still called benign at 0.99" is in
+`zero_day.by_threshold[].per_family` (binomial sampling only; flows sharing a connection are not
+independent, so read it as a floor). The worst, UDP-bypass-v1, is 15.2% (11.0% to 20.7%).
+
+**Resume-length lines.** The script writes these into `resume_sentences`, one experiment per line,
+and `tests/test_business.py` fails if this README stops quoting them word for word:
+
+> Measured open-set behaviour with leave-one-family-out retrains over 6 rare UDP DDoS families plus a rarity control: forced to answer, the model passes 70.5% of a never-seen family as benign; a 0.99 reject option cuts that to 7.7% by routing 91.4% to an analyst, and the control shows trained-on rare families routed almost as often (84.9%), so the gain comes from rejecting rare floods, not from detecting novelty.
+
+> On a stratified held-out split of 6,570 flows, a 0.99 reject threshold cut wrong automatic verdicts from 1,683 to 44 per 10,000 flows by sending 35.2% of flows to an analyst, 59.1% of benign ones.
 
 What this does not claim. The held-out split is a stratified sample with benign and UDP-RAW capped, so
 per-10k rates describe that mix, not a real network's; a network with more benign traffic would see a
-different queue. The zero-day means come from one round per family on 193-356 flows each, and the worst
+larger queue (table above). The zero-day means come from one round per family on 193-356 flows each, and the worst
 family, UDP-bypass-v1, still passes 15.2% of its flows as benign at 0.99. The analyst queue is the
-price: at 0.99 about 35% of known traffic goes to a human. Nothing is priced; there is no analyst-time
+price: at 0.99, 35.2% of the test mix and 59.1% of benign flows go to a human. Nothing is priced; there is no analyst-time
 or breach-cost figure anywhere in the artifact.
 
 ### Calibration of the confidence number
@@ -606,7 +651,7 @@ make reproduce            # or: python scripts/reproduce.py
 Retrains from the committed sample and fails unless `artifacts/metrics.json` regenerates
 **byte-identically** (seeded end to end: split, imputer, forests). Exact bytes are promised under
 `requirements.lock` (the environment the published numbers came from); on other versions the test
-suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (91 tests, including
+suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (106 tests, including
 the leakage guard, the metrics regression, exact-equality guards on both fast paths, and the perf
 regression guard) run in CI.
 

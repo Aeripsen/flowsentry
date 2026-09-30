@@ -54,6 +54,8 @@ jobs:
           pip install -e . --no-deps
       - name: Reproduce metrics byte-identically
         run: python scripts/reproduce.py
+      - name: Per-family and zero-day artifacts reproduce (retrains, env stamp ignored)
+        run: python scripts/verify_derived.py
 
   # MLflow + Evidently from a clean checkout, in the locked environment: train
   # (logs a run), log the arm comparison, rebuild the drift/performance report,

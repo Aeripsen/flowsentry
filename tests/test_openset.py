@@ -75,3 +75,21 @@ def test_destinations_are_ordered_most_frequent_first():
 def test_empty_holdout_is_an_error_not_a_silent_zero():
     with pytest.raises(ValueError):
         open_set_outcomes(np.array([]), np.array([]), threshold=0.9)
+
+
+def test_seen_family_outcomes_split_answered_attacks_into_right_and_wrong():
+    import numpy as np
+
+    from flowsentry.openset import novelty_lift_vs, open_set_outcomes, seen_family_outcomes
+
+    y = np.array(["A", "A", "A", "B", "B"])
+    labels = np.array(["A", "benign", "B", "B", "A"])
+    conf = np.array([0.99, 0.99, 0.99, 0.5, 0.99])
+    o = seen_family_outcomes(y, labels, conf, 0.9)
+    assert (o["n_rejected"], o["n_called_benign"], o["n_called_right"],
+            o["n_called_wrong_attack"]) == (1, 1, 1, 2)
+    assert o["rejected_unknown"] + o["called_benign"] + o["called_right"] + o[
+        "called_wrong_attack"
+    ] == 1.0
+    unseen = open_set_outcomes(np.array(["A", "A"]), np.array([0.1, 0.1]), 0.9)
+    assert novelty_lift_vs(unseen, o) == 0.8

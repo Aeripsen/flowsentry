@@ -1,13 +1,17 @@
 {
-  "what": "the reject knob as verdicts per 10,000 flows: answered, sent to an analyst, wrong; and what happens to flows of a never-seen attack family",
+  "what": "the reject knob as verdicts per 10,000 flows: answered, sent to an analyst, wrong; and what happens to flows of a never-seen attack family, next to rare families that were in training",
   "derived_from": [
     "artifacts/metrics.json (make reproduce)",
     "artifacts/per_family.json (make families)",
     "artifacts/zero_day_lofo.json (make zero-day)"
   ],
   "no_prices": "counts only; no analyst-time or breach-cost figure is used",
-  "test_mix_caveat": "the held-out split is a stratified sample with benign and UDP-RAW capped; per-10k rates describe that mix, not a real network's",
-  "consistency_check": "zero-day means match zero_day_lofo.json summary on 5 published values",
+  "test_mix_caveat": "the held-out split is a stratified sample with benign and UDP-RAW capped; per-10k rates describe that mix, not a real network's. At the headline threshold the knob sends a larger share of benign flows to an analyst than of the mix, so a benign-heavier network sends more; see analyst_share_by_class",
+  "experiments": {
+    "held_out_split": "seen_traffic, analyst_share_by_class, full_coverage_error_split",
+    "leave_one_family_out": "zero_day (unseen family, rarity control, known-traffic cost as the mean over that experiment's rounds)"
+  },
+  "consistency_check": "zero-day means match zero_day_lofo.json summary on 9 published values",
   "headline_threshold": 0.99,
   "seen_traffic": [
     {
@@ -95,6 +99,182 @@
       "reliability_of_answered": 0.9932
     }
   ],
+  "analyst_share_by_class": [
+    {
+      "reject_threshold": 0.5,
+      "all_test_flows": {
+        "n_flows": 6570,
+        "sent_to_analyst": 818,
+        "sent_to_analyst_share": 0.1245
+      },
+      "per_class": {
+        "UDP-GAME": {
+          "n_flows": 52,
+          "answered": 23,
+          "sent_to_analyst": 29,
+          "sent_to_analyst_share": 0.5577
+        },
+        "UDP-HULK": {
+          "n_flows": 63,
+          "answered": 37,
+          "sent_to_analyst": 26,
+          "sent_to_analyst_share": 0.4127
+        },
+        "UDP-MULTI": {
+          "n_flows": 78,
+          "answered": 51,
+          "sent_to_analyst": 27,
+          "sent_to_analyst_share": 0.3462
+        },
+        "UDP-OVH": {
+          "n_flows": 55,
+          "answered": 37,
+          "sent_to_analyst": 18,
+          "sent_to_analyst_share": 0.3273
+        },
+        "UDP-RAW": {
+          "n_flows": 3076,
+          "answered": 3073,
+          "sent_to_analyst": 3,
+          "sent_to_analyst_share": 0.001
+        },
+        "UDP-VSE": {
+          "n_flows": 100,
+          "answered": 74,
+          "sent_to_analyst": 26,
+          "sent_to_analyst_share": 0.26
+        },
+        "UDP-bypass-v1": {
+          "n_flows": 58,
+          "answered": 37,
+          "sent_to_analyst": 21,
+          "sent_to_analyst_share": 0.3621
+        },
+        "benign": {
+          "n_flows": 3088,
+          "answered": 2420,
+          "sent_to_analyst": 668,
+          "sent_to_analyst_share": 0.2163
+        }
+      }
+    },
+    {
+      "reject_threshold": 0.9,
+      "all_test_flows": {
+        "n_flows": 6570,
+        "sent_to_analyst": 1535,
+        "sent_to_analyst_share": 0.2336
+      },
+      "per_class": {
+        "UDP-GAME": {
+          "n_flows": 52,
+          "answered": 9,
+          "sent_to_analyst": 43,
+          "sent_to_analyst_share": 0.8269
+        },
+        "UDP-HULK": {
+          "n_flows": 63,
+          "answered": 12,
+          "sent_to_analyst": 51,
+          "sent_to_analyst_share": 0.8095
+        },
+        "UDP-MULTI": {
+          "n_flows": 78,
+          "answered": 12,
+          "sent_to_analyst": 66,
+          "sent_to_analyst_share": 0.8462
+        },
+        "UDP-OVH": {
+          "n_flows": 55,
+          "answered": 10,
+          "sent_to_analyst": 45,
+          "sent_to_analyst_share": 0.8182
+        },
+        "UDP-RAW": {
+          "n_flows": 3076,
+          "answered": 3047,
+          "sent_to_analyst": 29,
+          "sent_to_analyst_share": 0.0094
+        },
+        "UDP-VSE": {
+          "n_flows": 100,
+          "answered": 39,
+          "sent_to_analyst": 61,
+          "sent_to_analyst_share": 0.61
+        },
+        "UDP-bypass-v1": {
+          "n_flows": 58,
+          "answered": 17,
+          "sent_to_analyst": 41,
+          "sent_to_analyst_share": 0.7069
+        },
+        "benign": {
+          "n_flows": 3088,
+          "answered": 1889,
+          "sent_to_analyst": 1199,
+          "sent_to_analyst_share": 0.3883
+        }
+      }
+    },
+    {
+      "reject_threshold": 0.99,
+      "all_test_flows": {
+        "n_flows": 6570,
+        "sent_to_analyst": 2315,
+        "sent_to_analyst_share": 0.3524
+      },
+      "per_class": {
+        "UDP-GAME": {
+          "n_flows": 52,
+          "answered": 5,
+          "sent_to_analyst": 47,
+          "sent_to_analyst_share": 0.9038
+        },
+        "UDP-HULK": {
+          "n_flows": 63,
+          "answered": 6,
+          "sent_to_analyst": 57,
+          "sent_to_analyst_share": 0.9048
+        },
+        "UDP-MULTI": {
+          "n_flows": 78,
+          "answered": 5,
+          "sent_to_analyst": 73,
+          "sent_to_analyst_share": 0.9359
+        },
+        "UDP-OVH": {
+          "n_flows": 55,
+          "answered": 4,
+          "sent_to_analyst": 51,
+          "sent_to_analyst_share": 0.9273
+        },
+        "UDP-RAW": {
+          "n_flows": 3076,
+          "answered": 2932,
+          "sent_to_analyst": 144,
+          "sent_to_analyst_share": 0.0468
+        },
+        "UDP-VSE": {
+          "n_flows": 100,
+          "answered": 33,
+          "sent_to_analyst": 67,
+          "sent_to_analyst_share": 0.67
+        },
+        "UDP-bypass-v1": {
+          "n_flows": 58,
+          "answered": 6,
+          "sent_to_analyst": 52,
+          "sent_to_analyst_share": 0.8966
+        },
+        "benign": {
+          "n_flows": 3088,
+          "answered": 1264,
+          "sent_to_analyst": 1824,
+          "sent_to_analyst_share": 0.5907
+        }
+      }
+    }
+  ],
   "full_coverage_error_split": {
     "n_flows": 6570,
     "benign_flows": 3088,
@@ -133,10 +313,25 @@
           "rejected_unknown": 0,
           "called_wrong_attack": 470
         },
+        "pooled_ci95": {
+          "called_benign": {
+            "ci_lower": 0.6638,
+            "ci_upper": 0.7106
+          },
+          "rejected_unknown": {
+            "ci_lower": 0.0,
+            "ci_upper": 0.0025
+          }
+        },
         "pooled_per_10k_unseen_flows": {
           "passed_as_benign": 6877.1,
           "sent_to_analyst_as_unknown": 0.0,
           "labelled_as_a_different_attack": 3122.9
+        },
+        "rarity_control_mean_over_rounds": {
+          "seen_rare_called_benign": 0.5925,
+          "seen_rare_rejected_unknown": 0.0,
+          "novelty_lift_vs_seen_rare": 0.0
         },
         "cost_on_known_traffic": {
           "mean_seen_coverage": 1.0,
@@ -146,32 +341,92 @@
           "UDP-VSE": {
             "n_unseen_flows": 356,
             "called_benign": 0.5365,
-            "rejected_unknown": 0.0
+            "called_benign_ci95": {
+              "ci_lower": 0.4846,
+              "ci_upper": 0.5877
+            },
+            "rejected_unknown": 0.0,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.0,
+              "ci_upper": 0.0107
+            },
+            "seen_rare_rejected_unknown": 0.0,
+            "seen_rare_called_benign": 0.6078
           },
           "UDP-OVH": {
             "n_unseen_flows": 239,
             "called_benign": 0.7155,
-            "rejected_unknown": 0.0
+            "called_benign_ci95": {
+              "ci_lower": 0.6552,
+              "ci_upper": 0.7689
+            },
+            "rejected_unknown": 0.0,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.0,
+              "ci_upper": 0.0158
+            },
+            "seen_rare_rejected_unknown": 0.0,
+            "seen_rare_called_benign": 0.5413
           },
           "UDP-MULTI": {
             "n_unseen_flows": 261,
             "called_benign": 0.7165,
-            "rejected_unknown": 0.0
+            "called_benign_ci95": {
+              "ci_lower": 0.659,
+              "ci_upper": 0.7677
+            },
+            "rejected_unknown": 0.0,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.0,
+              "ci_upper": 0.0145
+            },
+            "seen_rare_rejected_unknown": 0.0,
+            "seen_rare_called_benign": 0.5884
           },
           "UDP-HULK": {
             "n_unseen_flows": 246,
             "called_benign": 0.6301,
-            "rejected_unknown": 0.0
+            "called_benign_ci95": {
+              "ci_lower": 0.5682,
+              "ci_upper": 0.688
+            },
+            "rejected_unknown": 0.0,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.0,
+              "ci_upper": 0.0154
+            },
+            "seen_rare_rejected_unknown": 0.0,
+            "seen_rare_called_benign": 0.5569
           },
           "UDP-bypass-v1": {
             "n_unseen_flows": 210,
             "called_benign": 0.9286,
-            "rejected_unknown": 0.0
+            "called_benign_ci95": {
+              "ci_lower": 0.8855,
+              "ci_upper": 0.9562
+            },
+            "rejected_unknown": 0.0,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.0,
+              "ci_upper": 0.018
+            },
+            "seen_rare_rejected_unknown": 0.0,
+            "seen_rare_called_benign": 0.6954
           },
           "UDP-GAME": {
             "n_unseen_flows": 193,
             "called_benign": 0.7047,
-            "rejected_unknown": 0.0
+            "called_benign_ci95": {
+              "ci_lower": 0.6368,
+              "ci_upper": 0.7645
+            },
+            "rejected_unknown": 0.0,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.0,
+              "ci_upper": 0.0195
+            },
+            "seen_rare_rejected_unknown": 0.0,
+            "seen_rare_called_benign": 0.565
           }
         }
       },
@@ -188,10 +443,25 @@
           "rejected_unknown": 545,
           "called_wrong_attack": 177
         },
+        "pooled_ci95": {
+          "called_benign": {
+            "ci_lower": 0.495,
+            "ci_upper": 0.5454
+          },
+          "rejected_unknown": {
+            "ci_lower": 0.3382,
+            "ci_upper": 0.3867
+          }
+        },
         "pooled_per_10k_unseen_flows": {
           "passed_as_benign": 5202.7,
           "sent_to_analyst_as_unknown": 3621.3,
           "labelled_as_a_different_attack": 1176.1
+        },
+        "rarity_control_mean_over_rounds": {
+          "seen_rare_called_benign": 0.4669,
+          "seen_rare_rejected_unknown": 0.3298,
+          "novelty_lift_vs_seen_rare": 0.0309
         },
         "cost_on_known_traffic": {
           "mean_seen_coverage": 0.8834,
@@ -201,32 +471,92 @@
           "UDP-VSE": {
             "n_unseen_flows": 356,
             "called_benign": 0.368,
-            "rejected_unknown": 0.3904
+            "called_benign_ci95": {
+              "ci_lower": 0.3195,
+              "ci_upper": 0.4192
+            },
+            "rejected_unknown": 0.3904,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.3412,
+              "ci_upper": 0.442
+            },
+            "seen_rare_rejected_unknown": 0.3725,
+            "seen_rare_called_benign": 0.4935
           },
           "UDP-OVH": {
             "n_unseen_flows": 239,
             "called_benign": 0.6151,
-            "rejected_unknown": 0.3347
+            "called_benign_ci95": {
+              "ci_lower": 0.552,
+              "ci_upper": 0.6745
+            },
+            "rejected_unknown": 0.3347,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.2779,
+              "ci_upper": 0.3968
+            },
+            "seen_rare_rejected_unknown": 0.3447,
+            "seen_rare_called_benign": 0.4274
           },
           "UDP-MULTI": {
             "n_unseen_flows": 261,
             "called_benign": 0.5939,
-            "rejected_unknown": 0.3372
+            "called_benign_ci95": {
+              "ci_lower": 0.5333,
+              "ci_upper": 0.6517
+            },
+            "rejected_unknown": 0.3372,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.2825,
+              "ci_upper": 0.3965
+            },
+            "seen_rare_rejected_unknown": 0.311,
+            "seen_rare_called_benign": 0.503
           },
           "UDP-HULK": {
             "n_unseen_flows": 246,
             "called_benign": 0.4715,
-            "rejected_unknown": 0.374
+            "called_benign_ci95": {
+              "ci_lower": 0.4101,
+              "ci_upper": 0.5339
+            },
+            "rejected_unknown": 0.374,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.3159,
+              "ci_upper": 0.436
+            },
+            "seen_rare_rejected_unknown": 0.3236,
+            "seen_rare_called_benign": 0.4606
           },
           "UDP-bypass-v1": {
             "n_unseen_flows": 210,
             "called_benign": 0.6476,
-            "rejected_unknown": 0.319
+            "called_benign_ci95": {
+              "ci_lower": 0.5809,
+              "ci_upper": 0.709
+            },
+            "rejected_unknown": 0.319,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.2597,
+              "ci_upper": 0.3849
+            },
+            "seen_rare_rejected_unknown": 0.3391,
+            "seen_rare_called_benign": 0.4397
           },
           "UDP-GAME": {
             "n_unseen_flows": 193,
             "called_benign": 0.5078,
-            "rejected_unknown": 0.4093
+            "called_benign_ci95": {
+              "ci_lower": 0.4378,
+              "ci_upper": 0.5775
+            },
+            "rejected_unknown": 0.4093,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.3424,
+              "ci_upper": 0.4798
+            },
+            "seen_rare_rejected_unknown": 0.2881,
+            "seen_rare_called_benign": 0.4774
           }
         }
       },
@@ -243,10 +573,25 @@
           "rejected_unknown": 921,
           "called_wrong_attack": 52
         },
+        "pooled_ci95": {
+          "called_benign": {
+            "ci_lower": 0.3297,
+            "ci_upper": 0.378
+          },
+          "rejected_unknown": {
+            "ci_lower": 0.5871,
+            "ci_upper": 0.6363
+          }
+        },
         "pooled_per_10k_unseen_flows": {
           "passed_as_benign": 3534.9,
           "sent_to_analyst_as_unknown": 6119.6,
           "labelled_as_a_different_attack": 345.5
+        },
+        "rarity_control_mean_over_rounds": {
+          "seen_rare_called_benign": 0.3275,
+          "seen_rare_rejected_unknown": 0.5489,
+          "novelty_lift_vs_seen_rare": 0.0538
         },
         "cost_on_known_traffic": {
           "mean_seen_coverage": 0.8305,
@@ -256,32 +601,92 @@
           "UDP-VSE": {
             "n_unseen_flows": 356,
             "called_benign": 0.2612,
-            "rejected_unknown": 0.7022
+            "called_benign_ci95": {
+              "ci_lower": 0.2183,
+              "ci_upper": 0.3092
+            },
+            "rejected_unknown": 0.7022,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.6528,
+              "ci_upper": 0.7474
+            },
+            "seen_rare_rejected_unknown": 0.5948,
+            "seen_rare_called_benign": 0.3562
           },
           "UDP-OVH": {
             "n_unseen_flows": 239,
             "called_benign": 0.4561,
-            "rejected_unknown": 0.5272
+            "called_benign_ci95": {
+              "ci_lower": 0.3941,
+              "ci_upper": 0.5194
+            },
+            "rejected_unknown": 0.5272,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.464,
+              "ci_upper": 0.5896
+            },
+            "seen_rare_rejected_unknown": 0.5556,
+            "seen_rare_called_benign": 0.2934
           },
           "UDP-MULTI": {
             "n_unseen_flows": 261,
             "called_benign": 0.3295,
-            "rejected_unknown": 0.6475
+            "called_benign_ci95": {
+              "ci_lower": 0.2753,
+              "ci_upper": 0.3886
+            },
+            "rejected_unknown": 0.6475,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.5878,
+              "ci_upper": 0.7029
+            },
+            "seen_rare_rejected_unknown": 0.5183,
+            "seen_rare_called_benign": 0.3506
           },
           "UDP-HULK": {
             "n_unseen_flows": 246,
             "called_benign": 0.3049,
-            "rejected_unknown": 0.5935
+            "called_benign_ci95": {
+              "ci_lower": 0.2507,
+              "ci_upper": 0.365
+            },
+            "rejected_unknown": 0.5935,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.5311,
+              "ci_upper": 0.653
+            },
+            "seen_rare_rejected_unknown": 0.5277,
+            "seen_rare_called_benign": 0.3411
           },
           "UDP-bypass-v1": {
             "n_unseen_flows": 210,
             "called_benign": 0.4762,
-            "rejected_unknown": 0.519
+            "called_benign_ci95": {
+              "ci_lower": 0.4097,
+              "ci_upper": 0.5436
+            },
+            "rejected_unknown": 0.519,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.4517,
+              "ci_upper": 0.5857
+            },
+            "seen_rare_rejected_unknown": 0.5546,
+            "seen_rare_called_benign": 0.3017
           },
           "UDP-GAME": {
             "n_unseen_flows": 193,
             "called_benign": 0.3575,
-            "rejected_unknown": 0.6269
+            "called_benign_ci95": {
+              "ci_lower": 0.2933,
+              "ci_upper": 0.4273
+            },
+            "rejected_unknown": 0.6269,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.5569,
+              "ci_upper": 0.6921
+            },
+            "seen_rare_rejected_unknown": 0.5424,
+            "seen_rare_called_benign": 0.322
           }
         }
       },
@@ -298,10 +703,25 @@
           "rejected_unknown": 1062,
           "called_wrong_attack": 43
         },
+        "pooled_ci95": {
+          "called_benign": {
+            "ci_lower": 0.2441,
+            "ci_upper": 0.2887
+          },
+          "rejected_unknown": {
+            "ci_lower": 0.6821,
+            "ci_upper": 0.7281
+          }
+        },
         "pooled_per_10k_unseen_flows": {
           "passed_as_benign": 2657.8,
           "sent_to_analyst_as_unknown": 7056.5,
           "labelled_as_a_different_attack": 285.7
+        },
+        "rarity_control_mean_over_rounds": {
+          "seen_rare_called_benign": 0.2358,
+          "seen_rare_rejected_unknown": 0.6602,
+          "novelty_lift_vs_seen_rare": 0.0385
         },
         "cost_on_known_traffic": {
           "mean_seen_coverage": 0.807,
@@ -311,32 +731,92 @@
           "UDP-VSE": {
             "n_unseen_flows": 356,
             "called_benign": 0.1966,
-            "rejected_unknown": 0.7725
+            "called_benign_ci95": {
+              "ci_lower": 0.1587,
+              "ci_upper": 0.2411
+            },
+            "rejected_unknown": 0.7725,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.7261,
+              "ci_upper": 0.813
+            },
+            "seen_rare_rejected_unknown": 0.6993,
+            "seen_rare_called_benign": 0.2712
           },
           "UDP-OVH": {
             "n_unseen_flows": 239,
             "called_benign": 0.3431,
-            "rejected_unknown": 0.6527
+            "called_benign_ci95": {
+              "ci_lower": 0.2858,
+              "ci_upper": 0.4053
+            },
+            "rejected_unknown": 0.6527,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.5904,
+              "ci_upper": 0.7102
+            },
+            "seen_rare_rejected_unknown": 0.6638,
+            "seen_rare_called_benign": 0.2165
           },
           "UDP-MULTI": {
             "n_unseen_flows": 261,
             "called_benign": 0.249,
-            "rejected_unknown": 0.728
+            "called_benign_ci95": {
+              "ci_lower": 0.2005,
+              "ci_upper": 0.3049
+            },
+            "rejected_unknown": 0.728,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.671,
+              "ci_upper": 0.7784
+            },
+            "seen_rare_rejected_unknown": 0.6341,
+            "seen_rare_called_benign": 0.2439
           },
           "UDP-HULK": {
             "n_unseen_flows": 246,
             "called_benign": 0.2033,
-            "rejected_unknown": 0.7033
+            "called_benign_ci95": {
+              "ci_lower": 0.1577,
+              "ci_upper": 0.2579
+            },
+            "rejected_unknown": 0.7033,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.6434,
+              "ci_upper": 0.7569
+            },
+            "seen_rare_rejected_unknown": 0.6531,
+            "seen_rare_called_benign": 0.2362
           },
           "UDP-bypass-v1": {
             "n_unseen_flows": 210,
             "called_benign": 0.3905,
-            "rejected_unknown": 0.6048
+            "called_benign_ci95": {
+              "ci_lower": 0.327,
+              "ci_upper": 0.4579
+            },
+            "rejected_unknown": 0.6048,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.5373,
+              "ci_upper": 0.6684
+            },
+            "seen_rare_rejected_unknown": 0.6638,
+            "seen_rare_called_benign": 0.2126
           },
           "UDP-GAME": {
             "n_unseen_flows": 193,
             "called_benign": 0.2642,
-            "rejected_unknown": 0.7306
+            "called_benign_ci95": {
+              "ci_lower": 0.2071,
+              "ci_upper": 0.3306
+            },
+            "rejected_unknown": 0.7306,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.6639,
+              "ci_upper": 0.7882
+            },
+            "seen_rare_rejected_unknown": 0.6469,
+            "seen_rare_called_benign": 0.2345
           }
         }
       },
@@ -353,10 +833,25 @@
           "rejected_unknown": 1187,
           "called_wrong_attack": 27
         },
+        "pooled_ci95": {
+          "called_benign": {
+            "ci_lower": 0.1742,
+            "ci_upper": 0.2141
+          },
+          "rejected_unknown": {
+            "ci_lower": 0.7674,
+            "ci_upper": 0.8086
+          }
+        },
         "pooled_per_10k_unseen_flows": {
           "passed_as_benign": 1933.6,
           "sent_to_analyst_as_unknown": 7887.0,
           "labelled_as_a_different_attack": 179.4
+        },
+        "rarity_control_mean_over_rounds": {
+          "seen_rare_called_benign": 0.1844,
+          "seen_rare_rejected_unknown": 0.7246,
+          "novelty_lift_vs_seen_rare": 0.0567
         },
         "cost_on_known_traffic": {
           "mean_seen_coverage": 0.7814,
@@ -366,32 +861,92 @@
           "UDP-VSE": {
             "n_unseen_flows": 356,
             "called_benign": 0.1517,
-            "rejected_unknown": 0.8427
+            "called_benign_ci95": {
+              "ci_lower": 0.1182,
+              "ci_upper": 0.1927
+            },
+            "rejected_unknown": 0.8427,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.8012,
+              "ci_upper": 0.8768
+            },
+            "seen_rare_rejected_unknown": 0.7582,
+            "seen_rare_called_benign": 0.2157
           },
           "UDP-OVH": {
             "n_unseen_flows": 239,
             "called_benign": 0.2469,
-            "rejected_unknown": 0.749
+            "called_benign_ci95": {
+              "ci_lower": 0.1965,
+              "ci_upper": 0.3052
+            },
+            "rejected_unknown": 0.749,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.6903,
+              "ci_upper": 0.7997
+            },
+            "seen_rare_rejected_unknown": 0.7208,
+            "seen_rare_called_benign": 0.1738
           },
           "UDP-MULTI": {
             "n_unseen_flows": 261,
             "called_benign": 0.1494,
-            "rejected_unknown": 0.8429
+            "called_benign_ci95": {
+              "ci_lower": 0.1113,
+              "ci_upper": 0.1977
+            },
+            "rejected_unknown": 0.8429,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.7938,
+              "ci_upper": 0.882
+            },
+            "seen_rare_rejected_unknown": 0.689,
+            "seen_rare_called_benign": 0.189
           },
           "UDP-HULK": {
             "n_unseen_flows": 246,
             "called_benign": 0.1382,
-            "rejected_unknown": 0.7805
+            "called_benign_ci95": {
+              "ci_lower": 0.1006,
+              "ci_upper": 0.1869
+            },
+            "rejected_unknown": 0.7805,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.7247,
+              "ci_upper": 0.8277
+            },
+            "seen_rare_rejected_unknown": 0.7376,
+            "seen_rare_called_benign": 0.1749
           },
           "UDP-bypass-v1": {
             "n_unseen_flows": 210,
             "called_benign": 0.3,
-            "rejected_unknown": 0.6952
+            "called_benign_ci95": {
+              "ci_lower": 0.2421,
+              "ci_upper": 0.3651
+            },
+            "rejected_unknown": 0.6952,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.6299,
+              "ci_upper": 0.7535
+            },
+            "seen_rare_rejected_unknown": 0.7299,
+            "seen_rare_called_benign": 0.1667
           },
           "UDP-GAME": {
             "n_unseen_flows": 193,
             "called_benign": 0.2176,
-            "rejected_unknown": 0.7772
+            "called_benign_ci95": {
+              "ci_lower": 0.1652,
+              "ci_upper": 0.281
+            },
+            "rejected_unknown": 0.7772,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.7134,
+              "ci_upper": 0.8302
+            },
+            "seen_rare_rejected_unknown": 0.7119,
+            "seen_rare_called_benign": 0.1864
           }
         }
       },
@@ -408,10 +963,25 @@
           "rejected_unknown": 1277,
           "called_wrong_attack": 24
         },
+        "pooled_ci95": {
+          "called_benign": {
+            "ci_lower": 0.1192,
+            "ci_upper": 0.1538
+          },
+          "rejected_unknown": {
+            "ci_lower": 0.8295,
+            "ci_upper": 0.8657
+          }
+        },
         "pooled_per_10k_unseen_flows": {
           "passed_as_benign": 1355.5,
           "sent_to_analyst_as_unknown": 8485.0,
           "labelled_as_a_different_attack": 159.5
+        },
+        "rarity_control_mean_over_rounds": {
+          "seen_rare_called_benign": 0.1369,
+          "seen_rare_rejected_unknown": 0.7771,
+          "novelty_lift_vs_seen_rare": 0.068
         },
         "cost_on_known_traffic": {
           "mean_seen_coverage": 0.747,
@@ -421,32 +991,92 @@
           "UDP-VSE": {
             "n_unseen_flows": 356,
             "called_benign": 0.1236,
-            "rejected_unknown": 0.8736
+            "called_benign_ci95": {
+              "ci_lower": 0.0934,
+              "ci_upper": 0.1619
+            },
+            "rejected_unknown": 0.8736,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.835,
+              "ci_upper": 0.9042
+            },
+            "seen_rare_rejected_unknown": 0.8301,
+            "seen_rare_called_benign": 0.1536
           },
           "UDP-OVH": {
             "n_unseen_flows": 239,
             "called_benign": 0.1213,
-            "rejected_unknown": 0.8745
+            "called_benign_ci95": {
+              "ci_lower": 0.0858,
+              "ci_upper": 0.1688
+            },
+            "rejected_unknown": 0.8745,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.8265,
+              "ci_upper": 0.9106
+            },
+            "seen_rare_rejected_unknown": 0.7692,
+            "seen_rare_called_benign": 0.1282
           },
           "UDP-MULTI": {
             "n_unseen_flows": 261,
             "called_benign": 0.1341,
-            "rejected_unknown": 0.8621
+            "called_benign_ci95": {
+              "ci_lower": 0.098,
+              "ci_upper": 0.1808
+            },
+            "rejected_unknown": 0.8621,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.815,
+              "ci_upper": 0.8987
+            },
+            "seen_rare_rejected_unknown": 0.7378,
+            "seen_rare_called_benign": 0.1463
           },
           "UDP-HULK": {
             "n_unseen_flows": 246,
             "called_benign": 0.0935,
-            "rejected_unknown": 0.8252
+            "called_benign_ci95": {
+              "ci_lower": 0.0631,
+              "ci_upper": 0.1364
+            },
+            "rejected_unknown": 0.8252,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.7728,
+              "ci_upper": 0.8676
+            },
+            "seen_rare_rejected_unknown": 0.7755,
+            "seen_rare_called_benign": 0.137
           },
           "UDP-bypass-v1": {
             "n_unseen_flows": 210,
             "called_benign": 0.2095,
-            "rejected_unknown": 0.7857
+            "called_benign_ci95": {
+              "ci_lower": 0.1599,
+              "ci_upper": 0.2695
+            },
+            "rejected_unknown": 0.7857,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.7253,
+              "ci_upper": 0.8358
+            },
+            "seen_rare_rejected_unknown": 0.7874,
+            "seen_rare_called_benign": 0.1149
           },
           "UDP-GAME": {
             "n_unseen_flows": 193,
             "called_benign": 0.1503,
-            "rejected_unknown": 0.8497
+            "called_benign_ci95": {
+              "ci_lower": 0.1067,
+              "ci_upper": 0.2075
+            },
+            "rejected_unknown": 0.8497,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.7925,
+              "ci_upper": 0.8933
+            },
+            "seen_rare_rejected_unknown": 0.7627,
+            "seen_rare_called_benign": 0.1412
           }
         }
       },
@@ -463,10 +1093,25 @@
           "rejected_unknown": 1380,
           "called_wrong_attack": 13
         },
+        "pooled_ci95": {
+          "called_benign": {
+            "ci_lower": 0.0622,
+            "ci_upper": 0.0888
+          },
+          "rejected_unknown": {
+            "ci_lower": 0.9019,
+            "ci_upper": 0.9298
+          }
+        },
         "pooled_per_10k_unseen_flows": {
           "passed_as_benign": 744.2,
           "sent_to_analyst_as_unknown": 9169.4,
           "labelled_as_a_different_attack": 86.4
+        },
+        "rarity_control_mean_over_rounds": {
+          "seen_rare_called_benign": 0.0699,
+          "seen_rare_rejected_unknown": 0.849,
+          "novelty_lift_vs_seen_rare": 0.0651
         },
         "cost_on_known_traffic": {
           "mean_seen_coverage": 0.6645,
@@ -476,39 +1121,104 @@
           "UDP-VSE": {
             "n_unseen_flows": 356,
             "called_benign": 0.0646,
-            "rejected_unknown": 0.9354
+            "called_benign_ci95": {
+              "ci_lower": 0.0434,
+              "ci_upper": 0.0951
+            },
+            "rejected_unknown": 0.9354,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.9049,
+              "ci_upper": 0.9566
+            },
+            "seen_rare_rejected_unknown": 0.915,
+            "seen_rare_called_benign": 0.0719
           },
           "UDP-OVH": {
             "n_unseen_flows": 239,
             "called_benign": 0.0669,
-            "rejected_unknown": 0.9289
+            "called_benign_ci95": {
+              "ci_lower": 0.0416,
+              "ci_upper": 0.106
+            },
+            "rejected_unknown": 0.9289,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.8891,
+              "ci_upper": 0.9551
+            },
+            "seen_rare_rejected_unknown": 0.849,
+            "seen_rare_called_benign": 0.057
           },
           "UDP-MULTI": {
             "n_unseen_flows": 261,
             "called_benign": 0.0575,
-            "rejected_unknown": 0.9425
+            "called_benign_ci95": {
+              "ci_lower": 0.0351,
+              "ci_upper": 0.0926
+            },
+            "rejected_unknown": 0.9425,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.9074,
+              "ci_upper": 0.9649
+            },
+            "seen_rare_rejected_unknown": 0.8323,
+            "seen_rare_called_benign": 0.064
           },
           "UDP-HULK": {
             "n_unseen_flows": 246,
             "called_benign": 0.0528,
-            "rejected_unknown": 0.9024
+            "called_benign_ci95": {
+              "ci_lower": 0.0311,
+              "ci_upper": 0.0883
+            },
+            "rejected_unknown": 0.9024,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.8589,
+              "ci_upper": 0.9336
+            },
+            "seen_rare_rejected_unknown": 0.8397,
+            "seen_rare_called_benign": 0.0729
           },
           "UDP-bypass-v1": {
             "n_unseen_flows": 210,
             "called_benign": 0.1524,
-            "rejected_unknown": 0.8429
+            "called_benign_ci95": {
+              "ci_lower": 0.1101,
+              "ci_upper": 0.2072
+            },
+            "rejected_unknown": 0.8429,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.7875,
+              "ci_upper": 0.8859
+            },
+            "seen_rare_rejected_unknown": 0.8247,
+            "seen_rare_called_benign": 0.0805
           },
           "UDP-GAME": {
             "n_unseen_flows": 193,
             "called_benign": 0.0674,
-            "rejected_unknown": 0.9326
+            "called_benign_ci95": {
+              "ci_lower": 0.0398,
+              "ci_upper": 0.1118
+            },
+            "rejected_unknown": 0.9326,
+            "rejected_unknown_ci95": {
+              "ci_lower": 0.8882,
+              "ci_upper": 0.9602
+            },
+            "seen_rare_rejected_unknown": 0.8333,
+            "seen_rare_called_benign": 0.0734
           }
         }
       }
     ]
   },
   "headline_sentences": [
-    "On attack families held out of training entirely (leave-one-family-out, 6 families), the reject option at 0.99 cuts silent misses (attack flows passed as benign) from 70.5% to 7.7% and sends 91.4% to an analyst as unknown, while answering 66.5% of known traffic at 99.4% reliability.",
-    "On the held-out split, wrong automatic verdicts fall from 1,683 to 44 per 10,000 flows (1,106 to 29 of 6,570), with 3,524 per 10,000 sent to an analyst."
+    "Leave-one-family-out (6 rare UDP DDoS families, one retrain each): forced to answer, the model passes 70.5% of a never-seen family's flows as benign. With the reject option at 0.99 that falls to 7.7%, because 91.4% go to an analyst as unknown. The worst family, UDP-bypass-v1, still passes 15.2% as benign (95% CI 11.0% to 20.7%).",
+    "That is not novelty detection. In the same rounds, the rare families that WERE in training are passed as benign 59.2% of the time with no knob and 7.0% at 0.99, where 84.9% of them go to an analyst too: the lift over them is 0.065. The knob protects against a new flood by rejecting rare floods in general.",
+    "Held-out split (6,570 flows, stratified test mix): wrong automatic verdicts fall from 1,683 to 44 per 10,000 flows (1,106 to 29) at 0.99, with 35.2% of flows sent to an analyst. That share is 59.1% for benign flows, so a network with more benign traffic than this capped sample would send more, not less."
+  ],
+  "resume_sentences": [
+    "Measured open-set behaviour with leave-one-family-out retrains over 6 rare UDP DDoS families plus a rarity control: forced to answer, the model passes 70.5% of a never-seen family as benign; a 0.99 reject option cuts that to 7.7% by routing 91.4% to an analyst, and the control shows trained-on rare families routed almost as often (84.9%), so the gain comes from rejecting rare floods, not from detecting novelty.",
+    "On a stratified held-out split of 6,570 flows, a 0.99 reject threshold cut wrong automatic verdicts from 1,683 to 44 per 10,000 flows by sending 35.2% of flows to an analyst, 59.1% of benign ones."
   ]
 }

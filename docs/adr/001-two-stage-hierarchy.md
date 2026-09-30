@@ -141,7 +141,10 @@ hierarchy's way.
 
 - All four arms sit within 0.03 novelty lift of each other, and the best is the plain
   200-tree joint forest (0.605) against the hierarchy's 0.579. Whatever protection the
-  reject knob gives against unseen families, it does not come from the two stages.
+  reject knob gives against unseen families, it does not come from the two stages. (That
+  lift is measured against all seen traffic. Against rare families the model did train
+  on it is 0.065, so the protection is rarity handling, not novelty detection; see
+  `summary.rarity_control` and the README's zero-day section.)
 - On unseen traffic **Stage 1's escalation rate rises from 22.7% to 79.7%**
   (`artifacts/zero_day_lofo.json`, `summary.stage1_escalation_on_unseen`). The cheap
   path is cheap only on traffic the model already knows. The deferred-QUIC-extraction
