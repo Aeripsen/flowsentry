@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business demo-data reproduce serve track drift-report mlflow-ui
+.PHONY: train test lint type bench splits hierarchy families calibration gbdt shap zero-day business demo-data reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind
 
 train:
 	python -m flowsentry.train
@@ -79,3 +79,12 @@ mlflow-ui:
 # connections (out-of-fold) vs held-out connections -> reports/*.html; needs [mlops]
 drift-report:
 	python scripts/evidently_report.py
+
+# Deploy to a throwaway kind cluster, smoke + load test, rolling restart under
+# load (needs docker, kind, kubectl). Same script the k8s CI workflow runs.
+k8s-e2e:
+	bash scripts/k8s_e2e.sh
+
+# terraform apply deploy/terraform/kubernetes to kind, re-plan, parity, destroy.
+tf-kind:
+	bash scripts/tf_kind_e2e.sh

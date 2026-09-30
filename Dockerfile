@@ -1,5 +1,6 @@
 # FlowSentry serving image. Trains inside the build from the committed BCCC sample,
 # so every image is self-contained and /predict works on a clean clone.
+# Used by docker-compose.yml, deploy/k8s and deploy/terraform/kubernetes (DEPLOY.md).
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -16,6 +17,13 @@ COPY data ./data
 
 # Train the model into artifacts/ so the image ships with a working model.
 RUN python -m flowsentry.train
+
+# Drop root: run as an unprivileged user so Kubernetes can enforce
+# runAsNonRoot (uid 10001 in deploy/k8s/base/flowsentry.yaml). Everything above
+# ran as root; chown hands the trained image to the runtime user. The API only
+# reads artifacts/ at runtime.
+RUN useradd --system --uid 10001 --home-dir /app app && chown -R app /app
+USER app
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
