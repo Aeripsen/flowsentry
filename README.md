@@ -55,7 +55,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"          # package + runtime deps + test tooling
 
 python -m flowsentry.train      # trains on the committed BCCC sample, writes artifacts/ (~30 s)
-pytest                          # 72 tests; 2 skip unless the [gbdt] extra is installed
+pytest                          # 80 tests; 2 skip unless the [gbdt] extra is installed
 uvicorn flowsentry.service:app  # serve on http://localhost:8000
 ```
 
