@@ -97,6 +97,13 @@ docker build -t flowsentry . && docker run -p 8000:8000 flowsentry
 docker compose up --build       # API on 8000 + dashboard on 8501
 ```
 
+Kubernetes and Terraform are run, not just written: [`.github/workflows/k8s.yml`](.github/workflows/k8s.yml)
+deploys [`deploy/k8s`](deploy/k8s) (probes, ConfigMap, HPA, PDB) to a kind cluster, load-tests it
+through the Service with k6, and rolls it under load, failing CI on any failed request (latest:
+0 failed of 43,980). It also applies [`deploy/terraform/kubernetes`](deploy/terraform/kubernetes)
+to kind, requires an empty re-plan and destroys it. Exact commands, captured output, and what the
+first run broke: [`DEPLOY.md`](DEPLOY.md). No cloud deploy exists.
+
 ## Why a reject option
 
 Most IDS demos report one accuracy number and answer every flow, confident or not. In a SOC that is
@@ -555,7 +562,8 @@ regression guard) run in CI.
 
 ## Roadmap (honest)
 
-- [ ] Public deploy with a live URL + a dashboard screenshot/GIF in this README
+- [ ] Public hosted API with a live URL (the API is deployed to kind in CI on every deploy change,
+      see [DEPLOY.md](DEPLOY.md), but nothing is hosted publicly)
 - [ ] Train on a larger slice of the full dataset and report those numbers alongside these
 - [ ] Rare-family coverage. The per-family artifact shows the reject knob cannot buy it, and the
       ablation already showed more trees do not either. Untested candidates: a larger slice of the
@@ -566,7 +574,9 @@ regression guard) run in CI.
       (`make zero-day`). Done and reported above. What is still open: rerunning it on the full
       dataset, and whether a dedicated novelty detector beats a thresholded closed-set model, which
       this does not test.
-- [ ] Load test under concurrent HTTP traffic (the benchmark measures scoring, not the ASGI stack)
+- [x] Load test under concurrent HTTP traffic: k6 through the Kubernetes Service on kind in CI,
+      including a rolling restart under load ([DEPLOY.md](DEPLOY.md)). Open: why per-pod HTTP
+      throughput sits far below the scoring benchmark, which has not been profiled
 - [ ] Adversarial probe: perturbed flows vs the reject knob (designed in
       [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md))
 - [ ] Cross-day / cross-dataset evaluation for host and campaign generalization. This is the one

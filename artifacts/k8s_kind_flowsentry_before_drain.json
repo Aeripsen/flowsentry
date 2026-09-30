@@ -1,0 +1,391 @@
+{
+  "what": "flowsentry deployed to a kind cluster from deploy/k8s/overlays/kind, smoke-tested, load-tested through its Service, and rolled while under load.",
+  "environment": {
+    "runner_vcpu": 4,
+    "runner_memory_mb": 15989,
+    "kind": "v0.33.0",
+    "kubernetes": "v1.37.0",
+    "git_sha": "00187a226d8ddb116ccd3c063df6396a92fab331",
+    "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36769507432"
+  },
+  "deploy": {
+    "initial_rollout_seconds": 6,
+    "ready": {
+      "status": "ready",
+      "model": "loaded",
+      "version": "0.2.0"
+    },
+    "predict_example": {
+      "label": "unknown",
+      "confidence": 0.5251,
+      "escalated_to_stage2": true,
+      "abstained": true
+    },
+    "pid1": "/usr/local/bin/python3.12 /usr/local/bin/uvicorn flowsentry.service:app --host 0.0.0.0 --port 8000",
+    "runs_as": "uid=10001(app) gid=999(app) groups=999(app)",
+    "configmap_max_batch": 2000,
+    "max_batch_seen_in_openapi": 2000,
+    "configmap_reaches_process": true
+  },
+  "load_steady": {
+    "phase": "steady",
+    "vus": 16,
+    "duration": "90s",
+    "requests": 9541,
+    "req_per_s": 105.9,
+    "latency_ms": {
+      "avg": 150.52,
+      "p50": 130.44,
+      "p95": 294.58,
+      "p99": 355.29,
+      "max": 541.85
+    },
+    "ok_2xx": 9541,
+    "failed_5xx": 0,
+    "failed_other_status": 0,
+    "failed_connection": 0,
+    "failed_total": 0
+  },
+  "load_during_rolling_restart": {
+    "phase": "restart",
+    "vus": 16,
+    "duration": "120s",
+    "requests": 40070,
+    "req_per_s": 333.8,
+    "latency_ms": {
+      "avg": 46.89,
+      "p50": 42.56,
+      "p95": 111.65,
+      "p99": 159.61,
+      "max": 293.36
+    },
+    "ok_2xx": 40069,
+    "failed_5xx": 0,
+    "failed_other_status": 0,
+    "failed_connection": 1,
+    "failed_total": 1,
+    "rolling_restart": {
+      "started_seconds_into_load": 15,
+      "rollout_seconds": 36,
+      "finished_before_load_ended": true,
+      "pods_before": [
+        "flowsentry-785bc8d7d8-7rc75",
+        "flowsentry-785bc8d7d8-8f8n4",
+        "flowsentry-785bc8d7d8-9jdrm",
+        "flowsentry-785bc8d7d8-tdcnv",
+        "flowsentry-785bc8d7d8-wm9wp"
+      ],
+      "pods_after": [
+        "flowsentry-b9d89f9fb-c5mg5",
+        "flowsentry-b9d89f9fb-hqgdj",
+        "flowsentry-b9d89f9fb-qxr95",
+        "flowsentry-b9d89f9fb-svffk",
+        "flowsentry-b9d89f9fb-xc8vz"
+      ],
+      "every_pod_replaced": true
+    }
+  },
+  "hpa": {
+    "columns": [
+      "seconds_since_steady_load_start",
+      "current_replicas",
+      "desired_replicas",
+      "cpu_percent_of_request"
+    ],
+    "replicas_min_seen": 2,
+    "replicas_max_seen": 5,
+    "cpu_percent_max_seen": 398,
+    "timeline": [
+      [
+        -1,
+        2,
+        0,
+        null
+      ],
+      [
+        4,
+        2,
+        2,
+        0
+      ],
+      [
+        9,
+        2,
+        2,
+        0
+      ],
+      [
+        14,
+        2,
+        2,
+        0
+      ],
+      [
+        19,
+        2,
+        2,
+        70
+      ],
+      [
+        24,
+        2,
+        2,
+        70
+      ],
+      [
+        30,
+        2,
+        2,
+        70
+      ],
+      [
+        35,
+        2,
+        4,
+        309
+      ],
+      [
+        40,
+        2,
+        4,
+        309
+      ],
+      [
+        45,
+        2,
+        4,
+        309
+      ],
+      [
+        50,
+        4,
+        5,
+        398
+      ],
+      [
+        55,
+        4,
+        5,
+        398
+      ],
+      [
+        60,
+        4,
+        5,
+        398
+      ],
+      [
+        65,
+        5,
+        5,
+        387
+      ],
+      [
+        70,
+        5,
+        5,
+        387
+      ],
+      [
+        75,
+        5,
+        5,
+        387
+      ],
+      [
+        80,
+        5,
+        5,
+        160
+      ],
+      [
+        86,
+        5,
+        5,
+        160
+      ],
+      [
+        91,
+        5,
+        5,
+        160
+      ],
+      [
+        96,
+        5,
+        5,
+        160
+      ],
+      [
+        101,
+        5,
+        5,
+        160
+      ],
+      [
+        106,
+        5,
+        5,
+        160
+      ],
+      [
+        111,
+        5,
+        5,
+        155
+      ],
+      [
+        116,
+        5,
+        5,
+        155
+      ],
+      [
+        121,
+        5,
+        5,
+        155
+      ],
+      [
+        126,
+        5,
+        5,
+        265
+      ],
+      [
+        131,
+        5,
+        5,
+        265
+      ],
+      [
+        137,
+        5,
+        5,
+        218
+      ],
+      [
+        142,
+        5,
+        5,
+        218
+      ],
+      [
+        147,
+        5,
+        5,
+        218
+      ],
+      [
+        152,
+        5,
+        5,
+        208
+      ],
+      [
+        157,
+        5,
+        5,
+        208
+      ],
+      [
+        162,
+        5,
+        5,
+        208
+      ],
+      [
+        167,
+        5,
+        5,
+        257
+      ],
+      [
+        172,
+        5,
+        5,
+        257
+      ],
+      [
+        178,
+        5,
+        5,
+        257
+      ],
+      [
+        183,
+        5,
+        5,
+        287
+      ],
+      [
+        188,
+        5,
+        5,
+        287
+      ],
+      [
+        193,
+        5,
+        5,
+        287
+      ],
+      [
+        198,
+        5,
+        5,
+        281
+      ],
+      [
+        203,
+        5,
+        5,
+        281
+      ],
+      [
+        208,
+        5,
+        5,
+        281
+      ],
+      [
+        214,
+        5,
+        5,
+        281
+      ]
+    ]
+  },
+  "pods_after_steady_load": [
+    {
+      "pod": "flowsentry-785bc8d7d8-7rc75",
+      "cpu_millicores": 2,
+      "memory_mi": 265.0
+    },
+    {
+      "pod": "flowsentry-785bc8d7d8-8f8n4",
+      "cpu_millicores": 2,
+      "memory_mi": 265.0
+    },
+    {
+      "pod": "flowsentry-785bc8d7d8-9jdrm",
+      "cpu_millicores": 2,
+      "memory_mi": 265.0
+    },
+    {
+      "pod": "flowsentry-785bc8d7d8-tdcnv",
+      "cpu_millicores": 998,
+      "memory_mi": 267.0
+    },
+    {
+      "pod": "flowsentry-785bc8d7d8-wm9wp",
+      "cpu_millicores": 1000,
+      "memory_mi": 267.0
+    }
+  ],
+  "caveats": [
+    "Single-node kind cluster on one GitHub Actions runner. The k6 load generator runs in the same cluster and competes for the same CPUs as the pods.",
+    "Synthetic load: one fixed request body sent in a closed loop. Not production traffic, not users.",
+    "Throughput and latency vary between runners; the gate is on failed requests, not on a throughput number."
+  ]
+}

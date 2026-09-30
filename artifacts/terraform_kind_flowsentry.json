@@ -1,0 +1,29 @@
+{
+  "what": "deploy/terraform/kubernetes applied to a kind cluster with the hashicorp/kubernetes provider, checked, then destroyed.",
+  "environment": {
+    "terraform_version": "1.16.4",
+    "provider_version": "3.2.1",
+    "kubernetes_version": "v1.37.0",
+    "git_sha": "849874a04f2a4d30ee6a2d5d7afb6d001c50c3b4",
+    "run_url": "https://github.com/Aeripsen/flowsentry/actions/runs/36771699879"
+  },
+  "apply_exit_code": 0,
+  "resources_created": 6,
+  "apply_seconds": 8,
+  "second_plan_exit_code": 0,
+  "second_plan_is_empty": true,
+  "ready": {
+    "status": "ready",
+    "model": "loaded",
+    "version": "0.2.0"
+  },
+  "predict_example": {
+    "label": "unknown",
+    "confidence": 0.5251,
+    "escalated_to_stage2": true,
+    "abstained": true
+  },
+  "parity_with_yaml_exit_code": 0,
+  "destroy_exit_code": 0,
+  "not_done": "No cloud apply. deploy/terraform/cloudrun is fmt-checked and validated in CI only; applying it needs a GCP project with billing."
+}
