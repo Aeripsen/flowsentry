@@ -28,4 +28,3 @@ mlartifacts/
 *.tfstate
 *.tfstate.*
 *.tfplan
-mlflow_arms_ci.json

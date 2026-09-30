@@ -553,9 +553,10 @@ already reports it (`metrics.json`, `calibration.json`, `hierarchy_benchmark.jso
 store and must reproduce its in-memory predictions on all 6,570 held-out flows. The runs are
 then read back from the store into `artifacts/mlflow_arms.json`. The cross-check caught one
 real thing on its first CI run: XGBoost (`tree_method=hist`) is not bit-identical across
-platforms. On the Linux runner it matches the Windows-measured binary PR-AUC but not the other
-fields, so the CI job requires exact matches for the forest, hierarchy and LightGBM arms and
-prints XGBoost's per-field gap instead of hiding it. Sklearn models are saved with
+operating systems. On ubuntu it matched the committed binary PR-AUC but not benign PR-AUC,
+accuracy, macro-F1 or ECE, while the forests and LightGBM matched exactly. The committed
+comparison was measured on Windows, so the `mlops` CI job runs on `windows-latest`, where all
+four arms match exactly and the job fails on any difference. Sklearn models are saved with
 skops (not pickle) against an explicit, reviewed list of trusted types; the two boosters cannot
 be walked by skops and are logged as a pyfunc with cloudpickle, which the script says in a
 comment.
