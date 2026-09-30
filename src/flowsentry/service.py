@@ -19,9 +19,11 @@ without regex archaeology.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import math
+import os
 import threading
 import time
 from datetime import UTC, datetime
@@ -55,6 +57,22 @@ _scorer: FlowScorer | None = None
 # Threads blocked on this lock do not compete for the GIL, so the handoffs stop.
 # Parallelism comes from processes (uvicorn --workers / replicas), not threads.
 _SCORE_LOCK = threading.Lock()
+
+# FLOWSENTRY_SCORE_LOCK=0 turns the lock off. It exists so the load test's
+# "before" arm runs the same commit (scripts/loadtest.py --arm nolock); it is on
+# unless the variable says exactly 0.
+SCORE_LOCK_SWITCH = "FLOWSENTRY_SCORE_LOCK"
+
+
+def score_lock_enabled(environ: dict[str, str] | os._Environ[str] = os.environ) -> bool:
+    return environ.get(SCORE_LOCK_SWITCH, "1").strip() != "0"
+
+
+_USE_SCORE_LOCK = score_lock_enabled()
+
+
+def _score_guard() -> contextlib.AbstractContextManager[object]:
+    return _SCORE_LOCK if _USE_SCORE_LOCK else contextlib.nullcontext()
 
 
 class _JsonFormatter(logging.Formatter):
@@ -155,7 +173,7 @@ def ready():
 def predict(req: Flow):
     scorer = _require_scorer()
     _require_finite(req.features)
-    with _SCORE_LOCK:  # timed inside: latency_ms stays scoring time, not queue wait
+    with _score_guard():  # timed inside: latency_ms stays scoring time, not queue wait
         t0 = time.perf_counter()
         verdict = scorer.score_one(req.features, reject_threshold=req.reject_threshold)
         latency_ms = round((time.perf_counter() - t0) * 1000.0, 3)
@@ -180,7 +198,7 @@ def predict_batch(req: FlowBatch):
     scorer = _require_scorer()
     for features in req.flows:
         _require_finite(features)
-    with _SCORE_LOCK:  # timed inside: latency_ms is build + score, not queue wait
+    with _score_guard():  # timed inside: latency_ms is build + score, not queue wait
         t0 = time.perf_counter()
         rows = np.vstack([scorer.row_from_features(f) for f in req.flows])
         labels, conf, escalated, abstained = scorer.score_batch(

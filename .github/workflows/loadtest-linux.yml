@@ -1,0 +1,56 @@
+name: loadtest-linux
+
+# The HTTP load test against the real serving image on Linux (the laptop
+# numbers in the README are Windows). Manual: it takes about half an hour and
+# measures, it does not gate. The result files are uploaded as an artifact and
+# committed to artifacts/loadtest_linux/ by hand, with the run id. README
+# "Load test".
+on:
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: A/B rounds (each runs both arms at 1 and 4 workers)
+        default: "3"
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install the client side (payload rows, harness)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[loadtest]"
+
+      # The client needs held-out test flows to post; they come from the trained
+      # artifact. The image trains its own copy from the same sample at build time.
+      - name: Train from the committed sample
+        run: python -m flowsentry.train
+
+      - name: Build the serving image
+        run: docker build -t flowsentry:loadtest .
+
+      - name: A/B on the image (scoring lock on as shipped vs FLOWSENTRY_SCORE_LOCK=0)
+        env:
+          ROUNDS: ${{ inputs.rounds }}
+        run: |
+          set -o pipefail
+          nproc; lscpu | head -20; free -g
+          bash scripts/loadtest_linux.sh | tee /tmp/loadtest_linux.log
+          python scripts/loadtest.py --check "artifacts/loadtest_linux/*_r*.json"
+          python scripts/loadtest.py --ab-summary artifacts/loadtest_linux >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: loadtest-linux-${{ github.sha }}
+          path: artifacts/loadtest_linux/

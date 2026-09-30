@@ -36,6 +36,29 @@ jobs:
       - name: Business case regenerates from committed artifacts
         run: python scripts/business_case.py --verify
 
+  # The HTTP load-test harness against a real uvicorn server, short: it has to
+  # start the shipped config (scoring lock on), measure server and machine CPU,
+  # record the commit, and see no failed requests.
+  loadtest-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install (with the loadtest extra)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[loadtest]"
+      - name: Train from the committed sample
+        run: python -m flowsentry.train
+      - name: Load test, 2 levels, fields checked
+        run: |
+          python scripts/loadtest.py --levels 1,4 --warmup 0.5 --duration 2 --payloads 200 --out /tmp/loadtest_smoke.json
+          python scripts/loadtest.py --check /tmp/loadtest_smoke.json
+          python -c "import json; d = json.load(open('/tmp/loadtest_smoke.json')); assert d['summary']['total_errors'] == 0; assert d['server']['arm_resolved']['score_lock'] is True, d['server']"
+
   # Exact-bytes reproducibility under the locked environment the numbers were
   # published from. The unlocked matrix above still enforces the PR-AUC floor
   # via the regression test; this job is the strict byte-identity contract.

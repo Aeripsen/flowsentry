@@ -1,7 +1,7 @@
 # Convenience targets; every one is a documented single command, so Windows
 # users without make can run the underlying line directly.
 
-.PHONY: train test lint type bench loadtest splits hierarchy families calibration gbdt shap zero-day business verify-derived demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind k8s-schema compose-smoke
+.PHONY: train test lint type bench loadtest loadtest-profile splits hierarchy families calibration gbdt shap zero-day business verify-derived demo-data demo-verify site-check reproduce serve track drift-report mlflow-ui k8s-e2e tf-kind k8s-schema compose-smoke
 
 train:
 	python -m flowsentry.train
@@ -18,11 +18,18 @@ type:
 bench:
 	python -m flowsentry.bench
 
-# HTTP load test: starts the service the way the Dockerfile does, steps concurrency
-# 1..128 with a closed-loop client, writes artifacts/loadtest_<label>.json. README "Load test".
+# HTTP load test, both halves of the A/B in one command: the shipped arm (scoring
+# lock on) and the before arm (FLOWSENTRY_SCORE_LOCK=0, same commit), alternating
+# ABBA, 3 rounds at 1 and 4 workers, then the py-spy profiles the README quotes.
+# Writes artifacts/loadtest_ab/predict/*.json + summary.json and
+# artifacts/profiles/. Needs pip install -e ".[loadtest]". README "Load test".
 loadtest:
-	python scripts/loadtest.py --label predict_w1_scorelock
-	python scripts/loadtest.py --workers 4 --label predict_w4_scorelock
+	python scripts/loadtest.py --ab-rounds 3 --ab-workers 1,4
+	$(MAKE) loadtest-profile
+
+loadtest-profile:
+	python scripts/loadtest.py --arm nolock --levels 4 --pyspy-at 4 --label profile_predict_w1_nolock --out artifacts/profiles/profile_predict_w1_nolock.json
+	python scripts/loadtest.py --arm lock --levels 4 --pyspy-at 4 --label profile_predict_w1_lock --out artifacts/profiles/profile_predict_w1_lock.json
 
 # grouped vs stratified head to head; sources the split claims in ADR 002
 splits:

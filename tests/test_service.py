@@ -162,3 +162,50 @@ def test_scoring_runs_under_the_process_lock(monkeypatch):
     assert client.post("/predict/batch", json={"flows": [flow, flow]}).status_code == 200
     assert seen == [True, True]
     assert not service._SCORE_LOCK.locked()  # released after each request
+
+
+def test_score_lock_switch_reads_only_an_explicit_zero():
+    assert service.score_lock_enabled({})
+    assert service.score_lock_enabled({"FLOWSENTRY_SCORE_LOCK": "1"})
+    assert service.score_lock_enabled({"FLOWSENTRY_SCORE_LOCK": "yes"})
+    assert not service.score_lock_enabled({"FLOWSENTRY_SCORE_LOCK": "0"})
+    assert not service.score_lock_enabled({"FLOWSENTRY_SCORE_LOCK": " 0 "})
+
+
+def test_scoring_skips_the_lock_when_switched_off(monkeypatch):
+    """The load test's before arm (FLOWSENTRY_SCORE_LOCK=0) must really score
+    without the lock, or the A/B compares the fix against itself."""
+    scorer = _tiny_scorer()
+    seen = []
+    real_one = scorer.score_one
+
+    def score_one(*a, **k):
+        seen.append(service._SCORE_LOCK.locked())
+        return real_one(*a, **k)
+
+    monkeypatch.setattr(scorer, "score_one", score_one)
+    monkeypatch.setattr(service, "_scorer", scorer)
+    monkeypatch.setattr(service, "_USE_SCORE_LOCK", False)
+    client = TestClient(service.app)
+    flow = {name: 1.0 for name in UDP_FEATURES}
+    assert client.post("/predict", json={"features": flow}).status_code == 200
+    assert seen == [False]
+
+
+def test_the_switch_is_read_at_import_and_settings_accept_it():
+    """Settings forbid unknown FLOWSENTRY_ fields; the switch must not trip that."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    src = str(Path(__file__).resolve().parents[1] / "src")
+    code = (
+        "from flowsentry import service; from flowsentry.config import get_settings; "
+        "get_settings(); print(service._USE_SCORE_LOCK)"
+    )
+    for value, expected in (("0", "False"), ("1", "True")):
+        env = {**os.environ, "FLOWSENTRY_SCORE_LOCK": value, "PYTHONPATH": src}
+        out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True,
+                             text=True, check=True)
+        assert out.stdout.strip().splitlines()[-1] == expected
