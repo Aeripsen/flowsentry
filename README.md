@@ -665,7 +665,7 @@ comment.
 time window. The two windows are the split the repo already uses: reference = the 19,045
 training flows, current = the 6,570 flows from connections the model never saw. Reference
 predictions are 3-fold grouped out-of-fold, so neither window is scored by a model that trained
-on it. From `artifacts/evidently_summary.json` and `reports/evidently_drift_performance.html`:
+on it. From `artifacts/evidently_summary.json` and [`reports/evidently_drift_performance.html`](https://aeripsen.github.io/flowsentry/reports/evidently_drift_performance.html) (open it in the browser):
 
 | | Result |
 |---|---|
