@@ -15,10 +15,10 @@
       "params": {
         "seed": "42",
         "grid_size": "8",
+        "n_estimators": "200",
         "num_leaves": "31",
-        "selected_by": "grouped validation carve (seed 43), binary PR-AUC",
         "learning_rate": "0.05",
-        "n_estimators": "200"
+        "selected_by": "grouped validation carve (seed 43), binary PR-AUC"
       },
       "metrics": {
         "binary_attack_pr_auc": 0.9837,
@@ -28,6 +28,7 @@
         "ece_top_label": 0.0559
       },
       "matches_committed": true,
+      "max_abs_diff_vs_committed": 0.0,
       "logged_model_reproduces_predictions": true
     },
     "random_forest_joint": {
@@ -35,8 +36,8 @@
       "shipped": false,
       "params": {
         "n_estimators": "200",
-        "random_state": "42",
-        "stage_estimator": "random_forest"
+        "stage_estimator": "random_forest",
+        "random_state": "42"
       },
       "metrics": {
         "binary_attack_pr_auc": 0.9774,
@@ -46,6 +47,7 @@
         "ece_top_label": 0.0359
       },
       "matches_committed": true,
+      "max_abs_diff_vs_committed": 0.0,
       "logged_model_reproduces_predictions": true
     },
     "two_stage_hierarchy": {
@@ -53,9 +55,9 @@
       "shipped": true,
       "params": {
         "stage_estimator": "random_forest",
+        "stage2.n_estimators": "200",
         "stage2.random_state": "42",
         "stage1.n_estimators": "60",
-        "stage2.n_estimators": "200",
         "stage1.random_state": "42",
         "escalate_threshold": "0.9"
       },
@@ -68,6 +70,7 @@
         "escalation_rate": 0.2429
       },
       "matches_committed": true,
+      "max_abs_diff_vs_committed": 0.0,
       "logged_model_reproduces_predictions": true
     },
     "xgboost_tuned": {
@@ -76,9 +79,9 @@
       "params": {
         "seed": "42",
         "grid_size": "8",
-        "selected_by": "grouped validation carve (seed 43), binary PR-AUC",
-        "learning_rate": "0.05",
         "n_estimators": "200",
+        "learning_rate": "0.05",
+        "selected_by": "grouped validation carve (seed 43), binary PR-AUC",
         "max_depth": "6"
       },
       "metrics": {
@@ -89,6 +92,7 @@
         "ece_top_label": 0.0399
       },
       "matches_committed": true,
+      "max_abs_diff_vs_committed": 0.0,
       "logged_model_reproduces_predictions": true
     }
   },

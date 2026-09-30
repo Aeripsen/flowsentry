@@ -551,7 +551,11 @@ trustworthy rather than decorative: every arm's metrics must equal the committed
 already reports it (`metrics.json`, `calibration.json`, `hierarchy_benchmark.json`,
 `gbdt_comparison.json`), or the script exits 1; and every logged model is loaded back from the
 store and must reproduce its in-memory predictions on all 6,570 held-out flows. The runs are
-then read back from the store into `artifacts/mlflow_arms.json`. Sklearn models are saved with
+then read back from the store into `artifacts/mlflow_arms.json`. The cross-check caught one
+real thing on its first CI run: XGBoost (`tree_method=hist`) is not bit-identical across
+platforms. On the Linux runner it matches the Windows-measured binary PR-AUC but not the other
+fields, so the CI job requires exact matches for the forest, hierarchy and LightGBM arms and
+prints XGBoost's per-field gap instead of hiding it. Sklearn models are saved with
 skops (not pickle) against an explicit, reviewed list of trusted types; the two boosters cannot
 be walked by skops and are logged as a pyfunc with cloudpickle, which the script says in a
 comment.

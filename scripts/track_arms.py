@@ -129,14 +129,18 @@ def committed_reference() -> dict[str, dict[str, float]]:
 def check(arm: str, live: dict[str, Any], ref: dict[str, dict[str, float]]) -> dict[str, Any]:
     rows = {}
     for k, want in ref.get(arm, {}).items():
-        rows[k] = {"committed": want, "tracked": live[k], "match": live[k] == want}
-    return {"fields": rows, "all_match": all(r["match"] for r in rows.values())}
+        rows[k] = {"committed": want, "tracked": live[k], "match": live[k] == want,
+                   "abs_diff": round(abs(live[k] - want), 4)}
+    return {"fields": rows, "all_match": all(r["match"] for r in rows.values()),
+            "max_abs_diff": max((r["abs_diff"] for r in rows.values()), default=0.0)}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--allow-mismatch", action="store_true",
                     help="log even if a run disagrees with the committed artifacts")
+    ap.add_argument("--out", type=Path, default=OUT,
+                    help="where to write the read-back summary (default: the committed file)")
     args = ap.parse_args()
 
     import mlflow
@@ -214,7 +218,8 @@ def main() -> int:
     ref = committed_reference()
     checks = {name: check(name, a["metrics"], ref) for name, a in arms.items()}
     for name, c in checks.items():
-        bad = [k for k, r in c["fields"].items() if not r["match"]]
+        bad = {k: f"{r['committed']} -> {r['tracked']}" for k, r in c["fields"].items()
+               if not r["match"]}
         status = "OK" if not bad else f"MISMATCH {bad}"
         print(f"[check] {name}: {status}")
     all_match = all(c["all_match"] for c in checks.values())
@@ -295,6 +300,7 @@ def main() -> int:
                         + ["escalation_rate"] if f"metrics.{k}" in runs.columns
                         and r[f"metrics.{k}"] == r[f"metrics.{k}"]},
             "matches_committed": r["tags.matches_committed"] == "True",
+            "max_abs_diff_vs_committed": checks[r["tags.arm"]]["max_abs_diff"],
             "logged_model_reproduces_predictions":
                 r["tags.roundtrip_predictions_identical"] == "True",
         }
@@ -315,8 +321,8 @@ def main() -> int:
             "calibration of the confidence the reject knob thresholds"),
         "all_arms_match_committed_artifacts": all_match,
     }
-    OUT.write_text(json.dumps(report, indent=2) + "\n")
-    print(f"[save] {OUT}")
+    args.out.write_text(json.dumps(report, indent=2) + "\n")
+    print(f"[save] {args.out}")
     return 0
 
 
