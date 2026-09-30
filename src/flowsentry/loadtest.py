@@ -492,6 +492,11 @@ def probe_openmp() -> dict[str, Any]:
     HistGradientBoostingClassifier(max_iter=5).fit(X, y).predict(X[:1])
     omp = [p for p in threadpool_info() if p.get("user_api") == "openmp"]
     return {
+        # the versions the SERVER runs, which for an external server (a container)
+        # are not the client host's versions in "environment"
+        "python": platform.python_version(),
+        **{mod.replace("-", "_"): _version(mod)
+           for mod in ("uvicorn", "fastapi", "scikit-learn", "numpy", "httptools")},
         "hgb_predict_openmp_threads": int(_openmp_effective_n_threads()),
         "openmp_runtime": omp[0].get("prefix") if omp else None,
         "openmp_pool_num_threads": omp[0].get("num_threads") if omp else None,
@@ -721,7 +726,9 @@ def run(
         cmd = server_cmd(port, http)
         server = {
             "mode": "started by the harness",
-            "cmd": [Path(cmd[0]).name, *cmd[1:]],
+            # repo-relative, so a result file carries no machine-specific path
+            "cmd": [Path(cmd[0]).name, *("src" if a == str(REPO_ROOT / "src") else a
+                                         for a in cmd[1:])],
             "workers_via": "WEB_CONCURRENCY",
             "thread_env": {k: senv[k] for k in THREAD_VARS if k in senv},
             "thread_env_source": "unset" if spec["unset_thread_env"] else "Dockerfile ENV",
@@ -734,6 +741,7 @@ def run(
     else:
         base = url.rstrip("/")
         pids = [server_pid] if server_pid else []
+        env["describes"] = "the client host only; the server's versions come from --meta"
         server = {
             "mode": "external (--url)",
             "url": base,

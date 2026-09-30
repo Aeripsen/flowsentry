@@ -23,7 +23,8 @@ IMAGE_ID=$(docker image inspect -f '{{.Id}}' "$IMAGE")
 run_arm() {
   local arm=$1 workers=$2 round=$3 lockenv=1
   [ "$arm" = nolock ] && lockenv=0
-  local cid pid
+  local cid pid probe
+  probe=$(docker run --rm "$IMAGE" python -m flowsentry.loadtest --probe-openmp)
   cid=$(docker run -d --network host -e WEB_CONCURRENCY="$workers" \
     -e FLOWSENTRY_SCORE_LOCK="$lockenv" "$IMAGE")
   pid=$(docker inspect -f '{{.State.Pid}}' "$cid")
@@ -34,6 +35,7 @@ run_arm() {
     --meta "image_id=$IMAGE_ID" \
     --meta "container_cmd=the image CMD, unchanged" \
     --meta "docker_run=--network host -e WEB_CONCURRENCY=$workers -e FLOWSENTRY_SCORE_LOCK=$lockenv (no --cpus)" \
+    --meta "server_probe_in_image=$probe" \
     --meta "ab_round=$round"
   docker logs "$cid" 2>&1 | tail -n 3
   docker rm -f "$cid" >/dev/null
