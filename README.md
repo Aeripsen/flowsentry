@@ -7,9 +7,27 @@
 
 [![the reject knob moving over the held-out flows](docs/img/demo.gif)](https://aeripsen.github.io/flowsentry/)
 
+**For a reviewer with three minutes.**
+
+- **Paper:** Jafari, Shafi, Habibi Lashkari, *Unveiling Hierarchical Machine Learning UDP-QUIC
+  Intrusion Detection: Protocol-Aware Flow Analysis and a New Cloud-Generated DDoS Dataset*,
+  SECRYPT 2026, pp. 49-68, [doi:10.5220/0015033600004103](https://doi.org/10.5220/0015033600004103). I am first author.
+- **Dataset:** [BCCC-UDP-QUIC-IDS-2025](https://www.yorku.ca/research/bccc/ucs-technical/cybersecurity-datasets-cds/udp-quic-network-threat-dataset-bccc-udp-quic-ids-2025/) (York University, CC BY 4.0; the full release is
+  requested through that page). A 25,615-flow stratified sample ships in this repo.
+- **Headline:** binary DDoS detection PR-AUC 0.9767 on a connection-grouped held-out split of that
+  sample. One command retrains from scratch and checks it:
+
+  ```bash
+  pip install -r requirements.lock && pip install -e . --no-deps
+  python scripts/reproduce.py   # or: make reproduce
+  # [reproduce] OK: metrics.json is byte-identical (binary attack PR-AUC = 0.9767)
+  ```
+
+- **What it does not show:** see [Limitations](#limitations). How to cite: [Citation](#citation).
+
 **What this is, in 30 seconds.** A network-attack detector that is allowed to say "I don't
 know" and hand a flow to an analyst instead of guessing, run on BCCC-UDP-QUIC-IDS-2025, the public
-dataset from my accepted SECRYPT 2026 paper. The repo uses a stratified sample of it: every flow of
+dataset from my published SECRYPT 2026 paper. The repo uses a stratified sample of it: every flow of
 the rare UDP DDoS families, with benign and UDP-RAW capped, so benign is 47.0% of the test flows,
 far less than on a real network. Measured, not assumed:
 
@@ -33,7 +51,7 @@ it and requires the export back byte for byte before the page can deploy (see
 [the live demo](#the-live-demo-and-what-ci-checks)).
 
 Per-flow hierarchical UDP/QUIC intrusion detection with a tunable reject option, served over
-FastAPI. It builds the two-stage architecture from my accepted **SECRYPT 2026** paper on hierarchical
+FastAPI. It builds the two-stage architecture from my published **SECRYPT 2026** paper on hierarchical
 UDP/QUIC intrusion detection, on that paper's own public dataset, and then measures it against
 simpler models: on this sample a single forest does as well, and the repo says so (see
 [the ablation](#ablation-what-the-hierarchy-actually-buys)).
@@ -785,6 +803,30 @@ suite still enforces the PR-AUC floor. `ruff check`, `mypy`, and `pytest -q` (th
 the leakage guard, the metrics regression, exact-equality guards on both fast paths, and the perf
 regression guard) run in CI.
 
+## Limitations
+
+Each of these is stated with its evidence further up; this section only gathers them.
+
+- **A sample, not the full dataset.** 25,615 flows, with benign and UDP-RAW capped, so benign is
+  47.0% of the test flows. PR-AUC depends on prevalence, and here the sampling chose it. The 64.8%
+  coverage at threshold 0.99 and the size of the analyst queue would not hold at real-world benign
+  prevalence.
+- **The rare families are where it is weak.** Macro-F1 across the 8 classes is 0.391. At full
+  coverage 56.2% of rare-family flows are labelled benign, and at threshold 0.99 recall is 0.000
+  for UDP-GAME, UDP-MULTI, UDP-OVH and UDP-bypass-v1. The 99.3% reliability is earned mostly on
+  UDP-RAW and benign.
+- **Detection or campaign recognition is untested.** UDP-RAW comes from 2 source IPs and 85.24% of
+  test flows share a source IP with training. A cross-day split would decide it, and the shipped
+  sample cannot support one because it has no timestamp.
+- **The hierarchy does not pay for itself on this sample.** A single 60-tree forest is faster and
+  scores higher binary PR-AUC; the repo keeps the paper's architecture and reports the ablation.
+- **Held-out families are flood variants, not real zero-days.** The reject knob sends 91.4% of an
+  unseen family to an analyst, but it sends 84.9% of seen rare families too: it rejects rare
+  floods, it does not detect novelty. 7.7% of unseen-family flows still pass as benign.
+- **Scope.** It classifies stored flow records; it is not a live network tap, and no public API
+  is hosted. Latency and load figures come from one dev machine and one CI runner. Exact bytes are
+  promised only under `requirements.lock`; XGBoost differs across operating systems.
+
 ## Roadmap (honest)
 
 - [ ] Public hosted API with a live URL (the API is deployed to kind in CI on every deploy change,
@@ -817,14 +859,33 @@ regression guard) run in CI.
 ## Attribution
 
 - The two-stage hierarchical UDP/QUIC IDS with a reject option is the architecture from my
-  peer-reviewed paper, accepted at **SECRYPT 2026** (Jafari, Shafi, Habibi Lashkari; I am first
-  author). This repo is that idea turned into a running, testable service.
+  peer-reviewed paper, published at **SECRYPT 2026** (Jafari, Shafi, Habibi Lashkari; I am first
+  author; [doi:10.5220/0015033600004103](https://doi.org/10.5220/0015033600004103)). This repo is that idea turned into a running,
+  testable service.
 - **UDPFlowLyzer** and **QUICFlowLyzer** (the feature layer) are my own public flow extractors,
   built on the **NTLFlowLyzer** base by MohammadMoein Shafi.
 - **BCCC-UDP-QUIC-IDS-2025** is the public (CC BY 4.0) dataset from the same paper, produced at the
   Behaviour-Centric Cybersecurity Center (BCCC), York University. Only a stratified sample of the
   released dataset is redistributed here, with attribution; no non-public data is included.
 - Built with scikit-learn, pandas, FastAPI, pydantic, and pydantic-settings.
+
+## Citation
+
+If you use this code or the bundled sample, cite the paper (also in [CITATION.cff](CITATION.cff)):
+
+```bibtex
+@inproceedings{jafari2026udpquic,
+  author    = {Jafari, Sepehr and Shafi, MohammadMoein and {Habibi Lashkari}, Arash},
+  title     = {Unveiling Hierarchical Machine Learning {UDP-QUIC} Intrusion Detection:
+               Protocol-Aware Flow Analysis and a New Cloud-Generated {DDoS} Dataset},
+  booktitle = {Proceedings of the 23rd International Conference on Security and Cryptography
+               (SECRYPT 2026)},
+  pages     = {49--68},
+  publisher = {SCITEPRESS},
+  year      = {2026},
+  doi       = {10.5220/0015033600004103}
+}
+```
 
 ## License
 

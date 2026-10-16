@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite the paper it implements (preferred-citation).
+  If you use the bundled data sample, cite the paper too: the BCCC-UDP-QUIC-IDS-2025
+  release asks for that citation under CC BY 4.0.
+title: "FlowSentry: hierarchical UDP/QUIC intrusion detection with a tunable reject option"
+type: software
+authors:
+  - given-names: Sepehr
+    family-names: Jafari
+version: 0.2.0
+license: MIT
+repository-code: "https://github.com/Aeripsen/flowsentry"
+url: "https://aeripsen.github.io/flowsentry/"
+keywords:
+  - intrusion detection
+  - network security
+  - QUIC
+  - UDP
+  - DDoS
+  - selective classification
+  - reject option
+preferred-citation:
+  type: conference-paper
+  title: >-
+    Unveiling Hierarchical Machine Learning UDP-QUIC Intrusion Detection:
+    Protocol-Aware Flow Analysis and a New Cloud-Generated DDoS Dataset
+  authors:
+    - given-names: Sepehr
+      family-names: Jafari
+    - given-names: MohammadMoein
+      family-names: Shafi
+    - given-names: Arash
+      family-names: Habibi Lashkari
+  collection-title: "Proceedings of the 23rd International Conference on Security and Cryptography (SECRYPT 2026)"
+  publisher:
+    name: SCITEPRESS
+  start: 49
+  end: 68
+  year: 2026
+  doi: "10.5220/0015033600004103"
+references:
+  - type: data
+    title: "UDP-QUIC Network Threat Dataset (BCCC-UDP-QUIC-IDS-2025)"
+    authors:
+      - given-names: Sepehr
+        family-names: Jafari
+      - given-names: MohammadMoein
+        family-names: Shafi
+      - given-names: Arash
+        family-names: Habibi Lashkari
+    institution:
+      name: "Behaviour-Centric Cybersecurity Center (BCCC), York University"
+    license: CC-BY-4.0
+    year: 2026
+    url: "https://www.yorku.ca/research/bccc/ucs-technical/cybersecurity-datasets-cds/udp-quic-network-threat-dataset-bccc-udp-quic-ids-2025/"
