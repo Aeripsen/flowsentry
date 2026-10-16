@@ -146,7 +146,7 @@ def connection_key(df: pd.DataFrame) -> np.ndarray:
     ).to_numpy()
 
 
-def build_matrices(df: pd.DataFrame):
+def build_matrices(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return (X_stage2, y, groups). X_stage2 columns are STAGE2_FEATURES in order,
     so X_stage2[:, STAGE1_INDICES] is exactly the Stage-1 (UDP-only) matrix.
     Non-finite values are set to NaN and imputed later on the training split only."""
@@ -157,7 +157,9 @@ def build_matrices(df: pd.DataFrame):
     return X, y, groups
 
 
-def leakage_safe_split(groups: np.ndarray, test_size: float = 0.25, seed: int = 42):
+def leakage_safe_split(
+    groups: np.ndarray, test_size: float = 0.25, seed: int = 42
+) -> tuple[np.ndarray, np.ndarray]:
     """Connection-grouped split: no flow from one connection appears in both train and
     test. Returns (train_idx, test_idx) and asserts the no-shared-connection property."""
     gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=seed)

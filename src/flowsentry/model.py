@@ -22,14 +22,25 @@ the point of the reject option.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
+from numpy.typing import ArrayLike
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import RandomForestClassifier
 
+if TYPE_CHECKING:
+    from .registry import StageClassifier
+
 UNKNOWN = "unknown"
 
+# one row of coverage_reliability_curve: threshold, coverage, reliability (None when
+# nothing is answered), n_covered, escalation_rate
+CurveRow = dict[str, float | int | None]
 
-def forest_proba(forest, X: np.ndarray, sequential: bool = False) -> np.ndarray:
+
+def forest_proba(forest: Any, X: np.ndarray, sequential: bool = False) -> np.ndarray:
     """Class probabilities from a fitted forest, with an optional sequential path.
 
     The fitted forests carry n_jobs=-1, and sklearn's predict_proba builds and
@@ -59,6 +70,15 @@ def forest_proba(forest, X: np.ndarray, sequential: bool = False) -> np.ndarray:
 
 
 class TwoStageRejectClassifier(BaseEstimator):
+    """Two-stage hierarchical classifier with a reject option (the SECRYPT 2026 design).
+
+    Stage 1 scores every flow on the UDP-only columns; flows whose Stage-1
+    confidence is below `escalate_threshold` are re-scored by Stage 2 on the full
+    UDP + QUIC matrix. A request-time `reject_threshold` turns low-confidence
+    verdicts into `UNKNOWN` instead of a guess. sklearn-compatible (get_params,
+    clone), so it drops into sklearn tooling.
+    """
+
     def __init__(
         self,
         stage1_features: list[int] | None = None,
@@ -66,8 +86,8 @@ class TwoStageRejectClassifier(BaseEstimator):
         n_estimators_stage1: int = 60,
         n_estimators_stage2: int = 200,
         random_state: int = 42,
-        stage1_estimator=None,
-        stage2_estimator=None,
+        stage1_estimator: StageClassifier | None = None,
+        stage2_estimator: StageClassifier | None = None,
     ) -> None:
         # stage1_features: indices (within the full Stage-2 matrix) of the UDP-only
         # columns Stage 1 trains on. None means Stage 1 sees the full feature set
@@ -85,7 +105,8 @@ class TwoStageRejectClassifier(BaseEstimator):
         self.stage1_estimator = stage1_estimator
         self.stage2_estimator = stage2_estimator
 
-    def _build_stage(self, estimator, n_estimators: int):
+    def _build_stage(self, estimator: StageClassifier | None, n_estimators: int) -> Any:
+        """A fresh clone of `estimator`, or the default balanced random forest."""
         if estimator is not None:
             return clone(estimator)
         return RandomForestClassifier(
@@ -95,7 +116,11 @@ class TwoStageRejectClassifier(BaseEstimator):
             class_weight="balanced_subsample",
         )
 
-    def fit(self, X, y) -> TwoStageRejectClassifier:
+    def fit(self, X: ArrayLike, y: ArrayLike) -> TwoStageRejectClassifier:
+        """Fit Stage 1 on the UDP-only columns and Stage 2 on all columns.
+
+        Both stages see every training row; escalation only applies at predict time.
+        """
         X = np.asarray(X, dtype=float)
         y = np.asarray(y)
         self.classes_ = np.unique(y)
@@ -110,7 +135,9 @@ class TwoStageRejectClassifier(BaseEstimator):
         self.stage2_.fit(X, y)
         return self
 
-    def _stage_predict(self, X, sequential: bool = False):
+    def _stage_predict(
+        self, X: ArrayLike, sequential: bool = False
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Return (labels, confidence, escalated_mask, proba) with two-stage
         escalation applied. `proba` is the class-probability matrix (columns follow
         self.classes_): Stage-1 rows for confident flows, Stage-2 rows for escalated
@@ -141,19 +168,27 @@ class TwoStageRejectClassifier(BaseEstimator):
             proba[escalate] = block
         return labels, conf, escalate, proba
 
-    def predict(self, X, reject_threshold: float = 0.0, sequential: bool = False):
+    def predict(
+        self, X: ArrayLike, reject_threshold: float = 0.0, sequential: bool = False
+    ) -> np.ndarray:
+        """Labels per flow; `UNKNOWN` where confidence < `reject_threshold`.
+
+        The default threshold 0.0 never abstains (full coverage).
+        """
         labels, conf, _, _ = self._stage_predict(X, sequential)
         out = labels.copy()
         if reject_threshold > 0:
             out[conf < reject_threshold] = UNKNOWN
         return out
 
-    def predict_proba(self, X, sequential: bool = False):
+    def predict_proba(self, X: ArrayLike, sequential: bool = False) -> np.ndarray:
         """Two-stage class probabilities (columns follow self.classes_)."""
         _, _, _, proba = self._stage_predict(X, sequential)
         return proba
 
-    def predict_detail(self, X, reject_threshold: float = 0.0, sequential: bool = False):
+    def predict_detail(
+        self, X: ArrayLike, reject_threshold: float = 0.0, sequential: bool = False
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Return (labels, confidence, escalated_mask, abstained_mask)."""
         labels, conf, escalate, _ = self._stage_predict(X, sequential)
         out = labels.copy()
@@ -161,12 +196,18 @@ class TwoStageRejectClassifier(BaseEstimator):
         out[abstained] = UNKNOWN
         return out, conf, escalate, abstained
 
-    def coverage_reliability_curve(self, X, y, thresholds, sequential: bool = False):
+    def coverage_reliability_curve(
+        self,
+        X: ArrayLike,
+        y: ArrayLike,
+        thresholds: Iterable[float],
+        sequential: bool = False,
+    ) -> list[CurveRow]:
         """For each reject threshold: coverage (fraction answered) and reliability
         (accuracy on the answered subset). Also reports the escalation rate."""
         labels, conf, escalate, _ = self._stage_predict(X, sequential)
         y = np.asarray(y)
-        rows = []
+        rows: list[CurveRow] = []
         for t in thresholds:
             covered = conf >= t
             n_cov = int(covered.sum())

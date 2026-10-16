@@ -64,6 +64,8 @@ module = [
     "flowsentry.sinks",
     "flowsentry.drift",
     "flowsentry.scoring",
+    "flowsentry.model",
+    "flowsentry.data",
 ]
 disallow_untyped_defs = true
 
