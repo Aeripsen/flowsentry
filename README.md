@@ -9,7 +9,7 @@
 
 **What this is, in 30 seconds.** A network-attack detector that is allowed to say "I don't
 know" and hand a flow to an analyst instead of guessing, run on BCCC-UDP-QUIC-IDS-2025, the public
-dataset from my accepted SECRYPT 2026 paper. The repo uses a stratified sample of it: every flow of
+dataset from my published SECRYPT 2026 paper. The repo uses a stratified sample of it: every flow of
 the rare UDP DDoS families, with benign and UDP-RAW capped, so benign is 47.0% of the test flows,
 far less than on a real network. Measured, not assumed:
 
@@ -33,7 +33,7 @@ it and requires the export back byte for byte before the page can deploy (see
 [the live demo](#the-live-demo-and-what-ci-checks)).
 
 Per-flow hierarchical UDP/QUIC intrusion detection with a tunable reject option, served over
-FastAPI. It builds the two-stage architecture from my accepted **SECRYPT 2026** paper on hierarchical
+FastAPI. It builds the two-stage architecture from my published **SECRYPT 2026** paper on hierarchical
 UDP/QUIC intrusion detection, on that paper's own public dataset, and then measures it against
 simpler models: on this sample a single forest does as well, and the repo says so (see
 [the ablation](#ablation-what-the-hierarchy-actually-buys)).
@@ -817,7 +817,7 @@ regression guard) run in CI.
 ## Attribution
 
 - The two-stage hierarchical UDP/QUIC IDS with a reject option is the architecture from my
-  peer-reviewed paper, accepted at **SECRYPT 2026** (Jafari, Shafi, Habibi Lashkari; I am first
+  peer-reviewed paper, published at **SECRYPT 2026** (Jafari, Shafi, Habibi Lashkari; I am first
   author). This repo is that idea turned into a running, testable service.
 - **UDPFlowLyzer** and **QUICFlowLyzer** (the feature layer) are my own public flow extractors,
   built on the **NTLFlowLyzer** base by MohammadMoein Shafi.
